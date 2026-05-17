@@ -36,7 +36,7 @@ export default function Sidebar({ user }: { user: { name?: string | null; email?
         <div className="flex items-center gap-2">
           <span className="text-2xl">🔮</span>
           <div>
-            <p className="font-bold text-gray-900 text-sm">Tarot Agenda</p>
+            <p className="font-bold text-gray-900 text-sm">Mística Agenda</p>
             <span className={cn(
               "text-xs font-medium px-2 py-0.5 rounded-full",
               user?.plan === "PRO"

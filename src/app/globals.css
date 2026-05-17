@@ -40,11 +40,20 @@ body {
   }
 }
 
-/* Override autofill — mantém a cor definida pelo componente */
+/* Autofill em inputs brancos (páginas auth com fundo roxo) */
+.text-white:-webkit-autofill,
+.text-white:-webkit-autofill:hover,
+.text-white:-webkit-autofill:focus {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(88, 28, 135, 0.8) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Autofill em inputs do dashboard (fundo branco) */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: inherit;
-  -webkit-box-shadow: 0 0 0px 1000px rgba(88, 28, 135, 0.8) inset;
+  -webkit-text-fill-color: #111827;
+  -webkit-box-shadow: 0 0 0px 1000px white inset;
   transition: background-color 5000s ease-in-out 0s;
 }

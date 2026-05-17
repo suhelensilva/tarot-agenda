@@ -6,8 +6,8 @@ import { SessionProvider } from "@/components/session-provider"
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" })
 
 export const metadata: Metadata = {
-  title: "Tarot Agenda",
-  description: "Gerencie seus atendimentos de tarot",
+  title: "Mística Agenda",
+  description: "Gerencie seus atendimentos — Mística Agenda",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
