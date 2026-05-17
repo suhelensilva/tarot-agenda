@@ -87,9 +87,10 @@ export default async function DashboardPage() {
     restOfMonth.push(`${String(now.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`)
   }
 
-  const birthdaysToday = clientsWithBirthday.filter((c) => getMMDD(c.birthDate!) === todayMMDD)
-  const birthdaysWeek = clientsWithBirthday.filter((c) => next7.includes(getMMDD(c.birthDate!)))
-  const birthdaysMonth = clientsWithBirthday.filter((c) => restOfMonth.includes(getMMDD(c.birthDate!)))
+  type BirthdayClient = { id: string; name: string; birthDate: Date | null; phone: string }
+  const birthdaysToday = clientsWithBirthday.filter((c: BirthdayClient) => getMMDD(c.birthDate!) === todayMMDD)
+  const birthdaysWeek = clientsWithBirthday.filter((c: BirthdayClient) => next7.includes(getMMDD(c.birthDate!)))
+  const birthdaysMonth = clientsWithBirthday.filter((c: BirthdayClient) => restOfMonth.includes(getMMDD(c.birthDate!)))
 
   const hasBirthdays = birthdaysToday.length + birthdaysWeek.length + birthdaysMonth.length > 0
 
