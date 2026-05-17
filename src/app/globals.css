@@ -25,14 +25,26 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Garante texto escuro em todos os campos de formulário */
-input,
-textarea,
-select {
-  color: #111827;
+/* Garante texto escuro em campos de formulário — dentro de @layer base
+   para que as utilities do Tailwind (text-white, text-gray-900, etc.) sempre vençam */
+@layer base {
+  input,
+  textarea,
+  select {
+    color: #111827;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af;
+  }
 }
 
-input::placeholder,
-textarea::placeholder {
-  color: #9ca3af;
+/* Override autofill — mantém a cor definida pelo componente */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: inherit;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(88, 28, 135, 0.8) inset;
+  transition: background-color 5000s ease-in-out 0s;
 }
