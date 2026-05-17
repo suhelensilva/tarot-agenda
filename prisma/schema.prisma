@@ -1,0 +1,267 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  plan          Plan      @default(FREE)
+  logoUrl       String?
+  reportBg      String?
+  signature          String?
+  slogan             String?
+  reportTitleFont       String?
+  reportTitleColor      String?
+  reportSignatureFont   String?
+  reportSignatureColor  String?
+  reportFont            String?
+  reportTextColor       String?
+  reportAccentColor     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  clients          Client[]
+  appointments     Appointment[]
+  services         Service[]
+  whatsappConfig   WhatsappConfig?
+  messageTemplates MessageTemplate[]
+  availability     Availability[]
+  fichas           Ficha[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  phone     String
+  email     String?
+  birthDate DateTime?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments     Appointment[]
+  anamnesisRecords AnamnesisRecord[]
+  fichas           Ficha[]
+
+  @@map("clients")
+}
+
+model Service {
+  id          String      @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  price       Float
+  duration    Int
+  type        ServiceType @default(ONE_TIME)
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  fichas       Ficha[]
+
+  @@map("services")
+}
+
+model Appointment {
+  id                 String            @id @default(cuid())
+  userId             String
+  clientId           String
+  serviceId          String?
+  title              String
+  startTime          DateTime
+  endTime            DateTime
+  status             AppointmentStatus @default(SCHEDULED)
+  notes              String?
+  meetingLink        String?
+  cancellationReason String?
+  amountPaid         Float?
+  remindersSent      Json              @default("[]")
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id])
+
+  @@map("appointments")
+}
+
+model AnamnesisRecord {
+  id        String   @id @default(cuid())
+  clientId  String
+  date      DateTime @default(now())
+  cards     String?
+  notes     String?
+  fileUrl   String?
+  fileName  String?
+  createdAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("anamnesis_records")
+}
+
+model WhatsappConfig {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  instanceId  String   @unique
+  connected   Boolean  @default(false)
+  phoneNumber String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("whatsapp_configs")
+}
+
+model MessageTemplate {
+  id        String       @id @default(cuid())
+  userId    String
+  type      TemplateType
+  content   String
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@map("message_templates")
+}
+
+model Availability {
+  id        String  @id @default(cuid())
+  userId    String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  active    Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("availability")
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+enum ServiceType {
+  ONE_TIME
+  MONTHLY
+  RECURRING
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+}
+
+enum TemplateType {
+  REMINDER_48H
+  REMINDER_24H
+  REMINDER_1H
+  PREPARATION
+  CONFIRMATION
+}
+
+model Ficha {
+  id              String    @id @default(cuid())
+  userId          String
+  clientId        String
+  type            FichaType
+
+  // Dados comuns
+  serviceId       String?
+  mainSubject     String?
+  productName     String?
+  removeBg        Boolean  @default(false)
+
+  // Pessoas envolvidas (JSON array: [{name, birthDate, relation}])
+  involvedPeople  Json      @default("[]")
+
+  // Dor / queixa (usado no Relatório)
+  mainComplaint   String?
+  complaintText   String?
+
+  // Relatório — perguntas com cartas
+  questions          Json      @default("[]")   // [{question, cards, interpretation}]
+  // Relatório — seções extras
+  energeticTips      String?
+  spiritualPractice  String?
+  additionalServices String?
+
+  // Ficha Interna — sessão
+  sessionCards            Json      @default("[]")  // [{card, interpretation}]
+  topicsAddressed         String?
+  energeticObservations   String?
+  therapeuticSuggestions  String?
+  returnSchedule          String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id])
+
+  @@map("fichas")
+}
+
+enum FichaType {
+  INTERNAL
+  REPORT
+}

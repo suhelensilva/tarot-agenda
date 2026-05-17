@@ -1,0 +1,405 @@
+﻿"use client"
+
+import { useEffect, useState, useRef } from "react"
+import { Smartphone, Calendar, Save, CheckCircle, ImageIcon, User } from "lucide-react"
+
+const DAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
+
+type DayAvail = { dayOfWeek: number; startTime: string; endTime: string; active: boolean }
+type Profile = {
+  name: string
+  logoUrl: string | null
+  reportBg: string | null
+  signature: string
+  slogan: string
+  reportTitleFont: string
+  reportTitleColor: string
+  reportSignatureFont: string
+  reportSignatureColor: string
+  reportFont: string
+  reportTextColor: string
+  reportAccentColor: string
+}
+
+export default function ConfiguracoesPage() {
+  const [availability, setAvailability] = useState<DayAvail[]>([])
+  const [savingAvail, setSavingAvail] = useState(false)
+  const [savedAvail, setSavedAvail] = useState(false)
+  const [whatsappStatus, setWhatsappStatus] = useState<"disconnected" | "connecting" | "connected">("disconnected")
+  const [qrCode, setQrCode] = useState<string | null>(null)
+  const [profile, setProfile] = useState<Profile>({
+    name: "", logoUrl: null, reportBg: null,
+    signature: "", slogan: "",
+    reportTitleFont: "Georgia, serif",
+    reportTitleColor: "#4a1d96",
+    reportSignatureFont: "Georgia, serif",
+    reportSignatureColor: "#7c3aed",
+    reportFont: "Georgia, serif",
+    reportTextColor: "#374151",
+    reportAccentColor: "#7c3aed",
+  })
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [savedProfile, setSavedProfile] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const logoRef = useRef<HTMLInputElement>(null)
+  const bgRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetch("/api/configuracoes/disponibilidade").then((r) => r.json()).then(setAvailability)
+    fetch("/api/perfil").then((r) => r.json()).then((d) => setProfile({
+      name: d.name ?? "",
+      logoUrl: d.logoUrl,
+      reportBg: d.reportBg,
+      signature: d.signature ?? "",
+      slogan: d.slogan ?? "",
+      reportTitleFont: d.reportTitleFont ?? "Georgia, serif",
+      reportTitleColor: d.reportTitleColor ?? "#4a1d96",
+      reportSignatureFont: d.reportSignatureFont ?? "Georgia, serif",
+      reportSignatureColor: d.reportSignatureColor ?? "#7c3aed",
+      reportFont: d.reportFont ?? "Georgia, serif",
+      reportTextColor: d.reportTextColor ?? "#374151",
+      reportAccentColor: d.reportAccentColor ?? "#7c3aed",
+    }))
+  }, [])
+
+  function handleImageUpload(field: "logoUrl" | "reportBg", file: File) {
+    const reader = new FileReader()
+    reader.onload = (e) => setProfile((p) => ({ ...p, [field]: e.target?.result as string }))
+    reader.readAsDataURL(file)
+  }
+
+  async function saveProfile() {
+    setSavingProfile(true)
+    setProfileError(null)
+    try {
+      const res = await fetch("/api/perfil", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error ?? `Erro ${res.status}`)
+      }
+      setSavedProfile(true)
+      setTimeout(() => setSavedProfile(false), 2000)
+    } catch (e) {
+      setProfileError(e instanceof Error ? e.message : "Erro ao salvar perfil")
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  function updateDay(dayOfWeek: number, field: keyof DayAvail, value: string | boolean) {
+    setAvailability((prev) => prev.map((d) => d.dayOfWeek === dayOfWeek ? { ...d, [field]: value } : d))
+  }
+
+  async function saveAvailability() {
+    setSavingAvail(true)
+    await fetch("/api/configuracoes/disponibilidade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(availability),
+    })
+    setSavingAvail(false)
+    setSavedAvail(true)
+    setTimeout(() => setSavedAvail(false), 2000)
+  }
+
+  async function connectWhatsapp() {
+    setWhatsappStatus("connecting")
+    setQrCode(null)
+    try {
+      const res = await fetch("/api/whatsapp/connect", { method: "POST" })
+      const data = await res.json()
+      if (data.qrCode) setQrCode(data.qrCode)
+      else if (data.connected) setWhatsappStatus("connected")
+    } catch {
+      setWhatsappStatus("disconnected")
+    }
+  }
+
+  return (
+    <div className="p-8 space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Configurações</h1>
+
+      {/* Perfil — Logo e Fundo */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="bg-purple-50 text-purple-600 w-9 h-9 rounded-lg flex items-center justify-center">
+            <User size={18} />
+          </div>
+          <div>
+            <h2 className="font-semibold text-gray-900">Perfil</h2>
+            <p className="text-sm text-gray-500">Logo e fundo padrão das fichas e relatórios</p>
+          </div>
+        </div>
+
+        {/* Logo */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-2">Logo <span className="text-gray-400 font-normal">(aparece no canto esquerdo de fichas e relatórios)</span></p>
+          <input ref={logoRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleImageUpload("logoUrl", e.target.files[0])} />
+          {profile.logoUrl ? (
+            <div className="flex items-center gap-4">
+              <img src={profile.logoUrl} alt="Logo" className="h-16 w-auto object-contain border border-gray-200 rounded-lg p-1" />
+              <div className="flex flex-col gap-1">
+                <button onClick={() => logoRef.current?.click()} className="text-sm text-purple-600 hover:text-purple-500 font-medium">Trocar logo</button>
+                <button onClick={() => setProfile((p) => ({ ...p, logoUrl: null }))} className="text-sm text-red-500 hover:text-red-700">Remover</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => logoRef.current?.click()}
+              className="flex items-center gap-2 border-2 border-dashed border-gray-200 hover:border-purple-300 rounded-xl px-6 py-4 text-sm text-gray-400 hover:text-purple-500 transition-colors w-full">
+              <ImageIcon size={16} /> Clique para adicionar sua logo
+            </button>
+          )}
+        </div>
+
+        {/* Fundo padrão dos relatórios */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-1">Fundo padrão dos relatórios <span className="text-gray-400 font-normal">(imagem A4 do Canva)</span></p>
+          <p className="text-xs text-gray-400 mb-2">Uma vez definido, será usado em todos os relatórios. Você pode remover por relatório individualmente.</p>
+          <input ref={bgRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleImageUpload("reportBg", e.target.files[0])} />
+          {profile.reportBg ? (
+            <div className="flex items-center gap-4">
+              <img src={profile.reportBg} alt="Fundo" className="h-20 w-auto object-contain border border-gray-200 rounded-lg" />
+              <div className="flex flex-col gap-1">
+                <button onClick={() => bgRef.current?.click()} className="text-sm text-purple-600 hover:text-purple-500 font-medium">Trocar fundo</button>
+                <button onClick={() => setProfile((p) => ({ ...p, reportBg: null }))} className="text-sm text-red-500 hover:text-red-700">Remover padrão</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => bgRef.current?.click()}
+              className="flex items-center gap-2 border-2 border-dashed border-gray-200 hover:border-purple-300 rounded-xl px-6 py-4 text-sm text-gray-400 hover:text-purple-500 transition-colors w-full">
+              <ImageIcon size={16} /> Clique para adicionar fundo A4
+            </button>
+          )}
+        </div>
+
+        {/* Identidade do relatório */}
+        <div className="mt-2 border border-gray-200 rounded-xl p-5 space-y-4">
+          <p className="text-sm font-semibold text-gray-700">✍️ Identidade do relatório</p>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Assinatura (nome que aparece no rodapé)</label>
+            <input value={profile.signature} onChange={(e) => setProfile({ ...profile, signature: e.target.value })}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+              placeholder="Ex: Suelen Silva | Luz e Alma Terapias" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Slogan (subtítulo no relatório)</label>
+            <input value={profile.slogan} onChange={(e) => setProfile({ ...profile, slogan: e.target.value })}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+              placeholder="Ex: Leituras com amor e luz" />
+          </div>
+
+          <p className="text-sm font-medium text-gray-700 pt-1">Fontes e cores</p>
+
+          {/* Título */}
+          <ConfigFontColorRow
+            label="Título"
+            hint="Nome da cliente + cabeçalho «Relatório de Atendimento»"
+            fontValue={profile.reportTitleFont}
+            onFontChange={(v) => setProfile({ ...profile, reportTitleFont: v })}
+            colorValue={profile.reportTitleColor}
+            onColorChange={(v) => setProfile({ ...profile, reportTitleColor: v })}
+          />
+
+          {/* Assinatura */}
+          <ConfigFontColorRow
+            label="Assinatura / Marca"
+            hint="Rodapé «Com Carinho + nome da terapeuta»"
+            fontValue={profile.reportSignatureFont}
+            onFontChange={(v) => setProfile({ ...profile, reportSignatureFont: v })}
+            colorValue={profile.reportSignatureColor}
+            onColorChange={(v) => setProfile({ ...profile, reportSignatureColor: v })}
+          />
+
+          {/* Corpo */}
+          <ConfigFontColorRow
+            label="Corpo do texto"
+            hint="Perguntas (subtítulos em negrito) e parágrafos"
+            fontValue={profile.reportFont}
+            onFontChange={(v) => setProfile({ ...profile, reportFont: v })}
+            colorValue={profile.reportTextColor}
+            onColorChange={(v) => setProfile({ ...profile, reportTextColor: v })}
+          />
+
+          {/* Destaque */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Cor de destaque <span className="text-gray-400 font-normal">(seções, divisórias)</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input type="color" value={profile.reportAccentColor} onChange={(e) => setProfile({ ...profile, reportAccentColor: e.target.value })}
+                className="w-9 h-9 rounded cursor-pointer border border-gray-200 p-0.5" />
+              <span className="text-xs text-gray-400 font-mono">{profile.reportAccentColor}</span>
+            </div>
+          </div>
+        </div>
+
+        {profileError && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{profileError}</p>
+        )}
+        <button onClick={saveProfile} disabled={savingProfile}
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+          <Save size={15} />
+          {savingProfile ? "Salvando..." : savedProfile ? "✓ Salvo!" : "Salvar perfil"}
+        </button>
+      </div>
+
+      {/* WhatsApp */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bg-green-50 text-green-600 w-9 h-9 rounded-lg flex items-center justify-center">
+            <Smartphone size={18} />
+          </div>
+          <div>
+            <h2 className="font-semibold text-gray-900">WhatsApp Business</h2>
+            <p className="text-sm text-gray-500">Conecte seu WhatsApp para envio de lembretes automáticos</p>
+          </div>
+        </div>
+
+        {whatsappStatus === "connected" ? (
+          <div className="flex items-center gap-2 text-green-600 font-medium">
+            <CheckCircle size={18} />
+            WhatsApp conectado
+          </div>
+        ) : whatsappStatus === "connecting" && qrCode ? (
+          <div>
+            <p className="text-sm text-gray-600 mb-3">Escaneie o QR Code com seu WhatsApp Business:</p>
+            <img src={qrCode} alt="QR Code WhatsApp" className="w-48 h-48 border border-gray-200 rounded-lg" />
+            <p className="text-xs text-gray-400 mt-2">Abra o WhatsApp → Dispositivos vinculados → Vincular dispositivo</p>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-gray-500 mb-4">
+              Ao conectar, os alertas automáticos serão enviados pelo seu número de WhatsApp Business.
+              <br />
+              <span className="text-amber-600 font-medium">⚠ Requer Evolution API configurada no seu servidor.</span>
+            </p>
+            <button
+              onClick={connectWhatsapp}
+              disabled={whatsappStatus === "connecting"}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+            >
+              <Smartphone size={15} />
+              {whatsappStatus === "connecting" ? "Conectando..." : "Conectar WhatsApp"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Disponibilidade */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bg-purple-50 text-purple-600 w-9 h-9 rounded-lg flex items-center justify-center">
+            <Calendar size={18} />
+          </div>
+          <div>
+            <h2 className="font-semibold text-gray-900">Horários disponíveis</h2>
+            <p className="text-sm text-gray-500">Defina os dias e horários que aparecem no link público de agendamento</p>
+          </div>
+        </div>
+
+        <div className="space-y-3 mb-6">
+          {availability.map((day) => (
+            <div key={day.dayOfWeek} className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${day.active ? "bg-gray-50" : "opacity-50"}`}>
+              <div
+                onClick={() => updateDay(day.dayOfWeek, "active", !day.active)}
+                className={`w-10 h-5 rounded-full cursor-pointer transition-colors shrink-0 ${day.active ? "bg-purple-500" : "bg-gray-200"}`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full shadow mt-0.5 transition-transform ${day.active ? "translate-x-5" : "translate-x-1"}`} />
+              </div>
+              <span className="text-sm font-medium text-gray-700 w-20 shrink-0">{DAYS[day.dayOfWeek]}</span>
+              <div className="flex items-center gap-2 flex-1">
+                <input
+                  type="time"
+                  value={day.startTime}
+                  onChange={(e) => updateDay(day.dayOfWeek, "startTime", e.target.value)}
+                  disabled={!day.active}
+                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40"
+                />
+                <span className="text-gray-400 text-sm">até</span>
+                <input
+                  type="time"
+                  value={day.endTime}
+                  onChange={(e) => updateDay(day.dayOfWeek, "endTime", e.target.value)}
+                  disabled={!day.active}
+                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={saveAvailability}
+          disabled={savingAvail}
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+        >
+          <Save size={15} />
+          {savingAvail ? "Salvando..." : savedAvail ? "Salvo!" : "Salvar disponibilidade"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── ConfigFontColorRow ────────────────────────────────────────────────────────
+
+const FONT_OPTIONS = [
+  { value: "Georgia, serif", label: "Georgia (elegante)" },
+  { value: "Palatino Linotype, Palatino, serif", label: "Palatino (clássica)" },
+  { value: "Garamond, serif", label: "Garamond (refinada)" },
+  { value: "Trebuchet MS, sans-serif", label: "Trebuchet (arredondada)" },
+  { value: "Arial, sans-serif", label: "Arial (moderna)" },
+  { value: "Brush Script MT, cursive", label: "Brush Script (manuscrita)" },
+]
+
+function ConfigFontColorRow({
+  label, hint, fontValue, onFontChange, colorValue, onColorChange,
+}: {
+  label: string
+  hint: string
+  fontValue: string
+  onFontChange: (v: string) => void
+  colorValue: string
+  onColorChange: (v: string) => void
+}) {
+  return (
+    <div className="border border-gray-100 rounded-lg p-3 space-y-2">
+      <div>
+        <p className="text-xs font-semibold text-gray-700">{label}</p>
+        <p className="text-xs text-gray-400">{hint}</p>
+      </div>
+      <div className="flex items-center gap-3">
+        <select
+          value={fontValue}
+          onChange={(e) => onFontChange(e.target.value)}
+          className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400"
+        >
+          {FONT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <input
+            type="color"
+            value={colorValue}
+            onChange={(e) => onColorChange(e.target.value)}
+            className="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
+          />
+          <span className="text-xs text-gray-400 font-mono w-14">{colorValue}</span>
+        </div>
+      </div>
+      {/* Font preview */}
+      <p style={{ fontFamily: fontValue, color: colorValue, fontSize: 14, margin: 0, lineHeight: 1.4 }}>
+        Luz e Alma Terapias — Relatório de Atendimento
+      </p>
+    </div>
+  )
+}
