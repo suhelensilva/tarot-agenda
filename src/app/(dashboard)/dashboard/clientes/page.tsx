@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import {
   Search, Plus, ChevronRight, X, User, Edit2, Trash2,
+  Upload, Download, CheckCircle, AlertCircle,
 } from "lucide-react"
 import { formatPhone, formatDate } from "@/lib/utils"
 
@@ -28,6 +29,8 @@ type FormData = {
 
 const empty: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "" }
 
+type ImportResult = { created: number; skipped: number } | null
+
 export default function ClientesPage() {
   const router = useRouter()
 
@@ -38,6 +41,10 @@ export default function ClientesPage() {
   const [editing, setEditing] = useState<Client | null>(null)
   const [form, setForm] = useState<FormData>(empty)
   const [saving, setSaving] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<ImportResult>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchClients = useCallback(async () => {
     setLoading(true)
@@ -104,6 +111,36 @@ export default function ClientesPage() {
     }
   }
 
+  function handleExport() {
+    window.open("/api/clientes/export", "_blank")
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    setImportResult(null)
+    setImportError(null)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch("/api/clientes/import", { method: "POST", body: fd })
+      const data = await res.json()
+      if (!res.ok) {
+        setImportError(data.error || "Erro ao importar")
+      } else {
+        setImportResult(data)
+        fetchClients()
+      }
+    } catch (err) {
+      console.error("handleImportFile error:", err)
+      setImportError("Erro ao importar arquivo")
+    } finally {
+      setImporting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 p-8 overflow-y-auto">
@@ -114,13 +151,63 @@ export default function ClientesPage() {
             <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
             <p className="text-gray-500 text-sm mt-0.5">{clients.length} cadastrado{clients.length !== 1 ? "s" : ""}</p>
           </div>
-          <button
-            onClick={openNew}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            <Plus size={16} /> Novo cliente
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleImportFile}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing}
+              className="flex items-center gap-2 border border-gray-200 hover:border-purple-300 text-gray-600 hover:text-purple-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              title="Importar CSV"
+            >
+              <Upload size={15} />
+              {importing ? "Importando..." : "Importar"}
+            </button>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 border border-gray-200 hover:border-purple-300 text-gray-600 hover:text-purple-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              title="Exportar CSV"
+            >
+              <Download size={15} />
+              Exportar
+            </button>
+            <button
+              onClick={openNew}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus size={16} /> Novo cliente
+            </button>
+          </div>
         </div>
+
+        {/* Import result toast */}
+        {importResult && (
+          <div className="mb-4 flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800">
+            <CheckCircle size={16} className="shrink-0 text-green-600" />
+            <span>
+              <strong>{importResult.created}</strong> contato{importResult.created !== 1 ? "s" : ""} importado{importResult.created !== 1 ? "s" : ""}
+              {importResult.skipped > 0 && ` · ${importResult.skipped} ignorado${importResult.skipped !== 1 ? "s" : ""}`}
+            </span>
+            <button onClick={() => setImportResult(null)} className="ml-auto text-green-600 hover:text-green-800">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+        {importError && (
+          <div className="mb-4 flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
+            <AlertCircle size={16} className="shrink-0 text-red-500" />
+            <span>{importError}</span>
+            <button onClick={() => setImportError(null)} className="ml-auto text-red-500 hover:text-red-700">
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative mb-6">

@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   Link2,
+  Crown,
 } from "lucide-react"
 
 const nav = [
@@ -25,6 +26,7 @@ const nav = [
   { href: "/dashboard/link", icon: Link2, label: "Link Público", exact: false },
   { href: "/dashboard/relatorios", icon: BarChart3, label: "Relatórios", exact: false },
   { href: "/dashboard/configuracoes", icon: Settings, label: "Configurações", exact: false },
+  { href: "/dashboard/assinatura", icon: Crown, label: "Assinatura", exact: false },
 ]
 
 export default function Sidebar({ user }: { user: { name?: string | null; email?: string | null; plan?: string } }) {
