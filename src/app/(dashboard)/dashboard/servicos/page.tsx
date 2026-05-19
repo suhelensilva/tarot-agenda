@@ -390,13 +390,15 @@ export default function ServicosPage() {
                   {form.imageUrl ? (
                     <>
                       <img src={form.imageUrl} alt="" className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setForm((f) => ({ ...f, imageUrl: "" })) }}
-                        className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-0.5 hover:bg-black/70"
-                      >
-                        <X size={12} />
-                      </button>
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setForm((f) => ({ ...f, imageUrl: "" })) }}
+                          className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          <X size={13} /> Remover foto
+                        </button>
+                      </div>
                     </>
                   ) : uploading ? (
                     <p className="text-sm text-purple-500">Enviando...</p>
