@@ -18,6 +18,14 @@ export async function POST(req: NextRequest) {
 
     if (!file) return NextResponse.json({ error: "Arquivo obrigatório" }, { status: 400 })
 
+    const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { error: "Imagem muito grande. O tamanho máximo é 5MB. Reduza o tamanho e tente novamente." },
+        { status: 400 }
+      )
+    }
+
     const ext = file.name.split(".").pop()
     const fileName = `${session.user.id}/${folder}/${Date.now()}.${ext}`
     const buffer = Buffer.from(await file.arrayBuffer())
@@ -33,6 +41,9 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[upload POST]", err)
     const msg = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    const friendly = msg.toLowerCase().includes("bucket")
+      ? "Erro de configuração no armazenamento. Contate o suporte."
+      : "Erro ao enviar imagem. Tente novamente."
+    return NextResponse.json({ error: friendly }, { status: 500 })
   }
 }

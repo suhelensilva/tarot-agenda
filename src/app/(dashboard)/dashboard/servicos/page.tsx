@@ -414,7 +414,15 @@ export default function ServicosPage() {
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f) }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (!f) return
+                    if (f.size > 5 * 1024 * 1024) {
+                      setUploadError("Imagem muito grande. O tamanho máximo é 5MB. Reduza e tente novamente.")
+                      return
+                    }
+                    handleImageUpload(f)
+                  }}
                 />
                 {uploadError && (
                   <p className="text-xs text-red-500 mt-1">{uploadError}</p>
