@@ -9,6 +9,8 @@ const schema = z.object({
   price: z.number().min(0),
   duration: z.number().min(1),
   type: z.enum(["ONE_TIME", "MONTHLY", "RECURRING"]),
+  categoryId: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
 })
 
 export async function GET() {
@@ -17,7 +19,10 @@ export async function GET() {
 
   const services = await prisma.service.findMany({
     where: { userId: session.user.id },
-    include: { _count: { select: { appointments: true } } },
+    include: {
+      _count: { select: { appointments: true } },
+      category: { select: { id: true, name: true } },
+    },
     orderBy: { name: "asc" },
   })
 
@@ -34,6 +39,7 @@ export async function POST(req: NextRequest) {
 
     const service = await prisma.service.create({
       data: { userId: session.user.id, ...data },
+      include: { category: { select: { id: true, name: true } } },
     })
 
     return NextResponse.json(service, { status: 201 })

@@ -10,6 +10,8 @@ const schema = z.object({
   duration: z.number().min(1),
   type: z.enum(["ONE_TIME", "MONTHLY", "RECURRING"]),
   active: z.boolean().optional(),
+  categoryId: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
 })
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
