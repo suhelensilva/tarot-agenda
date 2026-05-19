@@ -58,6 +58,7 @@ export default function ServicosPage() {
   const [form, setForm] = useState<FormData>(empty)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Category management
@@ -87,13 +88,23 @@ export default function ServicosPage() {
 
   async function handleImageUpload(file: File) {
     setUploading(true)
-    const fd = new FormData()
-    fd.append("file", file)
-    fd.append("folder", "servicos")
-    const res = await fetch("/api/upload", { method: "POST", body: fd })
-    const data = await res.json()
-    setUploading(false)
-    if (data.url) setForm((f) => ({ ...f, imageUrl: data.url }))
+    setUploadError(null)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      fd.append("folder", "servicos")
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const data = await res.json()
+      if (data.url) {
+        setForm((f) => ({ ...f, imageUrl: data.url }))
+      } else {
+        setUploadError(data.error || "Erro ao enviar foto")
+      }
+    } catch {
+      setUploadError("Erro ao enviar foto")
+    } finally {
+      setUploading(false)
+    }
   }
 
   // ── Service form ────────────────────────────────────────────────────────────
@@ -403,6 +414,9 @@ export default function ServicosPage() {
                   className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f) }}
                 />
+                {uploadError && (
+                  <p className="text-xs text-red-500 mt-1">{uploadError}</p>
+                )}
               </div>
 
               <div>
