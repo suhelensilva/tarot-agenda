@@ -338,7 +338,7 @@ export default function ServicosPage() {
             if (isCollapsed) return null
             return (
               <div key={key} className="mb-6">
-                <h2 className="text-base font-semibold text-gray-700 mb-4">{group.name}</h2>
+                <h2 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-4">{group.name}</h2>
                 {(
                   viewMode === "card" ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -361,22 +361,22 @@ export default function ServicosPage() {
           {/* Inactive */}
           {inactive.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-gray-400 mb-3">Desativados</p>
+              <p className="text-sm font-medium text-gray-400 dark:text-gray-500 mb-3">Desativados</p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {inactive.map((s) => (
-                  <div key={s.id} className="bg-gray-50 border border-gray-100 rounded-xl p-5">
+                  <div key={s.id} className="bg-gray-50 dark:bg-[rgba(255,255,255,0.03)] border border-gray-100 dark:border-[rgba(255,255,255,0.06)] rounded-xl p-5">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-500 truncate">{s.name}</p>
-                        <p className="text-sm text-gray-400 mt-0.5">
+                        <p className="font-medium text-gray-500 dark:text-gray-400 truncate">{s.name}</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
                           {s.price === 0 ? "Gratuito" : formatCurrency(s.price)} · {s.duration} min
                         </p>
                       </div>
-                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-200 text-gray-500 ml-2 shrink-0">Inativo</span>
+                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400 ml-2 shrink-0">Inativo</span>
                     </div>
                     <div className="flex gap-2 mt-3">
-                      <button onClick={() => handleReactivate(s.id)} className="flex-1 text-sm border border-purple-200 text-purple-600 hover:bg-purple-50 py-1.5 rounded-lg transition-colors font-medium">Reativar</button>
-                      <button onClick={() => handlePermanentDelete(s.id)} className="flex-1 text-sm border border-red-100 text-red-500 hover:bg-red-50 py-1.5 rounded-lg transition-colors">Excluir</button>
+                      <button onClick={() => handleReactivate(s.id)} className="flex-1 text-sm border border-purple-200 dark:border-[rgba(170,85,249,0.3)] text-purple-600 dark:text-[#aa55f9] hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.08)] py-1.5 rounded-lg transition-colors font-medium">Reativar</button>
+                      <button onClick={() => handlePermanentDelete(s.id)} className="flex-1 text-sm border border-red-100 dark:border-red-500/20 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 py-1.5 rounded-lg transition-colors">Excluir</button>
                     </div>
                   </div>
                 ))}
@@ -388,25 +388,25 @@ export default function ServicosPage() {
 
       {/* ── Category modal ── */}
       {showCatForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">{editingCat ? "Editar categoria" : "Nova categoria"}</h2>
-              <button onClick={() => setShowCatForm(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#13131f] dark:border dark:border-[rgba(170,85,249,0.15)] rounded-2xl shadow-xl w-full max-w-sm">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
+              <h2 className="font-semibold text-gray-900 dark:text-white">{editingCat ? "Editar categoria" : "Nova categoria"}</h2>
+              <button onClick={() => setShowCatForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X size={18} /></button>
             </div>
             <form onSubmit={handleSaveCat} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome da categoria *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome da categoria *</label>
                 <input
                   required
                   value={catName}
                   onChange={(e) => setCatName(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   placeholder="Ex: Tarot Terapêutico, Rituais..."
                 />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowCatForm(false)} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowCatForm(false)} className="flex-1 border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-400 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">Cancelar</button>
                 <button type="submit" disabled={savingCat} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white py-2.5 rounded-lg text-sm font-medium transition-colors">
                   {savingCat ? "Salvando..." : editingCat ? "Salvar" : "Criar"}
                 </button>
@@ -418,21 +418,21 @@ export default function ServicosPage() {
 
       {/* ── Service modal ── */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
-              <h2 className="font-semibold text-gray-900">{editing ? "Editar serviço" : "Novo serviço"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#13131f] dark:border dark:border-[rgba(170,85,249,0.15)] rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)] sticky top-0 bg-white dark:bg-[#13131f] z-10">
+              <h2 className="font-semibold text-gray-900 dark:text-white">{editing ? "Editar serviço" : "Novo serviço"}</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X size={18} /></button>
             </div>
 
             <form onSubmit={handleSave} className="p-6 space-y-4">
 
               {/* Imagem */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Foto do serviço</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Foto do serviço</label>
                 <div
                   onClick={() => fileRef.current?.click()}
-                  className="w-40 aspect-square mx-auto border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition-colors overflow-hidden relative"
+                  className="w-40 aspect-square mx-auto border-2 border-dashed border-gray-200 dark:border-[rgba(170,85,249,0.2)] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-300 dark:hover:border-[rgba(170,85,249,0.4)] hover:bg-purple-50/30 dark:hover:bg-[rgba(170,85,249,0.05)] transition-colors overflow-hidden relative"
                 >
                   {form.imageUrl ? (
                     <>
@@ -481,34 +481,34 @@ export default function ServicosPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do serviço *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do serviço *</label>
                 <input
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   placeholder="Ex: Leitura de Amor, Mapa Astral..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descrição</label>
                 <textarea
                   rows={2}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] resize-none"
                   placeholder="opcional"
                 />
               </div>
 
               {/* Categoria */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoria</label>
                 <select
                   value={form.categoryId}
                   onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[#1a1a2e] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                 >
                   <option value="">— Sem categoria —</option>
                   {categories.map((c) => (
@@ -519,14 +519,14 @@ export default function ServicosPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Preço (R$) *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Preço (R$) *</label>
                   <div className="flex gap-2 mb-2">
                     <button type="button" onClick={() => setForm({ ...form, free: false, price: "" })}
-                      className={`flex-1 text-xs font-medium py-1.5 rounded-lg border transition-colors ${!form.free ? "bg-purple-600 text-white border-purple-600" : "text-gray-500 border-gray-200 hover:border-purple-300 hover:text-purple-600"}`}>
+                      className={`flex-1 text-xs font-medium py-1.5 rounded-lg border transition-colors ${!form.free ? "bg-purple-600 text-white border-purple-600" : "text-gray-500 dark:text-gray-400 border-gray-200 dark:border-[rgba(255,255,255,0.08)] hover:border-purple-300 hover:text-purple-600"}`}>
                       Pago
                     </button>
                     <button type="button" onClick={() => setForm({ ...form, free: true, price: "" })}
-                      className={`flex-1 text-xs font-medium py-1.5 rounded-lg border transition-colors ${form.free ? "bg-green-500 text-white border-green-500" : "text-gray-500 border-gray-200 hover:border-green-400 hover:text-green-600"}`}>
+                      className={`flex-1 text-xs font-medium py-1.5 rounded-lg border transition-colors ${form.free ? "bg-green-500 text-white border-green-500" : "text-gray-500 dark:text-gray-400 border-gray-200 dark:border-[rgba(255,255,255,0.08)] hover:border-green-400 hover:text-green-600"}`}>
                       Gratuito
                     </button>
                   </div>
@@ -536,28 +536,28 @@ export default function ServicosPage() {
                     type="number" min="0" step="0.01"
                     value={form.free ? "" : form.price}
                     onChange={(e) => setForm({ ...form, price: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] disabled:bg-gray-50 dark:disabled:bg-white/[0.02] disabled:text-gray-400 dark:disabled:text-gray-600 disabled:cursor-not-allowed"
                     placeholder={form.free ? "Gratuito" : "0,00"}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duração (min) *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duração (min) *</label>
                   <input
                     required type="number" min="1"
                     value={form.duration}
                     onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                     placeholder="60"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo *</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(["ONE_TIME", "MONTHLY", "RECURRING"] as const).map((t) => (
                     <button key={t} type="button" onClick={() => setForm({ ...form, type: t })}
-                      className={`py-2 rounded-lg text-sm font-medium border transition-colors ${form.type === t ? "bg-purple-600 text-white border-purple-600" : "border-gray-200 text-gray-600 hover:border-purple-300"}`}>
+                      className={`py-2 rounded-lg text-sm font-medium border transition-colors ${form.type === t ? "bg-purple-600 text-white border-purple-600" : "border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-400 hover:border-purple-300"}`}>
                       {typeLabel[t]}
                     </button>
                   ))}
@@ -565,7 +565,7 @@ export default function ServicosPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-400 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving || uploading} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white py-2.5 rounded-lg text-sm font-medium transition-colors">
                   {saving ? "Salvando..." : editing ? "Salvar" : "Criar serviço"}
                 </button>
@@ -598,17 +598,17 @@ function ServiceRow({ service: s, onEdit, onDeactivate }: {
 
       {/* Name + description */}
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-900 truncate">{s.name}</p>
-        {s.description && <p className="text-xs text-gray-400 truncate">{s.description}</p>}
+        <p className="font-medium text-gray-900 dark:text-white truncate">{s.name}</p>
+        {s.description && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{s.description}</p>}
       </div>
 
       {/* Price */}
-      <div className="shrink-0 text-sm font-semibold text-gray-900 w-24 text-right">
-        {s.price === 0 ? <span className="text-green-600">Gratuito</span> : formatCurrency(s.price)}
+      <div className="shrink-0 text-sm font-semibold text-gray-900 dark:text-white w-24 text-right">
+        {s.price === 0 ? <span className="text-green-600 dark:text-green-400">Gratuito</span> : formatCurrency(s.price)}
       </div>
 
       {/* Duration */}
-      <div className="shrink-0 flex items-center gap-1 text-sm text-gray-400 w-16">
+      <div className="shrink-0 flex items-center gap-1 text-sm text-gray-400 dark:text-gray-500 w-16">
         <Clock size={13} />
         {s.duration}min
       </div>
@@ -648,8 +648,8 @@ function ServiceCard({ service: s, onEdit, onDeactivate }: {
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-gray-900 truncate">{s.name}</p>
-            {s.description && <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{s.description}</p>}
+            <p className="font-semibold text-gray-900 dark:text-white truncate">{s.name}</p>
+            {s.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{s.description}</p>}
           </div>
           <div className="flex items-center gap-1.5 ml-2 shrink-0">
             {s.price === 0 && <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700">Gratuito</span>}
@@ -658,22 +658,22 @@ function ServiceCard({ service: s, onEdit, onDeactivate }: {
         </div>
 
         <div className="flex items-center gap-4 mb-4">
-          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+          <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
             <Tag size={13} className="text-gray-400" />
             {s.price === 0
-              ? <span className="font-semibold text-green-600">Gratuito</span>
-              : <span className="font-semibold text-gray-900">{formatCurrency(s.price)}</span>}
+              ? <span className="font-semibold text-green-600 dark:text-green-400">Gratuito</span>
+              : <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(s.price)}</span>}
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-gray-500">
+          <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
             <Clock size={13} className="text-gray-400" />
             {s.duration} min
           </div>
-          <div className="text-sm text-gray-400">{s._count.appointments} atend.</div>
+          <div className="text-sm text-gray-400 dark:text-gray-500">{s._count.appointments} atend.</div>
         </div>
 
         <div className="flex gap-2">
-          <button onClick={onEdit} className="flex-1 text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 py-1.5 rounded-lg transition-colors">Editar</button>
-          <button onClick={onDeactivate} className="flex-1 text-sm border border-red-100 text-red-500 hover:bg-red-50 py-1.5 rounded-lg transition-colors">Desativar</button>
+          <button onClick={onEdit} className="flex-1 text-sm border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 py-1.5 rounded-lg transition-colors">Editar</button>
+          <button onClick={onDeactivate} className="flex-1 text-sm border border-red-100 dark:border-red-500/20 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 py-1.5 rounded-lg transition-colors">Desativar</button>
         </div>
       </div>
     </div>

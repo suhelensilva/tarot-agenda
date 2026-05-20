@@ -22,11 +22,11 @@ type Appointment = {
 }
 
 const statusConfig = {
-  SCHEDULED:  { label: "Agendado",   color: "bg-yellow-100 text-yellow-700", dot: "bg-yellow-400" },
-  CONFIRMED:  { label: "Confirmado", color: "bg-blue-100 text-blue-700",     dot: "bg-blue-400" },
-  COMPLETED:  { label: "Realizado",  color: "bg-green-100 text-green-700",   dot: "bg-green-400" },
-  NO_SHOW:    { label: "Faltou",     color: "bg-red-100 text-red-700",       dot: "bg-red-400" },
-  CANCELLED:  { label: "Cancelado",  color: "bg-gray-100 text-gray-500",     dot: "bg-gray-300" },
+  SCHEDULED:  { label: "Agendado",   color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400", dot: "bg-yellow-400" },
+  CONFIRMED:  { label: "Confirmado", color: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",         dot: "bg-blue-400" },
+  COMPLETED:  { label: "Realizado",  color: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400",     dot: "bg-green-400" },
+  NO_SHOW:    { label: "Faltou",     color: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",             dot: "bg-red-400" },
+  CANCELLED:  { label: "Cancelado",  color: "bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400",            dot: "bg-gray-300" },
 }
 
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
@@ -223,13 +223,13 @@ export default function AgendaPage() {
         {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <button onClick={prevMonth} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={prevMonth} className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors text-gray-600 dark:text-gray-400">
               <ChevronLeft size={18} />
             </button>
-            <h1 className="text-xl font-bold text-gray-900 w-48 text-center">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white w-48 text-center">
               {MONTHS[month]} {year}
             </h1>
-            <button onClick={nextMonth} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={nextMonth} className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors text-gray-600 dark:text-gray-400">
               <ChevronRight size={18} />
             </button>
           </div>
@@ -243,15 +243,15 @@ export default function AgendaPage() {
         </div>
 
         {/* Grid do calendário */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-          <div className="grid grid-cols-7 border-b border-gray-100">
+        <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl overflow-hidden mb-6">
+          <div className="grid grid-cols-7 border-b border-gray-100 dark:border-[rgba(170,85,249,0.08)]">
             {DAYS.map((d) => (
-              <div key={d} className="py-2 text-center text-xs font-medium text-gray-400">{d}</div>
+              <div key={d} className="py-2 text-center text-xs font-medium text-gray-400 dark:text-gray-500">{d}</div>
             ))}
           </div>
           <div className="grid grid-cols-7">
             {days.map((day, i) => {
-              if (!day) return <div key={`empty-${i}`} className="h-16 border-b border-r border-gray-50" />
+              if (!day) return <div key={`empty-${i}`} className="h-16 border-b border-r border-gray-50 dark:border-[rgba(255,255,255,0.03)]" />
               const apts = aptsForDay(day)
               const isToday = day.toDateString() === today.toDateString()
               const isSelected = selectedDay?.toDateString() === day.toDateString()
@@ -259,10 +259,10 @@ export default function AgendaPage() {
                 <button
                   key={day.toISOString()}
                   onClick={() => setSelectedDay(day)}
-                  className={`h-16 border-b border-r border-gray-50 p-1.5 text-left transition-colors hover:bg-purple-50 ${isSelected ? "bg-purple-50" : ""}`}
+                  className={`h-16 border-b border-r border-gray-50 dark:border-[rgba(255,255,255,0.03)] p-1.5 text-left transition-colors hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.06)] ${isSelected ? "bg-purple-50 dark:bg-[rgba(170,85,249,0.08)]" : ""}`}
                 >
                   <span className={`text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full ${
-                    isToday ? "bg-purple-600 text-white" : isSelected ? "text-purple-700" : "text-gray-700"
+                    isToday ? "bg-purple-600 text-white" : isSelected ? "text-purple-700 dark:text-[#aa55f9]" : "text-gray-700 dark:text-gray-300"
                   }`}>
                     {day.getDate()}
                   </span>
@@ -270,7 +270,7 @@ export default function AgendaPage() {
                     {apts.slice(0, 3).map((a) => (
                       <div key={a.id} className={`w-1.5 h-1.5 rounded-full ${statusConfig[a.status].dot}`} />
                     ))}
-                    {apts.length > 3 && <span className="text-xs text-gray-400">+{apts.length - 3}</span>}
+                    {apts.length > 3 && <span className="text-xs text-gray-400 dark:text-gray-500">+{apts.length - 3}</span>}
                   </div>
                 </button>
               )
@@ -282,19 +282,19 @@ export default function AgendaPage() {
         {selectedDay && (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-gray-900">
+              <h2 className="font-semibold text-gray-900 dark:text-white">
                 {selectedDay.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
               </h2>
               <button
                 onClick={() => openNew(selectedDay)}
-                className="text-sm text-purple-600 hover:text-purple-500 font-medium"
+                className="text-sm text-purple-600 dark:text-[#aa55f9] hover:text-purple-500 font-medium"
               >
                 + Agendar neste dia
               </button>
             </div>
 
             {selectedApts.length === 0 ? (
-              <p className="text-gray-400 text-sm">Nenhum agendamento neste dia</p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm">Nenhum agendamento neste dia</p>
             ) : (
               <div className="space-y-2">
                 {selectedApts.map((apt) => (
@@ -302,15 +302,17 @@ export default function AgendaPage() {
                     key={apt.id}
                     onClick={() => setSelected(apt)}
                     className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-colors ${
-                      selected?.id === apt.id ? "border-purple-300 bg-purple-50" : "border-gray-200 bg-white hover:border-purple-200"
+                      selected?.id === apt.id
+                        ? "border-purple-300 bg-purple-50 dark:border-[rgba(170,85,249,0.4)] dark:bg-[rgba(170,85,249,0.1)]"
+                        : "border-gray-200 bg-white hover:border-purple-200 dark:border-[rgba(170,85,249,0.12)] dark:bg-[#13131f] dark:hover:border-[rgba(170,85,249,0.3)]"
                     }`}
                   >
-                    <div className="text-sm font-mono text-purple-700 font-bold w-12 shrink-0">
+                    <div className="text-sm font-mono text-purple-700 dark:text-[#aa55f9] font-bold w-12 shrink-0">
                       {new Date(apt.startTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{apt.client.name}</p>
-                      {apt.service && <p className="text-xs text-gray-500">{apt.service.name}</p>}
+                      <p className="font-medium text-gray-900 dark:text-white truncate">{apt.client.name}</p>
+                      {apt.service && <p className="text-xs text-gray-500 dark:text-gray-400">{apt.service.name}</p>}
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${statusConfig[apt.status].color}`}>
                       {statusConfig[apt.status].label}
@@ -325,10 +327,10 @@ export default function AgendaPage() {
 
       {/* Painel lateral — detalhe do agendamento */}
       {selected && (
-        <div className="w-96 border-l border-gray-200 bg-white p-6 overflow-y-auto">
+        <div className="w-96 border-l border-gray-200 dark:border-[rgba(170,85,249,0.12)] bg-white dark:bg-[#0f0f1a] p-6 overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-semibold text-gray-900">Detalhes</h2>
-            <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">
+            <h2 className="font-semibold text-gray-900 dark:text-white">Detalhes</h2>
+            <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <X size={18} />
             </button>
           </div>
@@ -340,11 +342,11 @@ export default function AgendaPage() {
           <div className="mt-4 space-y-3">
             <div className="flex items-center gap-3 text-sm">
               <User size={15} className="text-gray-400 shrink-0" />
-              <span className="font-medium text-gray-900">{selected.client.name}</span>
+              <span className="font-medium text-gray-900 dark:text-white">{selected.client.name}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <Clock size={15} className="text-gray-400 shrink-0" />
-              <span className="text-gray-700">
+              <span className="text-gray-700 dark:text-gray-300">
                 {new Date(selected.startTime).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
                 {" · "}
                 {new Date(selected.startTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -355,22 +357,22 @@ export default function AgendaPage() {
             {selected.service && (
               <div className="flex items-center gap-3 text-sm">
                 <Package size={15} className="text-gray-400 shrink-0" />
-                <span className="text-gray-700">{selected.service.name} · {formatCurrency(selected.service.price)}</span>
+                <span className="text-gray-700 dark:text-gray-300">{selected.service.name} · {formatCurrency(selected.service.price)}</span>
               </div>
             )}
             {selected.meetingLink && (
               <div className="flex items-center gap-3 text-sm">
                 <Link size={15} className="text-gray-400 shrink-0" />
-                <a href={selected.meetingLink} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline truncate">
+                <a href={selected.meetingLink} target="_blank" rel="noopener noreferrer" className="text-purple-600 dark:text-[#aa55f9] hover:underline truncate">
                   Link da chamada
                 </a>
               </div>
             )}
             {selected.notes && (
-              <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700">{selected.notes}</div>
+              <div className="bg-gray-50 dark:bg-[rgba(255,255,255,0.04)] rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300">{selected.notes}</div>
             )}
             {selected.amountPaid != null && (
-              <div className="text-sm font-medium text-green-700">
+              <div className="text-sm font-medium text-green-700 dark:text-green-400">
                 Valor pago: {formatCurrency(selected.amountPaid)}
               </div>
             )}
@@ -379,13 +381,13 @@ export default function AgendaPage() {
           {/* Ações de status */}
           {selected.status !== "COMPLETED" && selected.status !== "CANCELLED" && (
             <div className="mt-6 space-y-2">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Marcar como</p>
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Marcar como</p>
 
               {selected.status !== "CONFIRMED" && (
                 <button
                   onClick={() => updateStatus(selected.id, "CONFIRMED")}
                   disabled={updatingStatus}
-                  className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CheckCircle size={15} /> Confirmado
                 </button>
@@ -394,7 +396,7 @@ export default function AgendaPage() {
               <button
                 onClick={() => updateStatus(selected.id, "COMPLETED")}
                 disabled={updatingStatus}
-                className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <CheckCircle size={15} /> {updatingStatus ? "Salvando..." : "Realizado"}
               </button>
@@ -402,7 +404,7 @@ export default function AgendaPage() {
               <button
                 onClick={() => updateStatus(selected.id, "NO_SHOW")}
                 disabled={updatingStatus}
-                className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-red-200 text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <XCircle size={15} /> Faltou
               </button>
@@ -412,12 +414,12 @@ export default function AgendaPage() {
                   value={cancellationReason}
                   onChange={(e) => setCancellationReason(e.target.value)}
                   placeholder="Motivo do cancelamento (opcional)"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.04)] rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-[rgba(170,85,249,0.4)] dark:text-gray-200 dark:placeholder-gray-600"
                 />
                 <button
                   onClick={() => updateStatus(selected.id, "CANCELLED", { cancellationReason: cancellationReason || undefined })}
                   disabled={updatingStatus}
-                  className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <AlertCircle size={15} /> Cancelado
                 </button>
@@ -427,7 +429,7 @@ export default function AgendaPage() {
 
           <button
             onClick={() => handleDelete(selected.id)}
-            className="w-full mt-4 text-sm text-red-500 hover:text-red-700 transition-colors"
+            className="w-full mt-4 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
           >
             Remover agendamento
           </button>
@@ -436,11 +438,11 @@ export default function AgendaPage() {
 
       {/* Modal novo agendamento */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Novo agendamento</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#13131f] rounded-2xl shadow-xl dark:border dark:border-[rgba(170,85,249,0.15)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
+              <h2 className="font-semibold text-gray-900 dark:text-white">Novo agendamento</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={18} />
               </button>
             </div>
@@ -448,51 +450,51 @@ export default function AgendaPage() {
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-gray-700">Cliente *</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Cliente *</label>
                   <button
                     type="button"
                     onClick={() => { setShowNewClient((v) => !v); setNewClientError(null) }}
-                    className="text-xs text-purple-600 hover:text-purple-500 font-medium flex items-center gap-1"
+                    className="text-xs text-purple-600 dark:text-[#aa55f9] hover:text-purple-500 font-medium flex items-center gap-1"
                   >
                     {showNewClient ? "← Voltar" : "+ Nova cliente"}
                   </button>
                 </div>
 
                 {showNewClient ? (
-                  <div className="border border-purple-200 bg-purple-50 rounded-xl p-4 space-y-3">
-                    <p className="text-xs font-semibold text-purple-700">Cadastrar nova cliente</p>
+                  <div className="border border-purple-200 dark:border-[rgba(170,85,249,0.25)] bg-purple-50 dark:bg-[rgba(170,85,249,0.06)] rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-semibold text-purple-700 dark:text-[#aa55f9]">Cadastrar nova cliente</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nome *</label>
                         <input
                           value={newClient.name}
                           onChange={(e) => setNewClient((p) => ({ ...p, name: e.target.value }))}
                           placeholder="Nome completo"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                          className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Telefone *</label>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Telefone *</label>
                         <input
                           value={newClient.phone}
                           onChange={(e) => setNewClient((p) => ({ ...p, phone: e.target.value }))}
                           placeholder="(00) 00000-0000"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                          className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">E-mail <span className="text-gray-400">(opcional)</span></label>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">E-mail <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
                       <input
                         type="email"
                         value={newClient.email}
                         onChange={(e) => setNewClient((p) => ({ ...p, email: e.target.value }))}
                         placeholder="email@exemplo.com"
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                        className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
                       />
                     </div>
                     {newClientError && (
-                      <p className="text-xs text-red-600">{newClientError}</p>
+                      <p className="text-xs text-red-600 dark:text-red-400">{newClientError}</p>
                     )}
                     <button
                       type="button"
@@ -508,7 +510,7 @@ export default function AgendaPage() {
                     required
                     value={form.clientId}
                     onChange={(e) => onClientChange(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[#1a1a2e] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   >
                     <option value="">Selecione a cliente</option>
                     {clients.map((c) => (
@@ -519,11 +521,11 @@ export default function AgendaPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Serviço</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Serviço</label>
                 <select
                   value={form.serviceId}
                   onChange={(e) => onServiceChange(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[#1a1a2e] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                 >
                   <option value="">Sem serviço específico</option>
                   {services.map((s) => (
@@ -533,80 +535,80 @@ export default function AgendaPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título *</label>
                 <input
                   required
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
                   placeholder="Ex: Leitura de Amor"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data *</label>
                   <input
                     required
                     type="date"
                     value={form.date}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Início *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Início *</label>
                   <input
                     required
                     type="time"
                     value={form.startHour}
                     onChange={(e) => setForm({ ...form, startHour: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fim *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fim *</label>
                   <input
                     required
                     type="time"
                     value={form.endHour}
                     onChange={(e) => setForm({ ...form, endHour: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valor (R$)</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={form.amountPaid}
                   onChange={(e) => setForm({ ...form, amountPaid: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
                   placeholder="0,00"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Link da chamada</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link da chamada</label>
                 <input
                   type="url"
                   value={form.meetingLink}
                   onChange={(e) => setForm({ ...form, meetingLink: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
                   placeholder="https://meet.google.com/... (opcional)"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações</label>
                 <textarea
                   rows={2}
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600 resize-none"
                   placeholder="opcional"
                 />
               </div>
@@ -615,7 +617,7 @@ export default function AgendaPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-400 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   Cancelar
                 </button>

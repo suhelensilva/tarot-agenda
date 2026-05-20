@@ -225,7 +225,7 @@ export default function ClienteDetailPage() {
       <div className="px-8 pt-6 pb-0 shrink-0">
         <button
           onClick={() => router.push("/dashboard/clientes")}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-purple-600 transition-colors mb-6"
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-[#aa55f9] transition-colors mb-6"
         >
           <ArrowLeft size={15} /> Clientes
         </button>
@@ -235,12 +235,12 @@ export default function ClienteDetailPage() {
       <div className="px-8 pb-0 shrink-0">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-2xl shrink-0">
+            <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-[rgba(170,85,249,0.15)] flex items-center justify-center text-purple-700 dark:text-[#aa55f9] font-bold text-2xl shrink-0">
               {client.name[0].toUpperCase()}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{client.name}</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                 {client.birthDate && (
                   <span>{calcAge(client.birthDate)} anos · {formatDate(client.birthDate)} · </span>
                 )}
@@ -254,13 +254,13 @@ export default function ClienteDetailPage() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={openEdit}
-              className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-purple-600 border border-gray-200 hover:border-purple-300 rounded-lg px-3 py-2 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-[#aa55f9] border border-gray-200 dark:border-[rgba(255,255,255,0.08)] hover:border-purple-300 dark:hover:border-[rgba(170,85,249,0.3)] rounded-lg px-3 py-2 transition-colors"
             >
               <Edit2 size={14} /> Editar
             </button>
             <button
               onClick={handleDelete}
-              className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 border border-red-100 hover:border-red-300 rounded-lg px-3 py-2 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 border border-red-100 dark:border-red-500/20 hover:border-red-300 rounded-lg px-3 py-2 transition-colors"
             >
               <Trash2 size={14} />
             </button>
@@ -268,7 +268,7 @@ export default function ClienteDetailPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-6 border-b border-gray-200">
+        <div className="flex gap-6 border-b border-gray-200 dark:border-[rgba(170,85,249,0.12)]">
           {(["dados", "fichas", "atendimentos"] as const).map((t) => {
             const labels: Record<TabPerfil, string> = {
               dados: "Dados",
@@ -280,7 +280,7 @@ export default function ClienteDetailPage() {
                 key={t}
                 onClick={() => setTab(t)}
                 className={`pb-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
-                  tab === t ? "border-purple-600 text-purple-700" : "border-transparent text-gray-500 hover:text-gray-700"
+                  tab === t ? "border-purple-600 text-purple-700 dark:border-[#aa55f9] dark:text-[#aa55f9]" : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 }`}
               >
                 {labels[t]}
@@ -298,15 +298,15 @@ export default function ClienteDetailPage() {
           <div className="max-w-lg space-y-5">
 
             {/* Contact card */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+            <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-5 space-y-3">
               <div className="flex items-center gap-3 text-sm">
                 <Phone size={15} className="text-gray-400 shrink-0" />
-                <span className="text-gray-700">{formatPhone(client.phone)}</span>
+                <span className="text-gray-700 dark:text-gray-300">{formatPhone(client.phone)}</span>
                 <a
                   href={`https://wa.me/${client.phone.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ml-auto text-xs text-green-600 hover:text-green-500 font-medium border border-green-200 hover:border-green-400 rounded-md px-2 py-0.5 transition-colors"
+                  className="ml-auto text-xs text-green-600 dark:text-green-400 hover:text-green-500 font-medium border border-green-200 dark:border-green-500/30 hover:border-green-400 rounded-md px-2 py-0.5 transition-colors"
                 >
                   WhatsApp
                 </a>
@@ -314,41 +314,41 @@ export default function ClienteDetailPage() {
               {client.email && (
                 <div className="flex items-center gap-3 text-sm">
                   <Mail size={15} className="text-gray-400 shrink-0" />
-                  <span className="text-gray-700">{client.email}</span>
+                  <span className="text-gray-700 dark:text-gray-300">{client.email}</span>
                 </div>
               )}
               {client.birthDate && (
                 <div className="flex items-center gap-3 text-sm">
                   <Calendar size={15} className="text-gray-400 shrink-0" />
-                  <span className="text-gray-700">{formatDate(client.birthDate)}</span>
-                  <span className="text-gray-400 text-xs ml-1">({calcAge(client.birthDate)} anos)</span>
+                  <span className="text-gray-700 dark:text-gray-300">{formatDate(client.birthDate)}</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">({calcAge(client.birthDate)} anos)</span>
                 </div>
               )}
             </div>
 
             {/* Notes */}
             {client.notes && (
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-                <p className="text-xs text-amber-600 mb-1.5 font-semibold uppercase tracking-wide">Observações</p>
-                <p className="text-sm text-gray-700 leading-relaxed">{client.notes}</p>
+              <div className="bg-amber-50 dark:bg-[rgba(251,191,36,0.08)] border border-amber-100 dark:border-[rgba(251,191,36,0.2)] rounded-xl p-4">
+                <p className="text-xs text-amber-600 dark:text-amber-400 mb-1.5 font-semibold uppercase tracking-wide">Observações</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{client.notes}</p>
               </div>
             )}
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-purple-50 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-purple-700">{client.appointments.length}</p>
-                <p className="text-xs text-purple-500 mt-1">Atendimentos</p>
+              <div className="bg-purple-50 dark:bg-[rgba(170,85,249,0.1)] rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-purple-700 dark:text-[#aa55f9]">{client.appointments.length}</p>
+                <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">Atendimentos</p>
               </div>
-              <div className="bg-indigo-50 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-indigo-700">
+              <div className="bg-indigo-50 dark:bg-[rgba(99,102,241,0.1)] rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">
                   {fichasCounts ? `${fichasCounts.internal}/${fichasCounts.reports}` : "–"}
                 </p>
-                <p className="text-xs text-indigo-500 mt-1">Fichas / Relatórios</p>
+                <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-1">Fichas / Relatórios</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 text-center">
-                <p className="text-xs text-gray-500 mt-1">Cadastrada em</p>
-                <p className="text-sm font-semibold text-gray-700 mt-1">{formatDate(client.createdAt)}</p>
+              <div className="bg-gray-50 dark:bg-[rgba(255,255,255,0.04)] rounded-xl p-4 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Cadastrada em</p>
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">{formatDate(client.createdAt)}</p>
               </div>
             </div>
           </div>
@@ -381,16 +381,16 @@ export default function ClienteDetailPage() {
                   const end = new Date(a.endTime)
                   const status = STATUS_CONFIG[a.status]
                   return (
-                    <div key={a.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl bg-white">
+                    <div key={a.id} className="flex items-center gap-4 p-4 border border-gray-200 dark:border-[rgba(170,85,249,0.12)] rounded-xl bg-white dark:bg-[#13131f]">
                       <div className="shrink-0 text-center min-w-[56px]">
-                        <p className="text-sm font-bold text-gray-900">{start.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
-                        <p className="text-xs text-gray-400">{start.getFullYear()}</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{start.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{start.getFullYear()}</p>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm truncate">
+                        <p className="font-medium text-gray-900 dark:text-white text-sm truncate">
                           {a.title ?? a.service?.name ?? "Atendimento"}
                         </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                           {start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                           {" – "}
                           {end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -401,7 +401,7 @@ export default function ClienteDetailPage() {
                           {status.label}
                         </span>
                         {a.amountPaid != null && a.amountPaid > 0 && (
-                          <span className="text-xs text-green-600 font-medium">{formatCurrency(a.amountPaid)}</span>
+                          <span className="text-xs text-green-600 dark:text-green-400 font-medium">{formatCurrency(a.amountPaid)}</span>
                         )}
                       </div>
                     </div>
@@ -415,61 +415,61 @@ export default function ClienteDetailPage() {
 
       {/* ── Edit modal ── */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Editar cliente</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#13131f] dark:border dark:border-[rgba(170,85,249,0.15)] rounded-2xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
+              <h2 className="font-semibold text-gray-900 dark:text-white">Editar cliente</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome *</label>
                 <input
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   placeholder="Nome completo"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefone / WhatsApp *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone / WhatsApp *</label>
                 <input
                   required
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   placeholder="(11) 99999-9999"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   placeholder="opcional"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Data de nascimento</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data de nascimento</label>
                 <input
                   type="date"
                   value={form.birthDate}
                   onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações</label>
                 <textarea
                   rows={3}
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] resize-none"
                   placeholder="Anotações sobre a cliente..."
                 />
               </div>
@@ -477,7 +477,7 @@ export default function ClienteDetailPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-400 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   Cancelar
                 </button>

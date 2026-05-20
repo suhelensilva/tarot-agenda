@@ -233,7 +233,7 @@ export default function ClientesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome ou telefone..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.04)] rounded-lg text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
           />
         </div>
 
@@ -252,36 +252,36 @@ export default function ClientesPage() {
               <div
                 key={c.id}
                 onClick={() => router.push(`/dashboard/clientes/${c.id}`)}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-gray-200 bg-white hover:border-purple-200 hover:bg-purple-50/50 text-left transition-colors cursor-pointer"
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-[rgba(170,85,249,0.12)] bg-white dark:bg-[#13131f] hover:border-purple-200 dark:hover:border-[rgba(170,85,249,0.3)] hover:bg-purple-50/50 dark:hover:bg-[rgba(170,85,249,0.06)] text-left transition-colors cursor-pointer"
               >
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-sm shrink-0">
+                <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-[rgba(170,85,249,0.15)] flex items-center justify-center text-purple-700 dark:text-[#aa55f9] font-bold text-sm shrink-0">
                   {c.name[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900">{c.name}</p>
-                  <p className="text-sm text-gray-500">{formatPhone(c.phone)}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{c.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{formatPhone(c.phone)}</p>
                 </div>
-                <div className="text-right shrink-0 text-xs text-gray-400">
+                <div className="text-right shrink-0 text-xs text-gray-400 dark:text-gray-500">
                   <p>{c._count.appointments} atend.</p>
                   {c.birthDate && <p className="mt-0.5">{formatDate(c.birthDate)}</p>}
                 </div>
                 <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={(e) => openEdit(e, c)}
-                    className="p-1.5 text-gray-400 hover:text-purple-600 rounded-md hover:bg-purple-50 transition-colors"
+                    className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-[#aa55f9] rounded-md hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.1)] transition-colors"
                     title="Editar"
                   >
                     <Edit2 size={14} />
                   </button>
                   <button
                     onClick={(e) => handleDelete(e, c.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors"
+                    className="p-1.5 text-gray-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                     title="Excluir"
                   >
                     <Trash2 size={14} />
                   </button>
                 </div>
-                <ChevronRight size={16} className="text-gray-400 shrink-0" />
+                <ChevronRight size={16} className="text-gray-400 dark:text-gray-600 shrink-0" />
               </div>
             ))}
           </div>
@@ -290,61 +290,61 @@ export default function ClientesPage() {
 
       {/* Create/edit modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">{editing ? "Editar cliente" : "Novo cliente"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#13131f] dark:border dark:border-[rgba(170,85,249,0.15)] rounded-2xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
+              <h2 className="font-semibold text-gray-900 dark:text-white">{editing ? "Editar cliente" : "Novo cliente"}</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome *</label>
                 <input
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   placeholder="Nome completo"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefone / WhatsApp *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone / WhatsApp *</label>
                 <input
                   required
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   placeholder="(11) 99999-9999"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   placeholder="opcional"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Data de nascimento</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data de nascimento</label>
                 <input
                   type="date"
                   value={form.birthDate}
                   onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações</label>
                 <textarea
                   rows={3}
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] resize-none"
                   placeholder="Anotações sobre a cliente..."
                 />
               </div>
@@ -352,7 +352,7 @@ export default function ClientesPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-400 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   Cancelar
                 </button>

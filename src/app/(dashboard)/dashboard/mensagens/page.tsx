@@ -53,20 +53,20 @@ export default function MensagensPage() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mensagens</h1>
-        <p className="text-gray-500 text-sm mt-1">Configure os textos enviados automaticamente pelo WhatsApp</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mensagens</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Configure os textos enviados automaticamente pelo WhatsApp</p>
       </div>
 
       {/* Variáveis disponíveis */}
-      <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 flex items-start gap-3">
+      <div className="bg-purple-50 dark:bg-[rgba(170,85,249,0.08)] border border-purple-100 dark:border-[rgba(170,85,249,0.2)] rounded-xl p-4 flex items-start gap-3">
         <Info size={16} className="text-purple-500 shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-purple-800 mb-2">Variáveis disponíveis nas mensagens</p>
+          <p className="text-sm font-medium text-purple-800 dark:text-[#aa55f9] mb-2">Variáveis disponíveis nas mensagens</p>
           <div className="flex flex-wrap gap-3">
             {variables.map((v) => (
               <div key={v.var} className="flex items-center gap-1.5 text-sm">
-                <code className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono text-xs">{v.var}</code>
-                <span className="text-purple-600">{v.desc}</span>
+                <code className="bg-purple-100 dark:bg-[rgba(170,85,249,0.2)] text-purple-700 dark:text-[#aa55f9] px-1.5 py-0.5 rounded font-mono text-xs">{v.var}</code>
+                <span className="text-purple-600 dark:text-purple-300">{v.desc}</span>
               </div>
             ))}
           </div>
@@ -78,22 +78,22 @@ export default function MensagensPage() {
         {templates.map((t) => {
           const config = typeConfig[t.type]
           return (
-            <div key={t.type} className={`bg-white border rounded-xl p-6 transition-opacity ${!t.active ? "opacity-60" : ""}`}>
+            <div key={t.type} className={`bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6 transition-opacity ${!t.active ? "opacity-60" : ""}`}>
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <MessageSquare size={15} className="text-gray-400" />
-                    <span className="font-semibold text-gray-900">{config.label}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{config.label}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${config.badge}`}>
                       {config.desc}
                     </span>
                   </div>
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-gray-500">{t.active ? "Ativo" : "Inativo"}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{t.active ? "Ativo" : "Inativo"}</span>
                   <div
                     onClick={() => update(t.type, "active", !t.active)}
-                    className={`w-10 h-5 rounded-full transition-colors cursor-pointer ${t.active ? "bg-purple-500" : "bg-gray-200"}`}
+                    className={`w-10 h-5 rounded-full transition-colors cursor-pointer ${t.active ? "bg-purple-500" : "bg-gray-200 dark:bg-white/10"}`}
                   >
                     <div className={`w-4 h-4 bg-white rounded-full shadow mt-0.5 transition-transform ${t.active ? "translate-x-5" : "translate-x-1"}`} />
                   </div>
@@ -104,11 +104,11 @@ export default function MensagensPage() {
                 rows={3}
                 value={t.content}
                 onChange={(e) => update(t.type, "content", e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none mb-3"
+                className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.04)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] resize-none mb-3"
               />
 
               <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   Preview: {t.content
                     .replace("{{nome}}", "Maria")
                     .replace("{{data}}", "10/05")
