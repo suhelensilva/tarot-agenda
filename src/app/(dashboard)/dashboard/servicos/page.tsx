@@ -297,24 +297,24 @@ export default function ServicosPage() {
           {categories.map((c) => {
             const isOpen = collapsed[c.id] === false
             return (
-              <div key={c.id} className={`group flex items-center gap-2 rounded-full px-4 py-1.5 shadow-sm transition-all cursor-pointer select-none border ${isOpen ? "bg-purple-600 border-purple-600" : "bg-white border-purple-200 hover:border-purple-400"}`}
+              <div key={c.id} className={`group flex items-center gap-2 rounded-full px-4 py-1.5 shadow-sm transition-all cursor-pointer select-none border ${isOpen ? "bg-purple-600 border-purple-600" : "bg-white dark:bg-[rgba(170,85,249,0.08)] border-purple-200 dark:border-[rgba(170,85,249,0.25)] hover:border-purple-400 dark:hover:border-[rgba(170,85,249,0.5)]"}`}
                 onClick={() => toggleCollapse(c.id)}
               >
-                <span className={`text-sm font-medium ${isOpen ? "text-white" : "text-purple-600"}`}>{c.name}</span>
-                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${isOpen ? "bg-white/20 text-white" : "bg-purple-100 text-purple-500"}`}>{c.services.length}</span>
+                <span className={`text-sm font-medium ${isOpen ? "text-white" : "text-purple-600 dark:text-[#aa55f9]"}`}>{c.name}</span>
+                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${isOpen ? "bg-white/20 text-white" : "bg-purple-100 dark:bg-[rgba(170,85,249,0.2)] text-purple-500 dark:text-[#aa55f9]"}`}>{c.services.length}</span>
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => openEditCat(c)} className={`p-1 rounded-full transition-colors ${isOpen ? "text-white/70 hover:text-white hover:bg-white/20" : "text-purple-400 hover:text-purple-600 hover:bg-purple-50"}`}><Pencil size={11} /></button>
-                  <button onClick={() => handleDeleteCat(c)} className={`p-1 rounded-full transition-colors ${isOpen ? "text-white/70 hover:text-white hover:bg-white/20" : "text-purple-300 hover:text-red-500 hover:bg-red-50"}`}><Trash2 size={11} /></button>
+                  <button onClick={() => openEditCat(c)} className={`p-1 rounded-full transition-colors ${isOpen ? "text-white/70 hover:text-white hover:bg-white/20" : "text-purple-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.15)]"}`}><Pencil size={11} /></button>
+                  <button onClick={() => handleDeleteCat(c)} className={`p-1 rounded-full transition-colors ${isOpen ? "text-white/70 hover:text-white hover:bg-white/20" : "text-purple-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"}`}><Trash2 size={11} /></button>
                 </div>
               </div>
             )
           })}
           {uncategorized.length > 0 && (
-            <div className={`flex items-center gap-2 rounded-full px-4 py-1.5 shadow-sm transition-all cursor-pointer select-none border ${collapsed["uncategorized"] === false ? "bg-purple-600 border-purple-600" : "bg-white border-purple-200 hover:border-purple-400"}`}
+            <div className={`flex items-center gap-2 rounded-full px-4 py-1.5 shadow-sm transition-all cursor-pointer select-none border ${collapsed["uncategorized"] === false ? "bg-purple-600 border-purple-600" : "bg-white dark:bg-[rgba(170,85,249,0.08)] border-purple-200 dark:border-[rgba(170,85,249,0.25)] hover:border-purple-400 dark:hover:border-[rgba(170,85,249,0.5)]"}`}
               onClick={() => toggleCollapse("uncategorized")}
             >
-              <span className={`text-sm font-medium ${collapsed["uncategorized"] === false ? "text-white" : "text-purple-600"}`}>Sem categoria</span>
-              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${collapsed["uncategorized"] === false ? "bg-white/20 text-white" : "bg-purple-100 text-purple-500"}`}>{uncategorized.length}</span>
+              <span className={`text-sm font-medium ${collapsed["uncategorized"] === false ? "text-white" : "text-purple-600 dark:text-[#aa55f9]"}`}>Sem categoria</span>
+              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${collapsed["uncategorized"] === false ? "bg-white/20 text-white" : "bg-purple-100 dark:bg-[rgba(170,85,249,0.2)] text-purple-500 dark:text-[#aa55f9]"}`}>{uncategorized.length}</span>
             </div>
           )}
         </div>

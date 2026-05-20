@@ -136,12 +136,12 @@ export default function ConfiguracoesPage() {
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-gray-900">Marca & Identidade Visual</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-white">Marca & Identidade Visual</h2>
               <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Crown size={10} /> Premium
               </span>
             </div>
-            <p className="text-sm text-gray-500">Logo, cores e fontes dos relatórios e fichas</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Logo, cores e fontes dos relatórios e fichas</p>
           </div>
         </div>
 
@@ -287,8 +287,8 @@ export default function ConfiguracoesPage() {
             <Smartphone size={18} />
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900">WhatsApp Business</h2>
-            <p className="text-sm text-gray-500">Conecte seu WhatsApp para envio de lembretes automáticos</p>
+            <h2 className="font-semibold text-gray-900 dark:text-white">WhatsApp Business</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Conecte seu WhatsApp para envio de lembretes automáticos</p>
           </div>
         </div>
 
@@ -329,53 +329,52 @@ export default function ConfiguracoesPage() {
             <Calendar size={18} />
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900">Horários disponíveis</h2>
-            <p className="text-sm text-gray-500">Defina os dias e horários que aparecem no link público de agendamento</p>
+            <h2 className="font-semibold text-gray-900 dark:text-white">Horários disponíveis</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Defina os dias e horários que aparecem no link público de agendamento</p>
           </div>
         </div>
 
         <div className="space-y-2 mb-6">
           {availability.map((day) => (
-            <div key={day.dayOfWeek} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${day.active ? "bg-gray-50" : "opacity-40"}`}>
+            <div key={day.dayOfWeek} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${day.active ? "bg-gray-50 dark:bg-[rgba(170,85,249,0.05)] border-transparent dark:border-[rgba(170,85,249,0.1)]" : "opacity-40 border-transparent"}`}>
               {/* Toggle ativo */}
               <div
                 onClick={() => updateDay(day.dayOfWeek, "active", !day.active)}
-                className={`w-9 h-5 rounded-full cursor-pointer transition-colors shrink-0 ${day.active ? "bg-purple-500" : "bg-gray-200"}`}
+                className={`w-9 h-5 rounded-full cursor-pointer transition-colors shrink-0 ${day.active ? "bg-purple-500" : "bg-gray-200 dark:bg-white/10"}`}
               >
                 <div className={`w-3.5 h-3.5 bg-white rounded-full shadow mt-[3px] transition-transform ${day.active ? "translate-x-[18px]" : "translate-x-[3px]"}`} />
               </div>
 
               {/* Nome do dia */}
-              <span className="text-sm font-medium text-gray-700 w-16 shrink-0">{DAYS[day.dayOfWeek]}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-16 shrink-0">{DAYS[day.dayOfWeek]}</span>
 
               {/* Horários */}
               <div className="flex items-center gap-1.5 flex-1 flex-wrap">
                 <input type="time" value={day.startTime}
                   onChange={(e) => updateDay(day.dayOfWeek, "startTime", e.target.value)}
                   disabled={!day.active}
-                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40" />
-                <span className="text-gray-400 text-xs">até</span>
+                  className="border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] disabled:opacity-40" />
+                <span className="text-gray-400 dark:text-gray-500 text-xs">até</span>
 
                 {day.lunchStart ? (
                   <>
-                    {/* Pausa: endTime do manhã é o lunchStart */}
                     <input type="time" value={day.lunchStart}
                       onChange={(e) => updateDay(day.dayOfWeek, "lunchStart", e.target.value)}
                       disabled={!day.active}
-                      className="border border-orange-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40" />
+                      className="border border-orange-200 dark:border-orange-500/30 dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40" />
                     <span className="text-orange-400 text-sm" title="Intervalo">☕</span>
                     <input type="time" value={day.lunchEnd ?? "13:00"}
                       onChange={(e) => updateDay(day.dayOfWeek, "lunchEnd", e.target.value)}
                       disabled={!day.active}
-                      className="border border-orange-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40" />
-                    <span className="text-gray-400 text-xs">até</span>
+                      className="border border-orange-200 dark:border-orange-500/30 dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40" />
+                    <span className="text-gray-400 dark:text-gray-500 text-xs">até</span>
                   </>
                 ) : null}
 
                 <input type="time" value={day.endTime}
                   onChange={(e) => updateDay(day.dayOfWeek, "endTime", e.target.value)}
                   disabled={!day.active}
-                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40" />
+                  className="border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] disabled:opacity-40" />
               </div>
 
               {/* Botão intervalo */}
@@ -387,7 +386,7 @@ export default function ConfiguracoesPage() {
                     setAvailability((prev) => prev.map((d) => d.dayOfWeek === day.dayOfWeek ? { ...d, lunchStart: "12:00", lunchEnd: "13:00" } : d))
                   }
                 }}
-                className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors shrink-0 disabled:opacity-40 ${day.lunchStart ? "bg-orange-50 border-orange-300 text-orange-600 hover:bg-orange-100" : "border-gray-200 text-gray-400 hover:border-orange-300 hover:text-orange-500"}`}
+                className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors shrink-0 disabled:opacity-40 ${day.lunchStart ? "bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20" : "border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-400 dark:text-gray-500 hover:border-orange-300 hover:text-orange-500"}`}
               >
                 {day.lunchStart ? "– pausa" : "+ pausa"}
               </button>
