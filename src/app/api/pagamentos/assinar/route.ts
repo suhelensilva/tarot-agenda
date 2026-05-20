@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
             currency_id: "BRL",
           },
           back_url: `${baseUrl}/dashboard/assinatura?status=success&plan=${plan}&cycle=monthly`,
+          payer_email: session.user.email!,
           external_reference: `${session.user.id}|${plan}|MONTHLY`,
         },
       })
