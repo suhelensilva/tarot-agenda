@@ -30,10 +30,11 @@ export default function Sidebar({ user }: {
     <aside className="
       w-64 flex flex-col
       bg-white dark:bg-[#0f0f1a]
-      border-r border-gray-200 dark:[border-right:1px_solid_rgba(170,85,249,0.12)]
+      border-r border-[rgba(124,58,237,0.1)] dark:[border-right:1px_solid_rgba(170,85,249,0.12)]
+      shadow-[1px_0_20px_rgba(124,58,237,0.06)] dark:shadow-none
     ">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
+      <div className="p-6 border-b border-[rgba(124,58,237,0.08)] dark:border-[rgba(170,85,249,0.1)]">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🔮</span>
           <div>
@@ -66,23 +67,25 @@ export default function Sidebar({ user }: {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
                 active
                   ? [
-                      "bg-purple-50 text-purple-700",
+                      "bg-purple-100/70 text-purple-700 [box-shadow:inset_0_0_0_1px_rgba(124,58,237,0.15)]",
                       "dark:text-[#aa55f9] dark:bg-[rgba(170,85,249,0.12)]",
                       "dark:[box-shadow:inset_0_0_0_1px_rgba(170,85,249,0.2)]",
                     ].join(" ")
                   : [
-                      "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                      "text-[#5a4880] hover:bg-purple-50/60 hover:text-[#3d3060]",
                       "dark:text-gray-400 dark:hover:bg-[rgba(170,85,249,0.06)] dark:hover:text-white",
                     ].join(" ")
               )}
             >
               <Icon
                 size={17}
-                className={active ? "dark:[filter:drop-shadow(0_0_6px_rgba(170,85,249,0.8))]" : ""}
+                className={active
+                  ? "[filter:drop-shadow(0_0_4px_rgba(124,58,237,0.5))] dark:[filter:drop-shadow(0_0_6px_rgba(170,85,249,0.8))]"
+                  : ""}
               />
               {label}
               {active && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-500 dark:bg-[#aa55f9] dark:[box-shadow:0_0_6px_rgba(170,85,249,0.9)]" />
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-[#aa55f9] [box-shadow:0_0_5px_rgba(124,58,237,0.4)] dark:[box-shadow:0_0_6px_rgba(170,85,249,0.9)]" />
               )}
             </Link>
           )
@@ -90,10 +93,10 @@ export default function Sidebar({ user }: {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-100 dark:border-[rgba(170,85,249,0.1)] space-y-3">
+      <div className="p-4 border-t border-[rgba(124,58,237,0.08)] dark:border-[rgba(170,85,249,0.1)] space-y-3">
         {/* Tema toggle */}
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-400 dark:text-gray-600">Tema</span>
+          <span className="text-xs text-[#a99cc5] dark:text-gray-600">Tema</span>
           <ThemeToggle />
         </div>
 
@@ -110,14 +113,14 @@ export default function Sidebar({ user }: {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user?.name ?? "Taróloga"}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-500 truncate">{user?.email}</p>
+            <p className="text-sm font-medium text-[#1c1735] dark:text-white truncate">{user?.name ?? "Taróloga"}</p>
+            <p className="text-xs text-[#7c6a9f] dark:text-gray-500 truncate">{user?.email}</p>
           </div>
         </div>
 
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-600 hover:text-red-600 dark:hover:text-red-400 transition-colors w-full"
+          className="flex items-center gap-2 text-sm text-[#7c6a9f] dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors w-full"
         >
           <LogOut size={15} />
           Sair
