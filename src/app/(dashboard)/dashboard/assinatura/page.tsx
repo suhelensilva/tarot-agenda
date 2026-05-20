@@ -99,7 +99,7 @@ export default function AssinaturaPage() {
           <div className="rounded-2xl border-2 border-purple-400 bg-white p-6 flex flex-col relative">
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-purple-500 mb-1">Básico</p>
-              <h2 className="text-xl font-bold text-gray-900">Pro</h2>
+              <h2 className="text-xl font-bold text-gray-900">Pró</h2>
               <p className="text-3xl font-bold text-gray-900 mt-2">
                 R$19,90
                 <span className="text-base font-normal text-gray-500">/mês</span>
@@ -127,7 +127,7 @@ export default function AssinaturaPage() {
             </div>
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 mb-1">Personalizado</p>
-              <h2 className="text-xl font-bold text-gray-900">Pro+</h2>
+              <h2 className="text-xl font-bold text-gray-900">Premium</h2>
               <p className="text-3xl font-bold text-gray-900 mt-2">
                 R$29,90
                 <span className="text-base font-normal text-gray-500">/mês</span>
@@ -158,8 +158,8 @@ export default function AssinaturaPage() {
                 a: "Você usa o Mística Agenda gratuitamente com até 80 clientes e as funções essenciais de agendamento.",
               },
               {
-                q: "Qual a diferença entre Pro e Pro+?",
-                a: "O Pro tem fichas e relatórios básicos com link público padrão. O Pro+ inclui relatórios avançados, link personalizado e suporte prioritário.",
+                q: "Qual a diferença entre Pró e Premium?",
+                a: "O Pró tem fichas e relatórios básicos com link público padrão. O Premium inclui relatórios avançados, link personalizado e suporte prioritário.",
               },
               {
                 q: "Posso cancelar quando quiser?",
