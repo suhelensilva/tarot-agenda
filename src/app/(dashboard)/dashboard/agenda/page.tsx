@@ -183,7 +183,7 @@ export default function AgendaPage() {
       endTime: endTime.toISOString(),
       notes: form.notes || null,
       meetingLink: form.meetingLink || null,
-      amountPaid: form.amountPaid ? parseFloat(form.amountPaid) : null,
+      amountPaid: form.amountPaid !== "" ? parseFloat(form.amountPaid) : null,
     }
 
     try {

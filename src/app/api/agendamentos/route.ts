@@ -5,13 +5,13 @@ import { z } from "zod"
 
 const schema = z.object({
   clientId: z.string().min(1),
-  serviceId: z.string().optional().or(z.literal("")),
+  serviceId: z.string().optional().nullable(),
   title: z.string().min(1),
   startTime: z.string(),
   endTime: z.string(),
-  notes: z.string().optional(),
-  meetingLink: z.string().optional().or(z.literal("")),
-  amountPaid: z.number().optional(),
+  notes: z.string().optional().nullable(),
+  meetingLink: z.string().optional().nullable(),
+  amountPaid: z.number().optional().nullable(),
 })
 
 export async function GET(req: NextRequest) {
