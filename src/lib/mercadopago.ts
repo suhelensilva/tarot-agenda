@@ -1,4 +1,4 @@
-import { MercadoPagoConfig, Payment, PreApproval, PreApprovalPlan } from "mercadopago"
+import { MercadoPagoConfig, Payment } from "mercadopago"
 
 export function getMPClient() {
   const token = process.env.MP_ACCESS_TOKEN
@@ -8,7 +8,7 @@ export function getMPClient() {
 
 export const MP_PUBLIC_KEY = process.env.MP_PUBLIC_KEY ?? ""
 
-export { Payment, PreApproval, PreApprovalPlan }
+export { Payment }
 
 // Preços
 export const PLAN_PRICES = {
