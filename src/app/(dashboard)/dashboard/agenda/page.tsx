@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { usePlanFetch } from "@/components/upgrade-provider"
 
@@ -40,6 +40,7 @@ export default function AgendaPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [selected, setSelected] = useState<Appointment | null>(null)
   const [saving, setSaving] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
@@ -106,7 +107,32 @@ export default function AgendaPage() {
     const d = day ?? selectedDay ?? today
     const dateStr = d.toISOString().slice(0, 10)
     setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour: "09:00", endHour: "10:00", notes: "", meetingLink: "", amountPaid: "" })
+    setEditingId(null)
     setSelected(null)
+    setShowNewClient(false)
+    setNewClient({ name: "", phone: "", email: "" })
+    setNewClientError(null)
+    setShowForm(true)
+  }
+
+  function openEdit(apt: Appointment) {
+    const start = new Date(apt.startTime)
+    const end = new Date(apt.endTime)
+    const dateStr = start.toISOString().slice(0, 10)
+    const startHour = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`
+    const endHour = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
+    setForm({
+      clientId: apt.client.id,
+      serviceId: apt.service?.id ?? "",
+      title: apt.title,
+      date: dateStr,
+      startHour,
+      endHour,
+      notes: apt.notes ?? "",
+      meetingLink: apt.meetingLink ?? "",
+      amountPaid: apt.amountPaid != null ? String(apt.amountPaid) : "",
+    })
+    setEditingId(apt.id)
     setShowNewClient(false)
     setNewClient({ name: "", phone: "", email: "" })
     setNewClientError(null)
@@ -137,23 +163,35 @@ export default function AgendaPage() {
     const startTime = new Date(`${form.date}T${form.startHour}:00`)
     const endTime = new Date(`${form.date}T${form.endHour}:00`)
 
-    await fetch("/api/agendamentos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientId: form.clientId,
-        serviceId: form.serviceId || undefined,
-        title: form.title,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        notes: form.notes || undefined,
-        meetingLink: form.meetingLink || undefined,
-        amountPaid: form.amountPaid ? parseFloat(form.amountPaid) : undefined,
-      }),
-    })
+    const payload = {
+      clientId: form.clientId,
+      serviceId: form.serviceId || null,
+      title: form.title,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      notes: form.notes || null,
+      meetingLink: form.meetingLink || null,
+      amountPaid: form.amountPaid ? parseFloat(form.amountPaid) : null,
+    }
+
+    if (editingId) {
+      await fetch(`/api/agendamentos/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+    } else {
+      await fetch("/api/agendamentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+    }
 
     setSaving(false)
     setShowForm(false)
+    setEditingId(null)
+    setSelected(null)
     fetchAppointments()
   }
 
@@ -427,9 +465,18 @@ export default function AgendaPage() {
             </div>
           )}
 
+          {/* Botão Editar */}
+          <button
+            onClick={() => openEdit(selected)}
+            className="w-full mt-6 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium border border-purple-200 dark:border-[rgba(170,85,249,0.3)] text-purple-700 dark:text-[#aa55f9] hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.08)] transition-colors"
+          >
+            <Pencil size={14} />
+            Editar agendamento
+          </button>
+
           <button
             onClick={() => handleDelete(selected.id)}
-            className="w-full mt-4 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
+            className="w-full mt-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
           >
             Remover agendamento
           </button>
@@ -441,7 +488,7 @@ export default function AgendaPage() {
         <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-[#13131f] rounded-2xl shadow-xl dark:border dark:border-[rgba(170,85,249,0.15)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
-              <h2 className="font-semibold text-gray-900 dark:text-white">Novo agendamento</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-white">{editingId ? "Editar agendamento" : "Novo agendamento"}</h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={18} />
               </button>
@@ -626,7 +673,7 @@ export default function AgendaPage() {
                   disabled={saving}
                   className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white py-2.5 rounded-lg text-sm font-medium transition-colors"
                 >
-                  {saving ? "Salvando..." : "Agendar"}
+                  {saving ? "Salvando..." : editingId ? "Salvar alterações" : "Agendar"}
                 </button>
               </div>
             </form>
