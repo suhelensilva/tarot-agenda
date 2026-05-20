@@ -408,7 +408,7 @@ export default function ServicosPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Foto do serviço</label>
                 <div
                   onClick={() => fileRef.current?.click()}
-                  className="w-full h-48 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition-colors overflow-hidden relative"
+                  className="w-full aspect-square border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition-colors overflow-hidden relative"
                 >
                   {form.imageUrl ? (
                     <>
@@ -416,7 +416,11 @@ export default function ServicosPage() {
                       <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); setForm((f) => ({ ...f, imageUrl: "" })) }}
+                          onClick={(e) => {
+                          e.stopPropagation()
+                          setForm((f) => ({ ...f, imageUrl: "" }))
+                          if (fileRef.current) fileRef.current.value = ""
+                        }}
                           className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
                         >
                           <X size={13} /> Remover foto
@@ -613,7 +617,7 @@ function ServiceCard({ service: s, onEdit, onDeactivate }: {
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       {s.imageUrl && (
-        <div className="w-full h-44 overflow-hidden">
+        <div className="w-full aspect-square overflow-hidden">
           <img src={s.imageUrl} alt={s.name} className="w-full h-full object-cover" />
         </div>
       )}
