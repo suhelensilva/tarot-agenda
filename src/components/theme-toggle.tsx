@@ -8,33 +8,12 @@ function cn(...classes: string[]) {
   return classes.filter(Boolean).join(" ")
 }
 
-// Modo compacto: ícone único que cicla light → dark → system
-export function ThemeToggle({ compact }: { compact?: boolean }) {
+export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => setMounted(true), [])
-  if (!mounted) return <div className={compact ? "w-10 h-10" : "w-24 h-7"} />
-
-  if (compact) {
-    const cycle = () => {
-      if (theme === "light") setTheme("dark")
-      else if (theme === "dark") setTheme("system")
-      else setTheme("light")
-    }
-    const Icon = theme === "light" ? Sun : theme === "dark" ? Moon : Monitor
-    const label = theme === "light" ? "Claro" : theme === "dark" ? "Escuro" : "Sistema"
-
-    return (
-      <button
-        onClick={cycle}
-        title={`Tema: ${label}`}
-        className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-[#aa55f9] hover:bg-gray-50 dark:hover:bg-[rgba(170,85,249,0.08)] transition-all"
-      >
-        <Icon size={17} />
-      </button>
-    )
-  }
+  if (!mounted) return <div className="w-24 h-7" />
 
   const options = [
     { value: "light",  icon: Sun,     label: "Claro"   },
