@@ -408,7 +408,7 @@ export default function ServicosPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Foto do serviço</label>
                 <div
                   onClick={() => fileRef.current?.click()}
-                  className="w-full aspect-square border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition-colors overflow-hidden relative"
+                  className="w-full h-40 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition-colors overflow-hidden relative"
                 >
                   {form.imageUrl ? (
                     <>
