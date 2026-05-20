@@ -231,7 +231,14 @@ export default function ServicosPage() {
   if (uncategorized.length > 0) grouped.push({ id: null, name: "Sem categoria", services: uncategorized })
 
   function toggleCollapse(key: string) {
-    setCollapsed((prev) => ({ ...prev, [key]: prev[key] === false ? true : false }))
+    setCollapsed((prev) => {
+      const isOpen = prev[key] === false
+      // Fecha tudo, e se estava fechado abre só esse
+      const next: Record<string, boolean> = {}
+      Object.keys(prev).forEach(k => { next[k] = true })
+      if (!isOpen) next[key] = false
+      return next
+    })
   }
 
   return (
@@ -276,25 +283,32 @@ export default function ServicosPage() {
       </div>
 
 
-      {/* Categories chips — clique abre/fecha a seção */}
-      {categories.length > 0 && (
+      {/* Categories chips — abas */}
+      {(categories.length > 0 || uncategorized.length > 0) && (
         <div className="flex flex-wrap gap-2 mb-6">
           {categories.map((c) => {
             const isOpen = collapsed[c.id] === false
             return (
-              <div key={c.id} className="group flex items-center gap-2 bg-white border border-purple-200 hover:border-purple-400 rounded-full px-4 py-1.5 shadow-sm transition-all cursor-pointer select-none"
+              <div key={c.id} className={`group flex items-center gap-2 rounded-full px-4 py-1.5 shadow-sm transition-all cursor-pointer select-none border ${isOpen ? "bg-purple-600 border-purple-600" : "bg-white border-purple-200 hover:border-purple-400"}`}
                 onClick={() => toggleCollapse(c.id)}
               >
-                <span className={`w-2 h-2 rounded-full shrink-0 transition-colors ${isOpen ? "bg-purple-600" : "bg-purple-300"}`} />
-                <span className={`text-sm font-medium transition-colors ${isOpen ? "text-purple-700" : "text-purple-500"}`}>{c.name}</span>
-                <span className="text-xs bg-purple-100 text-purple-500 font-semibold px-1.5 py-0.5 rounded-full">{c.services.length}</span>
+                <span className={`text-sm font-medium ${isOpen ? "text-white" : "text-purple-600"}`}>{c.name}</span>
+                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${isOpen ? "bg-white/20 text-white" : "bg-purple-100 text-purple-500"}`}>{c.services.length}</span>
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => openEditCat(c)} className="p-1 text-purple-400 hover:text-purple-600 rounded-full hover:bg-purple-50 transition-colors"><Pencil size={11} /></button>
-                  <button onClick={() => handleDeleteCat(c)} className="p-1 text-purple-300 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"><Trash2 size={11} /></button>
+                  <button onClick={() => openEditCat(c)} className={`p-1 rounded-full transition-colors ${isOpen ? "text-white/70 hover:text-white hover:bg-white/20" : "text-purple-400 hover:text-purple-600 hover:bg-purple-50"}`}><Pencil size={11} /></button>
+                  <button onClick={() => handleDeleteCat(c)} className={`p-1 rounded-full transition-colors ${isOpen ? "text-white/70 hover:text-white hover:bg-white/20" : "text-purple-300 hover:text-red-500 hover:bg-red-50"}`}><Trash2 size={11} /></button>
                 </div>
               </div>
             )
           })}
+          {uncategorized.length > 0 && (
+            <div className={`flex items-center gap-2 rounded-full px-4 py-1.5 shadow-sm transition-all cursor-pointer select-none border ${collapsed["uncategorized"] === false ? "bg-purple-600 border-purple-600" : "bg-white border-purple-200 hover:border-purple-400"}`}
+              onClick={() => toggleCollapse("uncategorized")}
+            >
+              <span className={`text-sm font-medium ${collapsed["uncategorized"] === false ? "text-white" : "text-purple-600"}`}>Sem categoria</span>
+              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${collapsed["uncategorized"] === false ? "bg-white/20 text-white" : "bg-purple-100 text-purple-500"}`}>{uncategorized.length}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -313,10 +327,10 @@ export default function ServicosPage() {
           {grouped.map((group) => {
             const key = group.id ?? "uncategorized"
             const isCollapsed = collapsed[key] !== false
+            if (isCollapsed) return null
             return (
               <div key={key}>
-
-                {!isCollapsed && (
+                {(
                   viewMode === "card" ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {group.services.map((s) => (
