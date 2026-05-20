@@ -305,74 +305,63 @@ export default function ConfiguracoesPage() {
           </div>
         </div>
 
-        <div className="space-y-3 mb-6">
+        <div className="space-y-2 mb-6">
           {availability.map((day) => (
-            <div key={day.dayOfWeek} className={`p-3 rounded-lg transition-colors ${day.active ? "bg-gray-50" : "opacity-50"}`}>
-              <div className="flex items-center gap-4">
-                <div
-                  onClick={() => updateDay(day.dayOfWeek, "active", !day.active)}
-                  className={`w-10 h-5 rounded-full cursor-pointer transition-colors shrink-0 ${day.active ? "bg-purple-500" : "bg-gray-200"}`}
-                >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow mt-0.5 transition-transform ${day.active ? "translate-x-5" : "translate-x-1"}`} />
-                </div>
-                <span className="text-sm font-medium text-gray-700 w-20 shrink-0">{DAYS[day.dayOfWeek]}</span>
-                <div className="flex items-center gap-2 flex-1 flex-wrap">
-                  {/* Manhã */}
-                  <input
-                    type="time"
-                    value={day.startTime}
-                    onChange={(e) => updateDay(day.dayOfWeek, "startTime", e.target.value)}
-                    disabled={!day.active}
-                    className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40"
-                  />
-                  <span className="text-gray-400 text-sm">até</span>
-                  <input
-                    type="time"
-                    value={day.endTime}
-                    onChange={(e) => updateDay(day.dayOfWeek, "endTime", e.target.value)}
-                    disabled={!day.active}
-                    className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40"
-                  />
-
-                  {/* Toggle intervalo */}
-                  <button
-                    type="button"
-                    disabled={!day.active}
-                    onClick={() => {
-                      if (day.lunchStart) {
-                        setAvailability((prev) => prev.map((d) => d.dayOfWeek === day.dayOfWeek ? { ...d, lunchStart: null, lunchEnd: null } : d))
-                      } else {
-                        updateDay(day.dayOfWeek, "lunchStart", "12:00")
-                      }
-                    }}
-                    className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-40 ${day.lunchStart ? "bg-orange-50 border-orange-300 text-orange-600" : "border-gray-200 text-gray-400 hover:border-orange-300 hover:text-orange-500"}`}
-                  >
-                    {day.lunchStart ? "– intervalo" : "+ intervalo"}
-                  </button>
-                </div>
+            <div key={day.dayOfWeek} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${day.active ? "bg-gray-50" : "opacity-40"}`}>
+              {/* Toggle ativo */}
+              <div
+                onClick={() => updateDay(day.dayOfWeek, "active", !day.active)}
+                className={`w-9 h-5 rounded-full cursor-pointer transition-colors shrink-0 ${day.active ? "bg-purple-500" : "bg-gray-200"}`}
+              >
+                <div className={`w-3.5 h-3.5 bg-white rounded-full shadow mt-[3px] transition-transform ${day.active ? "translate-x-[18px]" : "translate-x-[3px]"}`} />
               </div>
 
-              {/* Intervalo de almoço */}
-              {day.lunchStart && (
-                <div className="flex items-center gap-2 mt-2 ml-[7.5rem]">
-                  <span className="text-xs text-orange-500 font-medium w-16 shrink-0">Intervalo</span>
-                  <input
-                    type="time"
-                    value={day.lunchStart}
-                    onChange={(e) => updateDay(day.dayOfWeek, "lunchStart", e.target.value)}
-                    disabled={!day.active}
-                    className="border border-orange-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40"
-                  />
-                  <span className="text-gray-400 text-sm">até</span>
-                  <input
-                    type="time"
-                    value={day.lunchEnd ?? "13:00"}
-                    onChange={(e) => updateDay(day.dayOfWeek, "lunchEnd", e.target.value)}
-                    disabled={!day.active}
-                    className="border border-orange-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40"
-                  />
-                </div>
-              )}
+              {/* Nome do dia */}
+              <span className="text-sm font-medium text-gray-700 w-16 shrink-0">{DAYS[day.dayOfWeek]}</span>
+
+              {/* Horários */}
+              <div className="flex items-center gap-1.5 flex-1 flex-wrap">
+                <input type="time" value={day.startTime}
+                  onChange={(e) => updateDay(day.dayOfWeek, "startTime", e.target.value)}
+                  disabled={!day.active}
+                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40" />
+                <span className="text-gray-400 text-xs">até</span>
+
+                {day.lunchStart ? (
+                  <>
+                    {/* Pausa: endTime do manhã é o lunchStart */}
+                    <input type="time" value={day.lunchStart}
+                      onChange={(e) => updateDay(day.dayOfWeek, "lunchStart", e.target.value)}
+                      disabled={!day.active}
+                      className="border border-orange-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40" />
+                    <span className="text-orange-400 text-sm" title="Intervalo">☕</span>
+                    <input type="time" value={day.lunchEnd ?? "13:00"}
+                      onChange={(e) => updateDay(day.dayOfWeek, "lunchEnd", e.target.value)}
+                      disabled={!day.active}
+                      className="border border-orange-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40" />
+                    <span className="text-gray-400 text-xs">até</span>
+                  </>
+                ) : null}
+
+                <input type="time" value={day.endTime}
+                  onChange={(e) => updateDay(day.dayOfWeek, "endTime", e.target.value)}
+                  disabled={!day.active}
+                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40" />
+              </div>
+
+              {/* Botão intervalo */}
+              <button type="button" disabled={!day.active}
+                onClick={() => {
+                  if (day.lunchStart) {
+                    setAvailability((prev) => prev.map((d) => d.dayOfWeek === day.dayOfWeek ? { ...d, lunchStart: null, lunchEnd: null } : d))
+                  } else {
+                    setAvailability((prev) => prev.map((d) => d.dayOfWeek === day.dayOfWeek ? { ...d, lunchStart: "12:00", lunchEnd: "13:00" } : d))
+                  }
+                }}
+                className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors shrink-0 disabled:opacity-40 ${day.lunchStart ? "bg-orange-50 border-orange-300 text-orange-600 hover:bg-orange-100" : "border-gray-200 text-gray-400 hover:border-orange-300 hover:text-orange-500"}`}
+              >
+                {day.lunchStart ? "– pausa" : "+ pausa"}
+              </button>
             </div>
           ))}
         </div>
