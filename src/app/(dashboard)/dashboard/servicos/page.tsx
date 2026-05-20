@@ -329,10 +329,11 @@ export default function ServicosPage() {
             const isCollapsed = collapsed[key] !== false
             if (isCollapsed) return null
             return (
-              <div key={key}>
+              <div key={key} className="mb-6">
+                <h2 className="text-base font-semibold text-gray-700 mb-4">{group.name}</h2>
                 {(
                   viewMode === "card" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                       {group.services.map((s) => (
                         <ServiceCard key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} />
                       ))}
