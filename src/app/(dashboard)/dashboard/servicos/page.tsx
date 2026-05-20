@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { Plus, X, Package, Clock, Tag, FolderOpen, Pencil, Trash2, ImageIcon, LayoutGrid, List } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import { usePlanFetch } from "@/components/upgrade-provider"
 
 type Category = {
   id: string
@@ -72,6 +73,7 @@ export default function ServicosPage() {
 
   // View mode
   const [viewMode, setViewMode] = useState<"card" | "list">("card")
+  const planFetch = usePlanFetch()
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -96,7 +98,7 @@ export default function ServicosPage() {
       const fd = new FormData()
       fd.append("file", file)
       fd.append("folder", "servicos")
-      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const res = await planFetch("/api/upload", { method: "POST", body: fd })
       const data = await res.json()
       if (data.url) {
         setForm((f) => ({ ...f, imageUrl: data.url }))
@@ -147,10 +149,12 @@ export default function ServicosPage() {
     }
     const url = editing ? `/api/servicos/${editing.id}` : "/api/servicos"
     const method = editing ? "PUT" : "POST"
-    await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+    const res = await planFetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
     setSaving(false)
-    setShowForm(false)
-    fetchAll()
+    if (res.ok) {
+      setShowForm(false)
+      fetchAll()
+    }
   }
 
   async function handleDeactivate(id: string) {
@@ -194,11 +198,15 @@ export default function ServicosPage() {
         body: JSON.stringify({ name: catName }),
       })
     } else {
-      await fetch("/api/categorias", {
+      const res = await planFetch("/api/categorias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: catName }),
       })
+      if (!res.ok) {
+        setSavingCat(false)
+        return
+      }
     }
     setSavingCat(false)
     setShowCatForm(false)

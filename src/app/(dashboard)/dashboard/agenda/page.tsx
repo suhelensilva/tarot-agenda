@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import { usePlanFetch } from "@/components/upgrade-provider"
 
 type Client = { id: string; name: string; phone: string }
 type Service = { id: string; name: string; price: number; duration: number }
@@ -47,6 +48,7 @@ export default function AgendaPage() {
   const [newClient, setNewClient] = useState({ name: "", phone: "", email: "" })
   const [savingClient, setSavingClient] = useState(false)
   const [newClientError, setNewClientError] = useState<string | null>(null)
+  const planFetch = usePlanFetch()
 
   const [form, setForm] = useState({
     clientId: "",
@@ -180,7 +182,7 @@ export default function AgendaPage() {
     setSavingClient(true)
     setNewClientError(null)
     try {
-      const res = await fetch("/api/clientes", {
+      const res = await planFetch("/api/clientes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -189,7 +191,10 @@ export default function AgendaPage() {
           email: newClient.email.trim() || undefined,
         }),
       })
-      if (!res.ok) throw new Error("Erro ao criar cliente")
+      if (!res.ok) {
+        setSavingClient(false)
+        return
+      }
       const created: Client = await res.json()
       setClients((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
       onClientChange(created.id)

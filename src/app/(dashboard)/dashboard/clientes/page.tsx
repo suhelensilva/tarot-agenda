@@ -10,6 +10,7 @@ import {
 import { formatPhone, formatDate } from "@/lib/utils"
 import { getPlanLimits } from "@/lib/plan"
 import { PlanLimitBanner } from "@/components/plan-gate"
+import { usePlanFetch } from "@/components/upgrade-provider"
 
 type Client = {
   id: string
@@ -50,6 +51,7 @@ export default function ClientesPage() {
   const [importResult, setImportResult] = useState<ImportResult>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const planFetch = usePlanFetch()
 
   const fetchClients = useCallback(async () => {
     setLoading(true)
@@ -95,9 +97,11 @@ export default function ClientesPage() {
     const url = editing ? `/api/clientes/${editing.id}` : "/api/clientes"
     const method = editing ? "PUT" : "POST"
     try {
-      await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
-      setShowForm(false)
-      fetchClients()
+      const res = await planFetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
+      if (res.ok) {
+        setShowForm(false)
+        fetchClients()
+      }
     } catch (err) {
       console.error("handleSave error:", err)
     } finally {
@@ -129,7 +133,7 @@ export default function ClientesPage() {
     try {
       const fd = new FormData()
       fd.append("file", file)
-      const res = await fetch("/api/clientes/import", { method: "POST", body: fd })
+      const res = await planFetch("/api/clientes/import", { method: "POST", body: fd })
       const data = await res.json()
       if (!res.ok) {
         setImportError(data.error || "Erro ao importar")
