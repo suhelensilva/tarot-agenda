@@ -98,8 +98,8 @@ export default async function DashboardPage() {
               style={{ background: stat.glow, boxShadow: `0 0 12px 3px ${stat.glow}` }}
             />
             <div
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-16 opacity-0 dark:opacity-100 pointer-events-none"
-              style={{ background: `radial-gradient(ellipse at bottom, ${stat.glow} 0%, transparent 70%)` }}
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-8 opacity-0 dark:opacity-100 pointer-events-none"
+              style={{ background: `radial-gradient(ellipse at bottom, ${stat.glow} 0%, transparent 80%)` }}
             />
             <div className={`${stat.bg} ${stat.color} w-10 h-10 rounded-lg flex items-center justify-center mb-4 relative z-10`}>
               <stat.icon size={20} />
