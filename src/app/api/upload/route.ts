@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
 
     const { error } = await supabase.storage
-      .from("images")
+      .from("imagens")
       .upload(fileName, buffer, { contentType: file.type, upsert: true })
 
     if (error) {
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Erro Storage: ${error.message}` }, { status: 500 })
     }
 
-    const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName)
+    const { data: urlData } = supabase.storage.from("imagens").getPublicUrl(fileName)
     return NextResponse.json({ url: urlData.publicUrl })
   } catch (err) {
     console.error("[upload POST] Unexpected error:", err)
