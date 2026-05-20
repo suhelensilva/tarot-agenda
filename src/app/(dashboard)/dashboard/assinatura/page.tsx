@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
-import { Crown, Check, X, Sparkles, Zap, Lock, TrendingDown, Loader2 } from "lucide-react"
+import { Crown, Check, X, Sparkles, Zap, Lock, TrendingDown, Loader2, AlertTriangle } from "lucide-react"
 import { planLabel } from "@/lib/plan"
 
 type PlanFeature = { text: string; included: boolean }
@@ -44,7 +44,6 @@ const PREMIUM_FEATURES: PlanFeature[] = [
   { text: "Suporte prioritário", included: true },
 ]
 
-// Preços
 const PRICES = {
   PRO:     { monthly: 19.90, annual: 15.00 },
   PREMIUM: { monthly: 29.90, annual: 20.00 },
@@ -56,6 +55,11 @@ function discount(monthly: number, annual: number) {
 
 function fmt(v: number) {
   return v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function fmtDate(d: string | null | undefined) {
+  if (!d) return null
+  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
 }
 
 function FeatureList({ features }: { features: PlanFeature[] }) {
@@ -74,11 +78,30 @@ function FeatureList({ features }: { features: PlanFeature[] }) {
   )
 }
 
+type Subscription = {
+  id: string
+  plan: string
+  billingCycle: string
+  status: string
+  currentPeriodEnd: string | null
+  cancelledAt: string | null
+}
+
 export default function AssinaturaPage() {
-  const { data: session } = useSession()
+  const { data: session, update: updateSession } = useSession()
   const currentPlan = session?.user?.plan ?? "FREE"
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
   const [loading, setLoading] = useState<string | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [cancelConfirm, setCancelConfirm] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/pagamentos/assinatura")
+      .then(r => r.json())
+      .then(d => setSubscription(d.subscription ?? null))
+      .catch(() => {})
+  }, [currentPlan])
 
   async function handleSubscribe(plan: "PRO" | "PREMIUM") {
     setLoading(plan)
@@ -96,7 +119,7 @@ export default function AssinaturaPage() {
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl
       } else {
-        alert(`Erro: ${data.error ?? "Sem checkoutUrl na resposta"}`)
+        alert(`Erro: ${data.error ?? "Sem URL de checkout na resposta"}`)
       }
     } catch {
       alert("Erro ao conectar com o servidor.")
@@ -105,8 +128,28 @@ export default function AssinaturaPage() {
     }
   }
 
+  async function handleCancel() {
+    setCancelling(true)
+    try {
+      const res = await fetch("/api/pagamentos/cancelar", { method: "POST" })
+      if (res.ok) {
+        await updateSession()
+        setCancelConfirm(false)
+        setSubscription(null)
+      } else {
+        alert("Erro ao cancelar. Tente novamente.")
+      }
+    } catch {
+      alert("Erro ao conectar com o servidor.")
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   const proDiscount  = discount(PRICES.PRO.monthly, PRICES.PRO.annual)
   const premDiscount = discount(PRICES.PREMIUM.monthly, PRICES.PREMIUM.annual)
+  const hasActiveSub = subscription && subscription.status === "ACTIVE" && currentPlan !== "FREE"
+  const cycleLabel   = subscription?.billingCycle === "MONTHLY" ? "mensal" : "anual"
 
   return (
     <div className="flex flex-col h-full">
@@ -119,24 +162,68 @@ export default function AssinaturaPage() {
         </div>
 
         {/* Current plan badge */}
-        <div className="mb-7 flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-xl px-5 py-4">
-          <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center">
-            <Crown size={18} className="text-purple-600" />
+        <div className="mb-5 flex items-center justify-between gap-3 bg-purple-50 border border-purple-200 rounded-xl px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
+              <Crown size={18} className="text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-purple-900">
+                Você está no plano <span className="font-bold">{planLabel(currentPlan)}</span>
+                {currentPlan === "PREMIUM" && " ✨"}
+              </p>
+              <p className="text-xs text-purple-600 mt-0.5">
+                {hasActiveSub
+                  ? `Assinatura ${cycleLabel} · ${subscription?.currentPeriodEnd ? `próxima renovação em ${fmtDate(subscription.currentPeriodEnd)}` : "ativa"}`
+                  : currentPlan === "PREMIUM"
+                  ? "Você tem acesso a todos os recursos da plataforma"
+                  : currentPlan === "PRO"
+                  ? "Faça upgrade para Premium e desbloqueie tudo"
+                  : "Faça upgrade para desbloquear mais recursos"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-purple-900">
-              Você está no plano <span className="font-bold">{planLabel(currentPlan)}</span>
-              {currentPlan === "PREMIUM" && " ✨"}
-            </p>
-            <p className="text-xs text-purple-600 mt-0.5">
-              {currentPlan === "PREMIUM"
-                ? "Você tem acesso a todos os recursos da plataforma"
-                : currentPlan === "PRO"
-                ? "Faça upgrade para Premium e desbloqueie tudo"
-                : "Faça upgrade para desbloquear mais recursos"}
-            </p>
-          </div>
+
+          {/* Cancelar assinatura */}
+          {hasActiveSub && !cancelConfirm && (
+            <button
+              onClick={() => setCancelConfirm(true)}
+              className="text-xs text-red-500 hover:text-red-700 underline underline-offset-2 shrink-0"
+            >
+              Cancelar assinatura
+            </button>
+          )}
         </div>
+
+        {/* Confirm cancel */}
+        {cancelConfirm && (
+          <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-5 py-4">
+            <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-800">Cancelar assinatura?</p>
+              <p className="text-xs text-red-600 mt-0.5">
+                Seu plano voltará para Grátis imediatamente e você perderá acesso aos recursos pagos.
+              </p>
+              <div className="flex gap-3 mt-3">
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-lg disabled:opacity-60"
+                >
+                  {cancelling && <Loader2 size={12} className="animate-spin" />}
+                  Sim, cancelar
+                </button>
+                <button
+                  onClick={() => setCancelConfirm(false)}
+                  disabled={cancelling}
+                  className="text-xs text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
+                >
+                  Não, manter
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Billing toggle */}
         <div className="flex items-center justify-center mb-8">
@@ -338,7 +425,7 @@ export default function AssinaturaPage() {
               },
               {
                 q: "Posso cancelar quando quiser?",
-                a: "Sim! No plano mensal cancele a qualquer momento e mantenha o acesso até o fim do período. No anual, o acesso segue até o fim do ano contratado.",
+                a: "Sim! Cancele a qualquer momento direto nessa página. O plano volta para Grátis imediatamente.",
               },
               {
                 q: "Como funciona o plano grátis?",
