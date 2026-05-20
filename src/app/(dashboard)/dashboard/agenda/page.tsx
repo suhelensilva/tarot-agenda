@@ -41,6 +41,7 @@ export default function AgendaPage() {
   const [showForm, setShowForm] = useState(false)
   const [selected, setSelected] = useState<Appointment | null>(null)
   const [saving, setSaving] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
   const [cancellationReason, setCancellationReason] = useState("")
 
   const [form, setForm] = useState({
@@ -148,13 +149,20 @@ export default function AgendaPage() {
   }
 
   async function updateStatus(id: string, status: Appointment["status"], extra?: { cancellationReason?: string; amountPaid?: number }) {
-    await fetch(`/api/agendamentos/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, ...extra }),
-    })
-    setSelected(null)
-    fetchAppointments()
+    if (updatingStatus) return
+    setUpdatingStatus(true)
+    try {
+      await fetch(`/api/agendamentos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, ...extra }),
+      })
+      setSelected(null)
+      setCancellationReason("")
+      await fetchAppointments()
+    } finally {
+      setUpdatingStatus(false)
+    }
   }
 
   async function handleDelete(id: string) {
@@ -334,7 +342,8 @@ export default function AgendaPage() {
               {selected.status !== "CONFIRMED" && (
                 <button
                   onClick={() => updateStatus(selected.id, "CONFIRMED")}
-                  className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors"
+                  disabled={updatingStatus}
+                  className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CheckCircle size={15} /> Confirmado
                 </button>
@@ -342,14 +351,16 @@ export default function AgendaPage() {
 
               <button
                 onClick={() => updateStatus(selected.id, "COMPLETED")}
-                className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-green-200 text-green-700 hover:bg-green-50 transition-colors"
+                disabled={updatingStatus}
+                className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <CheckCircle size={15} /> Realizado
+                <CheckCircle size={15} /> {updatingStatus ? "Salvando..." : "Realizado"}
               </button>
 
               <button
                 onClick={() => updateStatus(selected.id, "NO_SHOW")}
-                className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-red-200 text-red-700 hover:bg-red-50 transition-colors"
+                disabled={updatingStatus}
+                className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-red-200 text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <XCircle size={15} /> Faltou
               </button>
@@ -363,7 +374,8 @@ export default function AgendaPage() {
                 />
                 <button
                   onClick={() => updateStatus(selected.id, "CANCELLED", { cancellationReason: cancellationReason || undefined })}
-                  className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                  disabled={updatingStatus}
+                  className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <AlertCircle size={15} /> Cancelado
                 </button>
