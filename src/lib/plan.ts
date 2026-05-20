@@ -9,15 +9,17 @@ export const PLAN_LIMITS = {
     importExport: false,
     categories: false,
     servicePhotos: false,
+    marcaRelatorio: false,
   },
   PRO: {
     clients: 80,
-    services: -1, // unlimited
+    services: -1,
     fichas: true,
     relatorios: true,
     importExport: true,
     categories: true,
     servicePhotos: true,
+    marcaRelatorio: false,
   },
   PREMIUM: {
     clients: -1,
@@ -27,6 +29,7 @@ export const PLAN_LIMITS = {
     importExport: true,
     categories: true,
     servicePhotos: true,
+    marcaRelatorio: true,
   },
 } as const
 
