@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getPlanLimits } from "@/lib/plan"
 import { z } from "zod"
 
 const involvedPersonSchema = z.object({
@@ -64,6 +65,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+
+  const limits = getPlanLimits(session.user.plan)
+  if (!limits.fichas) {
+    return NextResponse.json(
+      { error: "Fichas e relatórios disponíveis a partir do plano Pró.", code: "PLAN_LIMIT" },
+      { status: 403 }
+    )
+  }
 
   try {
     const body = await req.json()

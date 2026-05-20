@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import {
   Search, Plus, ChevronRight, X, User, Edit2, Trash2,
   Upload, Download, CheckCircle, AlertCircle,
 } from "lucide-react"
 import { formatPhone, formatDate } from "@/lib/utils"
+import { getPlanLimits } from "@/lib/plan"
+import { PlanLimitBanner } from "@/components/plan-gate"
 
 type Client = {
   id: string
@@ -33,6 +36,8 @@ type ImportResult = { created: number; skipped: number } | null
 
 export default function ClientesPage() {
   const router = useRouter()
+  const { data: session } = useSession()
+  const limits = getPlanLimits(session?.user?.plan)
 
   const [clients, setClients] = useState<Client[]>([])
   const [search, setSearch] = useState("")
@@ -146,7 +151,7 @@ export default function ClientesPage() {
       <div className="flex-1 p-8 overflow-y-auto">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
             <p className="text-gray-500 text-sm mt-0.5">{clients.length} cadastrado{clients.length !== 1 ? "s" : ""}</p>
@@ -160,31 +165,39 @@ export default function ClientesPage() {
               className="hidden"
               onChange={handleImportFile}
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={importing}
-              className="flex items-center gap-2 border border-gray-200 hover:border-purple-300 text-gray-600 hover:text-purple-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              title="Importar CSV"
-            >
-              <Upload size={15} />
-              {importing ? "Importando..." : "Importar"}
-            </button>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 border border-gray-200 hover:border-purple-300 text-gray-600 hover:text-purple-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-              title="Exportar CSV"
-            >
-              <Download size={15} />
-              Exportar
-            </button>
+            {limits.importExport ? (
+              <>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={importing}
+                  className="flex items-center gap-2 border border-gray-200 hover:border-purple-300 text-gray-600 hover:text-purple-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  title="Importar CSV"
+                >
+                  <Upload size={15} />
+                  {importing ? "Importando..." : "Importar"}
+                </button>
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 border border-gray-200 hover:border-purple-300 text-gray-600 hover:text-purple-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                  title="Exportar CSV"
+                >
+                  <Download size={15} />
+                  Exportar
+                </button>
+              </>
+            ) : null}
             <button
               onClick={openNew}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              disabled={limits.clients !== -1 && clients.length >= limits.clients}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={16} /> Novo cliente
             </button>
           </div>
         </div>
+
+        {/* Limite de plano */}
+        <PlanLimitBanner current={clients.length} limit={limits.clients} entity="clientes" />
 
         {/* Import result toast */}
         {importResult && (

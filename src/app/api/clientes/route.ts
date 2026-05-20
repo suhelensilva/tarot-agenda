@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getPlanLimits } from "@/lib/plan"
 import { z } from "zod"
 
 const schema = z.object({
@@ -42,6 +43,17 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
 
   try {
+    const limits = getPlanLimits(session.user.plan)
+    if (limits.clients !== -1) {
+      const count = await prisma.client.count({ where: { userId: session.user.id } })
+      if (count >= limits.clients) {
+        return NextResponse.json(
+          { error: `Limite de ${limits.clients} clientes atingido. Faça upgrade do plano para adicionar mais.`, code: "PLAN_LIMIT" },
+          { status: 403 }
+        )
+      }
+    }
+
     const body = await req.json()
     const data = schema.parse(body)
 

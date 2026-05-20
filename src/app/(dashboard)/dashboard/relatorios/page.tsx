@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { TrendingUp, Users, XCircle, BarChart2 } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import { PlanGate } from "@/components/plan-gate"
 
 type MonthData = { label: string; revenue: number; count: number }
 type ClientStat = { id: string; name: string; totalSessions: number; totalRevenue: number }
@@ -37,7 +38,11 @@ export default function RelatoriosPage() {
     fetch("/api/relatorios").then((r) => r.json()).then(setData)
   }, [])
 
-  if (!data) return <div className="p-8 text-gray-400">Carregando...</div>
+  if (!data) return (
+    <PlanGate feature="relatorios" message="Relatórios e métricas estão disponíveis a partir do plano Pró.">
+      <div className="p-8 text-gray-400">Carregando...</div>
+    </PlanGate>
+  )
 
   const maxRevenue = Math.max(...data.monthlyRevenue.map((m) => m.revenue), 1)
   const totalRevenue = data.monthlyRevenue.reduce((s, m) => s + m.revenue, 0)
@@ -45,6 +50,7 @@ export default function RelatoriosPage() {
   const totalNoShow = data.statusCounts.find((s) => s.status === "NO_SHOW")?._count ?? 0
 
   return (
+    <PlanGate feature="relatorios" message="Relatórios e métricas estão disponíveis a partir do plano Pró.">
     <div className="p-8 space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
 
@@ -166,5 +172,6 @@ export default function RelatoriosPage() {
         )}
       </div>
     </div>
+    </PlanGate>
   )
 }

@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getPlanLimits } from "@/lib/plan"
 
 export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+
+  const limits = getPlanLimits(session.user.plan)
+  if (!limits.importExport) {
+    return NextResponse.json(
+      { error: "Exportação de contatos disponível a partir do plano Pró.", code: "PLAN_LIMIT" },
+      { status: 403 }
+    )
+  }
 
   const clients = await prisma.client.findMany({
     where: { userId: session.user.id },

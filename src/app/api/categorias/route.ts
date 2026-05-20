@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getPlanLimits } from "@/lib/plan"
 
 export async function GET() {
   const session = await auth()
@@ -17,6 +18,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+
+  const limits = getPlanLimits(session.user.plan)
+  if (!limits.categories) {
+    return NextResponse.json(
+      { error: "Categorias de serviço disponíveis a partir do plano Pró.", code: "PLAN_LIMIT" },
+      { status: 403 }
+    )
+  }
 
   const { name } = await req.json()
   if (!name?.trim()) return NextResponse.json({ error: "Nome obrigatório" }, { status: 400 })

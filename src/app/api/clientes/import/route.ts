@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getPlanLimits } from "@/lib/plan"
 
 // Parse a CSV line respecting quoted fields
 function parseCsvLine(line: string): string[] {
@@ -30,6 +31,14 @@ function parseCsvLine(line: string): string[] {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+
+  const limits = getPlanLimits(session.user.plan)
+  if (!limits.importExport) {
+    return NextResponse.json(
+      { error: "Importação de contatos disponível a partir do plano Pró.", code: "PLAN_LIMIT" },
+      { status: 403 }
+    )
+  }
 
   try {
     const formData = await req.formData()

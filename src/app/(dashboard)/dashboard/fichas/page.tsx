@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import FichasTab from "@/components/fichas-tab"
+import { PlanGate } from "@/components/plan-gate"
 
 type Client = { id: string; name: string; birthDate: string | null }
 
@@ -21,12 +22,14 @@ export default function FichasPage() {
   }, [])
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <FichasTab
-        clients={clients}
-        defaultClientId={defaultClientId}
-        defaultClientName={defaultClientName}
-      />
-    </div>
+    <PlanGate feature="fichas" message="Fichas de atendimento estão disponíveis a partir do plano Pró.">
+      <div className="flex flex-col h-full overflow-hidden">
+        <FichasTab
+          clients={clients}
+          defaultClientId={defaultClientId}
+          defaultClientName={defaultClientName}
+        />
+      </div>
+    </PlanGate>
   )
 }

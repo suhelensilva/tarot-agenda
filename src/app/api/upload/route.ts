@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { createClient } from "@supabase/supabase-js"
+import { getPlanLimits } from "@/lib/plan"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -20,6 +21,17 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     const file = formData.get("file") as File
     const folder = (formData.get("folder") as string) || "uploads"
+
+    // Fotos de serviço só para PRO+
+    if (folder === "servicos") {
+      const limits = getPlanLimits(session.user.plan)
+      if (!limits.servicePhotos) {
+        return NextResponse.json(
+          { error: "Fotos nos serviços disponíveis a partir do plano Pró.", code: "PLAN_LIMIT" },
+          { status: 403 }
+        )
+      }
+    }
 
     if (!file) return NextResponse.json({ error: "Arquivo obrigatório" }, { status: 400 })
 
