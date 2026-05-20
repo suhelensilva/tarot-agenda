@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { getMPClient, Payment, PreApproval, PLAN_PRICES, PLAN_NAMES } from "@/lib/mercadopago"
+import { getMPClient, PreApproval, PLAN_PRICES, PLAN_NAMES } from "@/lib/mercadopago"
 import { z } from "zod"
 
 const schema = z.object({
@@ -36,7 +35,6 @@ export async function POST(req: NextRequest) {
             currency_id: "BRL",
           },
           back_url: `${baseUrl}/dashboard/assinatura?status=success&plan=${plan}&cycle=monthly`,
-          payer_email: session.user.email ?? undefined,
           external_reference: `${session.user.id}|${plan}|MONTHLY`,
         },
       })
@@ -46,7 +44,6 @@ export async function POST(req: NextRequest) {
 
     // ── ANUAL: pagamento único ────────────────────────────────────────────────
     const amount = PLAN_PRICES[plan].ANNUAL
-    const payment = new Payment(client)
 
     // Para anual retornamos um preference (Checkout Pro) que aceita Pix e cartão
     const { Preference } = await import("mercadopago")
@@ -75,7 +72,6 @@ export async function POST(req: NextRequest) {
         auto_return: "approved",
         external_reference: `${session.user.id}|${plan}|ANNUAL`,
         notification_url: `${baseUrl}/api/pagamentos/webhook`,
-        payer: session.user.email ? { email: session.user.email } : undefined,
       },
     })
 
