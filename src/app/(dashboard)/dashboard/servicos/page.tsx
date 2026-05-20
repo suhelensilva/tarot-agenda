@@ -408,7 +408,7 @@ export default function ServicosPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Foto do serviço</label>
                 <div
                   onClick={() => fileRef.current?.click()}
-                  className="w-full h-32 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition-colors overflow-hidden relative"
+                  className="w-full h-48 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition-colors overflow-hidden relative"
                 >
                   {form.imageUrl ? (
                     <>
@@ -613,7 +613,7 @@ function ServiceCard({ service: s, onEdit, onDeactivate }: {
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       {s.imageUrl && (
-        <div className="w-full h-32 overflow-hidden">
+        <div className="w-full h-44 overflow-hidden">
           <img src={s.imageUrl} alt={s.name} className="w-full h-full object-cover" />
         </div>
       )}
