@@ -79,7 +79,8 @@ export async function POST(req: NextRequest) {
     const checkoutUrl = prefResult.init_point ?? (prefResult as unknown as Record<string, unknown>).sandbox_init_point as string | undefined
     return NextResponse.json({ checkoutUrl })
   } catch (err) {
-    console.error("[pagamentos/assinar]", err)
-    return NextResponse.json({ error: "Erro ao criar pagamento" }, { status: 500 })
+    console.error("[pagamentos/assinar]", JSON.stringify(err, null, 2))
+    const msg = err instanceof Error ? err.message : JSON.stringify(err)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

@@ -96,7 +96,7 @@ export default function AssinaturaPage() {
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl
       } else {
-        alert("Erro ao iniciar pagamento. Tente novamente.")
+        alert(`Erro: ${data.error ?? "Sem checkoutUrl na resposta"}`)
       }
     } catch {
       alert("Erro ao conectar com o servidor.")
