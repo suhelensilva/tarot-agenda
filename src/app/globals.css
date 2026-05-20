@@ -3,9 +3,10 @@
 /* Dark mode via classe — next-themes adiciona .dark no <html> */
 @variant dark (&:is(.dark *));
 
+/* ─── Variáveis ──────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3f0ff;
+  --foreground: #1c1735;
 }
 
 .dark {
@@ -17,58 +18,89 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-geist);
   --font-mono: var(--font-geist-mono);
 }
 
+/* ─── Body ───────────────────────────────────────────────────────────────── */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Scrollbar dark */
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE — design system completo
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1 · Fundo da página — lavanda muito suave */
+html:not(.dark) body,
+html:not(.dark) main {
+  background-color: #f3f0ff;
+}
+
+/* 2 · Cards flutuam sobre o fundo com sombra roxa suave */
+html:not(.dark) div.bg-white.rounded-xl,
+html:not(.dark) div.bg-white.rounded-2xl {
+  box-shadow: 0 2px 16px rgba(124, 58, 237, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* 3 · Modais — sombra mais forte */
+html:not(.dark) div.bg-white.rounded-2xl.shadow-xl,
+html:not(.dark) div.bg-white.rounded-2xl.shadow-lg {
+  box-shadow: 0 8px 40px rgba(124, 58, 237, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 4 · Bordas — tom roxo suavíssimo */
+html:not(.dark) .border-gray-200 {
+  border-color: rgba(124, 58, 237, 0.14) !important;
+}
+html:not(.dark) .border-gray-100 {
+  border-color: rgba(124, 58, 237, 0.08) !important;
+}
+
+/* 5 · Fundos cinza viram lavanda suave */
+html:not(.dark) .bg-gray-50 {
+  background-color: rgba(243, 240, 255, 0.85) !important;
+}
+html:not(.dark) .bg-gray-100 {
+  background-color: rgba(237, 233, 254, 0.65) !important;
+}
+
+/* 6 · Tipografia — levemente roxo-escuro */
+html:not(.dark) .text-gray-900 { color: #1c1735; }
+html:not(.dark) .text-gray-800 { color: #2d2150; }
+html:not(.dark) .text-gray-700 { color: #3d3060; }
+html:not(.dark) .text-gray-600 { color: #5a4880; }
+html:not(.dark) .text-gray-500 { color: #7c6a9f; }
+html:not(.dark) .text-gray-400 { color: #a99cc5; }
+
+/* 7 · Hover cinza → lavanda */
+html:not(.dark) .hover\:bg-gray-50:hover {
+  background-color: rgba(243, 240, 255, 0.9) !important;
+}
+html:not(.dark) .hover\:bg-gray-100:hover {
+  background-color: rgba(237, 233, 254, 0.7) !important;
+}
+
+/* 8 · Divisórias */
+html:not(.dark) .divide-gray-100 > * + * {
+  border-color: rgba(124, 58, 237, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .dark ::-webkit-scrollbar { width: 6px; }
 .dark ::-webkit-scrollbar-track { background: #0f0f1a; }
 .dark ::-webkit-scrollbar-thumb { background: #aa55f920; border-radius: 3px; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #aa55f950; }
 
-@layer base {
-  input, textarea, select { color: #111827; }
-  .dark input, .dark textarea, .dark select { color: #e2e8f0; }
-  input::placeholder, textarea::placeholder { color: #9ca3af; }
-  .dark input::placeholder, .dark textarea::placeholder { color: #4b5563; }
-}
-
-/* Autofill claro */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #111827;
-  -webkit-box-shadow: 0 0 0px 1000px white inset;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-/* Autofill escuro */
-.dark input:-webkit-autofill,
-.dark input:-webkit-autofill:hover,
-.dark input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #e2e8f0;
-  -webkit-box-shadow: 0 0 0px 1000px #13131f inset;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-/* Auth pages */
-.text-white:-webkit-autofill,
-.text-white:-webkit-autofill:hover,
-.text-white:-webkit-autofill:focus {
-  -webkit-text-fill-color: white !important;
-  -webkit-box-shadow: 0 0 0px 1000px rgba(88, 28, 135, 0.8) inset !important;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-/* Glow neon nos cards dark — adiciona brilho embaixo automaticamente */
+/* Glow neon nos cards dark */
 .dark .neon-card {
   background: #13131f;
   border: 1px solid rgba(170, 85, 249, 0.15);
@@ -94,7 +126,40 @@ input:-webkit-autofill:focus {
   transition: all 0.2s ease;
 }
 
-/* Cards padrão do dashboard com glow automático */
-.dark [class*="bg-\\[\\#13131f\\]"] {
-  position: relative;
+/* ═══════════════════════════════════════════════════════════════════════════
+   INPUTS / FORMULÁRIOS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  input, textarea, select { color: #1c1735; }
+  .dark input, .dark textarea, .dark select { color: #e2e8f0; }
+  input::placeholder, textarea::placeholder { color: #9ca3af; }
+  .dark input::placeholder, .dark textarea::placeholder { color: #4b5563; }
+}
+
+/* Autofill claro */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #1c1735;
+  -webkit-box-shadow: 0 0 0px 1000px #f8f6ff inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Autofill escuro */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #e2e8f0;
+  -webkit-box-shadow: 0 0 0px 1000px #13131f inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Auth pages */
+.text-white:-webkit-autofill,
+.text-white:-webkit-autofill:hover,
+.text-white:-webkit-autofill:focus {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(88, 28, 135, 0.8) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
