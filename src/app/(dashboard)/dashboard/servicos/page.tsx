@@ -82,6 +82,12 @@ export default function ServicosPage() {
     const [sData, cData] = await Promise.all([sRes.json(), cRes.json()])
     setServices(Array.isArray(sData) ? sData : [])
     setCategories(Array.isArray(cData) ? cData : [])
+    // Começa tudo fechado
+    if (Array.isArray(cData)) {
+      const initial: Record<string, boolean> = { uncategorized: true }
+      cData.forEach((c: { id: string }) => { initial[c.id] = true })
+      setCollapsed(initial)
+    }
     setLoading(false)
   }, [])
 
@@ -279,11 +285,14 @@ export default function ServicosPage() {
       {categories.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
           {categories.map((c) => (
-            <div key={c.id} className="flex items-center gap-1.5 bg-purple-50 border border-purple-100 rounded-lg px-3 py-1.5">
-              <span className="text-sm text-purple-700 font-medium">{c.name}</span>
-              <span className="text-xs text-purple-400">{c.services.length}</span>
-              <button onClick={() => openEditCat(c)} className="text-purple-400 hover:text-purple-600 ml-1"><Pencil size={11} /></button>
-              <button onClick={() => handleDeleteCat(c)} className="text-purple-300 hover:text-red-500"><Trash2 size={11} /></button>
+            <div key={c.id} className="group flex items-center gap-2 bg-white border border-purple-200 hover:border-purple-400 rounded-full px-4 py-1.5 shadow-sm transition-all">
+              <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
+              <span className="text-sm text-purple-800 font-medium">{c.name}</span>
+              <span className="text-xs bg-purple-100 text-purple-500 font-semibold px-1.5 py-0.5 rounded-full">{c.services.length}</span>
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                <button onClick={() => openEditCat(c)} className="p-1 text-purple-400 hover:text-purple-600 rounded-full hover:bg-purple-50 transition-colors"><Pencil size={11} /></button>
+                <button onClick={() => handleDeleteCat(c)} className="p-1 text-purple-300 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"><Trash2 size={11} /></button>
+              </div>
             </div>
           ))}
         </div>
