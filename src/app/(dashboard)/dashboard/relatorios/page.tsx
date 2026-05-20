@@ -94,7 +94,7 @@ export default function RelatoriosPage() {
             {data.monthlyRevenue.map((m) => (
               <div key={m.label} className="flex items-center gap-3">
                 <span className="text-sm text-gray-500 dark:text-gray-400 w-24 shrink-0">{m.label}</span>
-                <div className="flex-1 bg-gray-100 rounded-full h-2">
+                <div className="flex-1 bg-gray-100 dark:bg-[rgba(255,255,255,0.07)] rounded-full h-2">
                   <div
                     className="bg-purple-500 h-2 rounded-full transition-all"
                     style={{ width: `${(m.revenue / maxRevenue) * 100}%` }}
@@ -131,8 +131,8 @@ export default function RelatoriosPage() {
               <div className="space-y-2">
                 {data.cancelReasons.map((r, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 truncate">{r.cancellationReason ?? "Sem motivo"}</span>
-                    <span className="font-semibold text-gray-900 ml-2 shrink-0">{r._count}x</span>
+                    <span className="text-gray-600 dark:text-gray-300 truncate">{r.cancellationReason ?? "Sem motivo"}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white ml-2 shrink-0">{r._count}x</span>
                   </div>
                 ))}
               </div>
@@ -144,26 +144,26 @@ export default function RelatoriosPage() {
         <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <Users size={18} className="text-gray-400" />
-            <h2 className="font-semibold text-gray-900">Clientes — histórico</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white">Clientes — histórico</h2>
           </div>
           {data.clientStats.length === 0 ? (
-            <p className="text-gray-400 text-sm">Nenhum dado ainda</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm">Nenhum dado ainda</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left py-2 text-gray-400 font-medium">Cliente</th>
-                    <th className="text-right py-2 text-gray-400 font-medium">Sessões</th>
-                    <th className="text-right py-2 text-gray-400 font-medium">Total investido</th>
+                  <tr className="border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
+                    <th className="text-left py-2 text-gray-400 dark:text-gray-500 font-medium">Cliente</th>
+                    <th className="text-right py-2 text-gray-400 dark:text-gray-500 font-medium">Sessões</th>
+                    <th className="text-right py-2 text-gray-400 dark:text-gray-500 font-medium">Total investido</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.clientStats.map((c) => (
-                    <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-2.5 font-medium text-gray-900">{c.name}</td>
-                      <td className="py-2.5 text-right text-gray-600">{c.totalSessions}</td>
-                      <td className="py-2.5 text-right font-semibold text-gray-900">{formatCurrency(c.totalRevenue)}</td>
+                    <tr key={c.id} className="border-b border-gray-50 dark:border-[rgba(255,255,255,0.04)] hover:bg-gray-50 dark:hover:bg-[rgba(170,85,249,0.05)]">
+                      <td className="py-2.5 font-medium text-gray-900 dark:text-white">{c.name}</td>
+                      <td className="py-2.5 text-right text-gray-600 dark:text-gray-300">{c.totalSessions}</td>
+                      <td className="py-2.5 text-right font-semibold text-gray-900 dark:text-white">{formatCurrency(c.totalRevenue)}</td>
                     </tr>
                   ))}
                 </tbody>
