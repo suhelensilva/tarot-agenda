@@ -117,7 +117,7 @@ export default function AgendaPage() {
     setEditingId(null)
     setSelected(null)
     setShowNewClient(false)
-    setNewClient({ name: "", phone: "", email: "" })
+    setNewClient({ name: "", phone: "", email: "", birthDate: "" })
     setNewClientError(null)
     setShowForm(true)
   }
@@ -141,7 +141,7 @@ export default function AgendaPage() {
     })
     setEditingId(apt.id)
     setShowNewClient(false)
-    setNewClient({ name: "", phone: "", email: "" })
+    setNewClient({ name: "", phone: "", email: "", birthDate: "" })
     setNewClientError(null)
     setShowForm(true)
   }
@@ -150,16 +150,19 @@ export default function AgendaPage() {
     setForm((f) => ({ ...f, clientId }))
   }
 
+  function calcEndHour(startHour: string, duration: number): string {
+    const [h, m] = startHour.split(":").map(Number)
+    const end = new Date(0, 0, 0, h, m + duration)
+    return `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
+  }
+
   function onServiceChange(serviceId: string) {
     const service = services.find((s) => s.id === serviceId)
     if (service) {
-      const [h, m] = form.startHour.split(":").map(Number)
-      const end = new Date(0, 0, 0, h, m + service.duration)
-      const endHour = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
       setForm((f) => ({
         ...f,
         serviceId,
-        endHour,
+        endHour: service.duration > 0 ? calcEndHour(f.startHour, service.duration) : f.endHour,
         title: `Agendamento ${service.name}`,
         amountPaid: service.price > 0 ? String(service.price) : "",
       }))
@@ -185,6 +188,8 @@ export default function AgendaPage() {
       meetingLink: form.meetingLink || null,
       amountPaid: form.amountPaid !== "" ? parseFloat(form.amountPaid) : null,
     }
+
+    console.log("[agenda] handleSave payload:", JSON.stringify(payload))
 
     try {
       const res = editingId
@@ -646,15 +651,13 @@ export default function AgendaPage() {
                     value={form.startHour}
                     onChange={(e) => {
                       const startHour = e.target.value
-                      const service = services.find((s) => s.id === form.serviceId)
-                      if (service && service.duration > 0) {
-                        const [h, m] = startHour.split(":").map(Number)
-                        const end = new Date(0, 0, 0, h, m + service.duration)
-                        const endHour = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
-                        setForm((f) => ({ ...f, startHour, endHour }))
-                      } else {
-                        setForm((f) => ({ ...f, startHour }))
-                      }
+                      setForm((f) => {
+                        const service = services.find((s) => s.id === f.serviceId)
+                        const endHour = service && service.duration > 0
+                          ? calcEndHour(startHour, service.duration)
+                          : f.endHour
+                        return { ...f, startHour, endHour }
+                      })
                     }}
                     className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   />

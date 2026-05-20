@@ -28,17 +28,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   try {
     const body = await req.json()
-    const data = statusSchema.parse(body)
+    const parsed = statusSchema.safeParse(body)
+    if (!parsed.success) {
+      const fields = parsed.error.issues.map((e) => `${e.path.map(String).join(".")}: ${e.message}`).join(", ")
+      console.error("[agendamentos PATCH] validação falhou:", fields)
+      return NextResponse.json({ error: `Campos inválidos: ${fields}` }, { status: 400 })
+    }
 
     await prisma.appointment.updateMany({
       where: { id, userId: session.user.id },
-      data,
+      data: parsed.data,
     })
 
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error("[agendamentos PATCH]", err)
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    const msg = err instanceof Error ? err.message : "Erro interno"
+    return NextResponse.json({ error: msg }, { status: 400 })
   }
 }
 
@@ -50,7 +56,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   try {
     const body = await req.json()
-    const data = editSchema.parse(body)
+    console.log("[agendamentos PUT] body recebido:", JSON.stringify(body))
+
+    const parsed = editSchema.safeParse(body)
+    if (!parsed.success) {
+      const fields = parsed.error.issues.map((e) => `${e.path.map(String).join(".")}: ${e.message}`).join(", ")
+      console.error("[agendamentos PUT] validação falhou:", fields)
+      return NextResponse.json({ error: `Campos inválidos: ${fields}` }, { status: 400 })
+    }
+    const data = parsed.data
 
     await prisma.appointment.updateMany({
       where: { id, userId: session.user.id },
@@ -69,7 +83,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error("[agendamentos PUT]", err)
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    const msg = err instanceof Error ? err.message : "Erro interno"
+    return NextResponse.json({ error: msg }, { status: 400 })
   }
 }
 

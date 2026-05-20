@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = schema.safeParse(body)
     if (!parsed.success) {
-      const fields = parsed.error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", ")
+      const fields = parsed.error.issues.map((e) => `${e.path.map(String).join(".")}: ${e.message}`).join(", ")
       console.error("[agendamentos POST] validação falhou:", fields)
       return NextResponse.json({ error: `Campos inválidos: ${fields}` }, { status: 400 })
     }
