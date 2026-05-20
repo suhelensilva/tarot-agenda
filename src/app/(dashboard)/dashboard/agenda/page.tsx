@@ -103,9 +103,16 @@ export default function AgendaPage() {
   function prevMonth() { setCurrentDate(new Date(year, month - 1, 1)) }
   function nextMonth() { setCurrentDate(new Date(year, month + 1, 1)) }
 
+  function toLocalDateStr(d: Date) {
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, "0")
+    const dd = String(d.getDate()).padStart(2, "0")
+    return `${yyyy}-${mm}-${dd}`
+  }
+
   function openNew(day?: Date) {
     const d = day ?? selectedDay ?? today
-    const dateStr = d.toISOString().slice(0, 10)
+    const dateStr = toLocalDateStr(d)
     setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour: "09:00", endHour: "10:00", notes: "", meetingLink: "", amountPaid: "" })
     setEditingId(null)
     setSelected(null)
@@ -118,7 +125,7 @@ export default function AgendaPage() {
   function openEdit(apt: Appointment) {
     const start = new Date(apt.startTime)
     const end = new Date(apt.endTime)
-    const dateStr = start.toISOString().slice(0, 10)
+    const dateStr = toLocalDateStr(start)
     const startHour = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`
     const endHour = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
     setForm({
@@ -140,8 +147,7 @@ export default function AgendaPage() {
   }
 
   function onClientChange(clientId: string) {
-    const client = clients.find((c) => c.id === clientId)
-    setForm((f) => ({ ...f, clientId, title: client ? `Sessão — ${client.name}` : f.title }))
+    setForm((f) => ({ ...f, clientId }))
   }
 
   function onServiceChange(serviceId: string) {
@@ -150,9 +156,15 @@ export default function AgendaPage() {
       const [h, m] = form.startHour.split(":").map(Number)
       const end = new Date(0, 0, 0, h, m + service.duration)
       const endHour = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
-      setForm((f) => ({ ...f, serviceId, endHour, amountPaid: String(service.price) }))
+      setForm((f) => ({
+        ...f,
+        serviceId,
+        endHour,
+        title: `Agendamento ${service.name}`,
+        amountPaid: service.price > 0 ? String(service.price) : "",
+      }))
     } else {
-      setForm((f) => ({ ...f, serviceId }))
+      setForm((f) => ({ ...f, serviceId, title: "", amountPaid: "" }))
     }
   }
 
@@ -174,25 +186,36 @@ export default function AgendaPage() {
       amountPaid: form.amountPaid ? parseFloat(form.amountPaid) : null,
     }
 
-    if (editingId) {
-      await fetch(`/api/agendamentos/${editingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-    } else {
-      await fetch("/api/agendamentos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-    }
+    try {
+      const res = editingId
+        ? await fetch(`/api/agendamentos/${editingId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        : await fetch("/api/agendamentos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
 
-    setSaving(false)
-    setShowForm(false)
-    setEditingId(null)
-    setSelected(null)
-    fetchAppointments()
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error ?? "Erro ao salvar agendamento. Tente novamente.")
+        setSaving(false)
+        return
+      }
+
+      setShowForm(false)
+      setEditingId(null)
+      setSelected(null)
+      setSelectedDay(startTime)
+      await fetchAppointments()
+    } catch {
+      alert("Erro de conexão. Verifique sua internet e tente novamente.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function updateStatus(id: string, status: Appointment["status"], extra?: { cancellationReason?: string; amountPaid?: number }) {
