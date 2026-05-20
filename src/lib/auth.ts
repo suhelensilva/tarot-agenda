@@ -46,6 +46,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id
         token.plan = (user as { plan?: string }).plan
       }
+      // Sempre busca o plano atualizado do banco (captura upgrades sem precisar re-login)
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { plan: true },
+        })
+        if (dbUser) token.plan = dbUser.plan
+      }
       return token
     },
     async session({ session, token }) {
