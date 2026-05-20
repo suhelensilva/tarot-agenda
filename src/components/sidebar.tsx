@@ -41,11 +41,13 @@ export default function Sidebar({ user }: { user: { name?: string | null; email?
             <p className="font-bold text-gray-900 text-sm">Mística Agenda</p>
             <span className={cn(
               "text-xs font-medium px-2 py-0.5 rounded-full",
-              user?.plan === "PRO"
+              user?.plan === "PREMIUM"
+                ? "bg-yellow-100 text-yellow-700"
+                : user?.plan === "PRO"
                 ? "bg-purple-100 text-purple-700"
                 : "bg-gray-100 text-gray-500"
             )}>
-              {user?.plan === "PRO" ? "PRO" : "Grátis"}
+              {user?.plan === "PREMIUM" ? "Premium" : user?.plan === "PRO" ? "Pró" : "Grátis"}
             </span>
           </div>
         </div>

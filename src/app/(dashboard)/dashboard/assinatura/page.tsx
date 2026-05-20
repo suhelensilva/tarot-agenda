@@ -74,8 +74,8 @@ export default function AssinaturaPage() {
             <Crown size={18} className="text-purple-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-purple-900">Você está no plano <span className="font-bold">Grátis</span></p>
-            <p className="text-xs text-purple-600 mt-0.5">Faça upgrade para desbloquear todos os recursos</p>
+            <p className="text-sm font-semibold text-purple-900">Você está no plano <span className="font-bold">Premium</span> ✨</p>
+            <p className="text-xs text-purple-600 mt-0.5">Você tem acesso a todos os recursos da plataforma</p>
           </div>
         </div>
 

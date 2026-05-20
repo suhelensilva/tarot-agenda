@@ -212,6 +212,7 @@ model Availability {
 enum Plan {
   FREE
   PRO
+  PREMIUM
 }
 
 enum ServiceType {
