@@ -82,12 +82,6 @@ export default function ServicosPage() {
     const [sData, cData] = await Promise.all([sRes.json(), cRes.json()])
     setServices(Array.isArray(sData) ? sData : [])
     setCategories(Array.isArray(cData) ? cData : [])
-    // Começa tudo fechado
-    if (Array.isArray(cData)) {
-      const initial: Record<string, boolean> = { uncategorized: true }
-      cData.forEach((c: { id: string }) => { initial[c.id] = true })
-      setCollapsed(initial)
-    }
     setLoading(false)
   }, [])
 
@@ -237,7 +231,7 @@ export default function ServicosPage() {
   if (uncategorized.length > 0) grouped.push({ id: null, name: "Sem categoria", services: uncategorized })
 
   function toggleCollapse(key: string) {
-    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }))
+    setCollapsed((prev) => ({ ...prev, [key]: prev[key] === false ? true : false }))
   }
 
   return (
@@ -312,7 +306,7 @@ export default function ServicosPage() {
           {/* Active services grouped by category */}
           {grouped.map((group) => {
             const key = group.id ?? "uncategorized"
-            const isCollapsed = collapsed[key]
+            const isCollapsed = collapsed[key] !== false
             return (
               <div key={key}>
                 <button
