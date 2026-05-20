@@ -39,9 +39,11 @@ model User {
   messageTemplates MessageTemplate[]
   availability     Availability[]
   fichas           Ficha[]
+  subscription     Subscription?
 
   @@map("users")
 }
+
 
 model Account {
   id                String  @id @default(cuid())
@@ -285,4 +287,35 @@ model Ficha {
 enum FichaType {
   INTERNAL
   REPORT
+}
+
+model Subscription {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  plan            Plan
+  billingCycle    BillingCycle
+  status          SubscriptionStatus @default(PENDING)
+  mpSubscriptionId String?         // ID da assinatura recorrente no MP
+  mpPaymentId     String?          // ID do pagamento único (anual)
+  currentPeriodEnd DateTime?       // Quando expira o período atual
+  cancelledAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
 }

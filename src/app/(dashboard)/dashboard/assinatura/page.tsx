@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useSession } from "next-auth/react"
-import { Crown, Check, X, Sparkles, Zap, Lock, TrendingDown } from "lucide-react"
+import { Crown, Check, X, Sparkles, Zap, Lock, TrendingDown, Loader2 } from "lucide-react"
 import { planLabel } from "@/lib/plan"
 
 type PlanFeature = { text: string; included: boolean }
@@ -78,6 +78,32 @@ export default function AssinaturaPage() {
   const { data: session } = useSession()
   const currentPlan = session?.user?.plan ?? "FREE"
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
+  const [loading, setLoading] = useState<string | null>(null)
+
+  async function handleSubscribe(plan: "PRO" | "PREMIUM") {
+    setLoading(plan)
+    try {
+      const res = await fetch("/api/pagamentos/assinar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan,
+          cycle: billing === "monthly" ? "MONTHLY" : "ANNUAL",
+          paymentMethod: billing === "annual" ? "credit_card" : undefined,
+        }),
+      })
+      const data = await res.json()
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl
+      } else {
+        alert("Erro ao iniciar pagamento. Tente novamente.")
+      }
+    } catch {
+      alert("Erro ao conectar com o servidor.")
+    } finally {
+      setLoading(null)
+    }
+  }
 
   const proDiscount  = discount(PRICES.PRO.monthly, PRICES.PRO.annual)
   const premDiscount = discount(PRICES.PREMIUM.monthly, PRICES.PREMIUM.annual)
@@ -211,14 +237,26 @@ export default function AssinaturaPage() {
               )}
             </div>
             <FeatureList features={PRO_FEATURES} />
-            <button
-              disabled
-              className="w-full flex items-center justify-center gap-2 bg-purple-500 text-white rounded-lg py-2.5 text-sm font-semibold opacity-60 cursor-not-allowed"
-            >
-              <Zap size={15} /> Em breve
-            </button>
+            {currentPlan === "PRO" ? (
+              <div className="w-full rounded-lg border border-purple-200 bg-purple-50 text-purple-600 text-sm font-medium py-2.5 text-center">
+                ✓ Plano atual
+              </div>
+            ) : currentPlan === "PREMIUM" ? (
+              <div className="w-full rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-sm font-medium py-2.5 text-center cursor-default">
+                Você já tem o Premium
+              </div>
+            ) : (
+              <button
+                onClick={() => handleSubscribe("PRO")}
+                disabled={loading !== null}
+                className="w-full flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-400 text-white rounded-lg py-2.5 text-sm font-semibold transition-colors disabled:opacity-60"
+              >
+                {loading === "PRO" ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
+                {loading === "PRO" ? "Aguarde..." : "Assinar Pró"}
+              </button>
+            )}
             <p className="text-xs text-center text-gray-400 mt-2 flex items-center justify-center gap-1">
-              <Lock size={11} /> Pagamento seguro
+              <Lock size={11} /> Pagamento seguro via Mercado Pago
             </p>
           </div>
 
@@ -264,14 +302,22 @@ export default function AssinaturaPage() {
               )}
             </div>
             <FeatureList features={PREMIUM_FEATURES} />
-            <button
-              disabled
-              className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white rounded-lg py-2.5 text-sm font-semibold opacity-60 cursor-not-allowed"
-            >
-              <Zap size={15} /> Em breve
-            </button>
+            {currentPlan === "PREMIUM" ? (
+              <div className="w-full rounded-lg border border-purple-200 bg-purple-50 text-purple-600 text-sm font-medium py-2.5 text-center">
+                ✓ Plano atual
+              </div>
+            ) : (
+              <button
+                onClick={() => handleSubscribe("PREMIUM")}
+                disabled={loading !== null}
+                className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg py-2.5 text-sm font-semibold transition-colors disabled:opacity-60"
+              >
+                {loading === "PREMIUM" ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                {loading === "PREMIUM" ? "Aguarde..." : "Assinar Premium"}
+              </button>
+            )}
             <p className="text-xs text-center text-gray-400 mt-2 flex items-center justify-center gap-1">
-              <Lock size={11} /> Pagamento seguro
+              <Lock size={11} /> Pagamento seguro via Mercado Pago
             </p>
           </div>
 
