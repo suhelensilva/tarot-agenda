@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
+/* Dark mode via classe — next-themes adiciona .dark no <html> */
+@variant dark (&:is(.dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+.dark {
+  --background: #0f0f13;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -12,21 +20,13 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Garante texto escuro em campos de formulário — dentro de @layer base
-   para que as utilities do Tailwind (text-white, text-gray-900, etc.) sempre vençam */
 @layer base {
   input,
   textarea,
@@ -34,26 +34,46 @@ body {
     color: #111827;
   }
 
+  .dark input,
+  .dark textarea,
+  .dark select {
+    color: #f3f4f6;
+  }
+
   input::placeholder,
   textarea::placeholder {
     color: #9ca3af;
   }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #6b7280;
+  }
 }
 
-/* Autofill em inputs brancos (páginas auth com fundo roxo) */
-.text-white:-webkit-autofill,
-.text-white:-webkit-autofill:hover,
-.text-white:-webkit-autofill:focus {
-  -webkit-text-fill-color: white !important;
-  -webkit-box-shadow: 0 0 0px 1000px rgba(88, 28, 135, 0.8) inset !important;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-/* Autofill em inputs do dashboard (fundo branco) */
+/* Autofill — tema claro */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
   -webkit-text-fill-color: #111827;
   -webkit-box-shadow: 0 0 0px 1000px white inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Autofill — tema escuro */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f3f4f6;
+  -webkit-box-shadow: 0 0 0px 1000px #1f2937 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Autofill — páginas auth com fundo roxo */
+.text-white:-webkit-autofill,
+.text-white:-webkit-autofill:hover,
+.text-white:-webkit-autofill:focus {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(88, 28, 135, 0.8) inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
