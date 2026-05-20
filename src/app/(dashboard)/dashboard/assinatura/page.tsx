@@ -5,7 +5,7 @@ import { Crown, Check, X, Sparkles, Zap, Lock } from "lucide-react"
 type PlanFeature = { text: string; included: boolean }
 
 const FREE_FEATURES: PlanFeature[] = [
-  { text: "Até 80 clientes", included: true },
+  { text: "Até 30 clientes", included: true },
   { text: "Agendamentos ilimitados", included: true },
   { text: "Até 5 serviços", included: true },
   { text: "Link público de agendamento", included: true },
@@ -16,7 +16,7 @@ const FREE_FEATURES: PlanFeature[] = [
 ]
 
 const BASIC_FEATURES: PlanFeature[] = [
-  { text: "Clientes ilimitados", included: true },
+  { text: "Até 80 clientes", included: true },
   { text: "Agendamentos ilimitados", included: true },
   { text: "Serviços ilimitados", included: true },
   { text: "Link público de agendamento", included: true },
@@ -155,7 +155,7 @@ export default function AssinaturaPage() {
             {[
               {
                 q: "Como funciona o plano grátis?",
-                a: "Você usa o Mística Agenda gratuitamente com até 80 clientes e as funções essenciais de agendamento.",
+                a: "Você usa o Mística Agenda gratuitamente com até 30 clientes e as funções essenciais de agendamento.",
               },
               {
                 q: "Qual a diferença entre Pró e Premium?",
