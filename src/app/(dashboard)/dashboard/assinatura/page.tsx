@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
-import { Crown, Check, X, Sparkles, Zap, Lock, TrendingDown, Loader2, AlertTriangle } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { Crown, Check, X, Sparkles, Zap, Lock, TrendingDown, Loader2, AlertTriangle, PartyPopper } from "lucide-react"
 import { planLabel } from "@/lib/plan"
 
 type PlanFeature = { text: string; included: boolean }
@@ -89,12 +90,50 @@ type Subscription = {
 
 export default function AssinaturaPage() {
   const { data: session, update: updateSession } = useSession()
+  const searchParams = useSearchParams()
   const currentPlan = session?.user?.plan ?? "FREE"
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
   const [loading, setLoading] = useState<string | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [processingPayment, setProcessingPayment] = useState(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Detecta retorno do MP com status=success e fica polling até o plano atualizar
+  useEffect(() => {
+    const status = searchParams.get("status")
+    if (status !== "success") return
+
+    setProcessingPayment(true)
+
+    // Limpa URL sem recarregar
+    window.history.replaceState({}, "", "/dashboard/assinatura")
+
+    // Polling: verifica a cada 2s se o banco já atualizou
+    let attempts = 0
+    pollRef.current = setInterval(async () => {
+      attempts++
+      try {
+        const res = await fetch("/api/pagamentos/assinatura")
+        const data = await res.json()
+        if (data.subscription?.status === "ACTIVE") {
+          clearInterval(pollRef.current!)
+          await updateSession() // força atualização do JWT
+          setProcessingPayment(false)
+          setSubscription(data.subscription)
+        }
+      } catch { /* ignora */ }
+      // Desiste após 30 tentativas (~60s)
+      if (attempts >= 30) {
+        clearInterval(pollRef.current!)
+        setProcessingPayment(false)
+      }
+    }, 2000)
+
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     fetch("/api/pagamentos/assinatura")
@@ -160,6 +199,25 @@ export default function AssinaturaPage() {
           <h1 className="text-2xl font-bold text-gray-900">Assinatura</h1>
           <p className="text-gray-500 text-sm mt-0.5">Escolha o plano ideal para o seu negócio</p>
         </div>
+
+        {/* Banner processando pagamento */}
+        {processingPayment && (
+          <div className="mb-5 flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-xl px-5 py-4">
+            <Loader2 size={18} className="text-purple-500 animate-spin shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-purple-900">Confirmando seu pagamento…</p>
+              <p className="text-xs text-purple-600 mt-0.5">Aguarde alguns segundos, seus recursos serão liberados automaticamente.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Banner sucesso — plano já ativo */}
+        {!processingPayment && currentPlan !== "FREE" && searchParams.get("status") === null && subscription?.status === "ACTIVE" && (
+          <div className="mb-5 flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-4">
+            <PartyPopper size={18} className="text-green-600 shrink-0" />
+            <p className="text-sm font-semibold text-green-800">Plano {planLabel(currentPlan)} ativo! Aproveite todos os recursos. 🎉</p>
+          </div>
+        )}
 
         {/* Current plan badge */}
         <div className="mb-5 flex items-center justify-between gap-3 bg-purple-50 border border-purple-200 rounded-xl px-5 py-4">
