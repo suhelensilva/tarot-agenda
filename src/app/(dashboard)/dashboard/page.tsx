@@ -73,10 +73,10 @@ export default async function DashboardPage() {
   const hasBirthdays   = birthdaysToday.length + birthdaysWeek.length + birthdaysMonth.length > 0
 
   const stats = [
-    { label: "Clientes",             value: totalClients,                                    icon: Users,       color: "text-blue-500",   bg: "bg-blue-50   dark:bg-blue-500/10"   },
-    { label: "Atendimentos este mês", value: appointmentsThisMonth,                          icon: CalendarDays, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10" },
-    { label: "Faturamento do mês",   value: formatCurrency(revenue._sum.amountPaid ?? 0),   icon: TrendingUp,  color: "text-green-500",  bg: "bg-green-50  dark:bg-green-500/10"  },
-    { label: "Agendamentos hoje",    value: upcomingToday.length,                            icon: Clock,       color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10" },
+    { label: "Clientes",              value: totalClients,                                   icon: Users,        color: "text-blue-500",   bg: "bg-blue-50   dark:bg-blue-500/10",   glow: "rgba(59,130,246,0.5)"   },
+    { label: "Atendimentos este mês", value: appointmentsThisMonth,                          icon: CalendarDays, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10", glow: "rgba(170,85,249,0.55)"  },
+    { label: "Faturamento do mês",    value: formatCurrency(revenue._sum.amountPaid ?? 0),   icon: TrendingUp,   color: "text-green-500",  bg: "bg-green-50  dark:bg-green-500/10",  glow: "rgba(34,197,94,0.5)"    },
+    { label: "Agendamentos hoje",     value: upcomingToday.length,                           icon: Clock,        color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10", glow: "rgba(249,115,22,0.5)"   },
   ]
 
   return (
@@ -91,12 +91,21 @@ export default async function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white dark:bg-[#13131f] rounded-xl border border-gray-200 dark:border-[rgba(170,85,249,0.15)] p-6 dark:hover:border-[rgba(170,85,249,0.35)] transition-all">
-            <div className={`${stat.bg} ${stat.color} w-10 h-10 rounded-lg flex items-center justify-center mb-4`}>
+          <div key={stat.label} className="relative bg-white dark:bg-[#13131f] rounded-xl border border-gray-200 dark:border-[rgba(170,85,249,0.15)] p-6 dark:hover:border-[rgba(170,85,249,0.3)] transition-all overflow-hidden group">
+            {/* Glow neon embaixo — só no dark */}
+            <div
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-px opacity-0 dark:opacity-100 transition-all duration-300 group-hover:opacity-100 group-hover:h-0.5"
+              style={{ background: stat.glow, boxShadow: `0 0 12px 3px ${stat.glow}` }}
+            />
+            <div
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-16 opacity-0 dark:opacity-100 pointer-events-none"
+              style={{ background: `radial-gradient(ellipse at bottom, ${stat.glow} 0%, transparent 70%)` }}
+            />
+            <div className={`${stat.bg} ${stat.color} w-10 h-10 rounded-lg flex items-center justify-center mb-4 relative z-10`}>
               <stat.icon size={20} />
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{stat.label}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white relative z-10">{stat.value}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 relative z-10">{stat.label}</p>
           </div>
         ))}
       </div>
@@ -104,7 +113,9 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Agenda do dia */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#13131f] rounded-xl border border-gray-200 dark:border-[rgba(170,85,249,0.15)] p-6">
+        <div className="lg:col-span-2 relative bg-white dark:bg-[#13131f] rounded-xl border border-gray-200 dark:border-[rgba(170,85,249,0.15)] p-6 overflow-hidden">
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-20 opacity-0 dark:opacity-100 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse at bottom, rgba(170,85,249,0.18) 0%, transparent 70%)" }} />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Agenda de hoje</h2>
           {upcomingToday.length === 0 ? (
             <p className="text-gray-400 dark:text-gray-500 text-sm">Nenhum atendimento agendado para hoje</p>
@@ -133,7 +144,9 @@ export default async function DashboardPage() {
         </div>
 
         {/* Aniversariantes */}
-        <div className="bg-white dark:bg-[#13131f] rounded-xl border border-gray-200 dark:border-[rgba(170,85,249,0.15)] p-6">
+        <div className="relative bg-white dark:bg-[#13131f] rounded-xl border border-gray-200 dark:border-[rgba(170,85,249,0.15)] p-6 overflow-hidden">
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-20 opacity-0 dark:opacity-100 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse at bottom, rgba(236,72,153,0.18) 0%, transparent 70%)" }} />
           <div className="flex items-center gap-2 mb-4">
             <Cake size={18} className="text-pink-500" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Aniversariantes</h2>

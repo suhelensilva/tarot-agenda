@@ -68,15 +68,33 @@ input:-webkit-autofill:focus {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Glow neon nos cards dark */
+/* Glow neon nos cards dark — adiciona brilho embaixo automaticamente */
 .dark .neon-card {
   background: #13131f;
   border: 1px solid rgba(170, 85, 249, 0.15);
-  box-shadow: 0 0 0 1px rgba(170, 85, 249, 0.05), inset 0 1px 0 rgba(170, 85, 249, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .neon-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 1px;
+  background: rgba(170, 85, 249, 0.6);
+  box-shadow: 0 0 12px 4px rgba(170, 85, 249, 0.4);
+  border-radius: 50%;
 }
 
 .dark .neon-card:hover {
   border-color: rgba(170, 85, 249, 0.35);
-  box-shadow: 0 0 20px rgba(170, 85, 249, 0.08), 0 0 0 1px rgba(170, 85, 249, 0.15);
   transition: all 0.2s ease;
+}
+
+/* Cards padrão do dashboard com glow automático */
+.dark [class*="bg-\\[\\#13131f\\]"] {
+  position: relative;
 }
