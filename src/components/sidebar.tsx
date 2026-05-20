@@ -28,24 +28,25 @@ export default function Sidebar({ user }: {
 
   return (
     <aside className="
-      w-64 flex flex-col
+      w-64 flex flex-col relative z-10
       bg-white dark:bg-[#0f0f1a]
-      border-r border-[rgba(124,58,237,0.1)] dark:[border-right:1px_solid_rgba(170,85,249,0.12)]
-      shadow-[1px_0_20px_rgba(124,58,237,0.06)] dark:shadow-none
+      border-r border-[rgba(139,92,246,0.08)] dark:[border-right:1px_solid_rgba(170,85,249,0.12)]
     ">
       {/* Logo */}
-      <div className="p-6 border-b border-[rgba(124,58,237,0.08)] dark:border-[rgba(170,85,249,0.1)]">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🔮</span>
+      <div className="px-5 py-5 border-b border-[rgba(139,92,246,0.07)] dark:border-[rgba(170,85,249,0.1)]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-[0_2px_10px_rgba(139,92,246,0.4)] dark:shadow-[0_2px_10px_rgba(170,85,249,0.4)]">
+            <span className="text-base leading-none">🔮</span>
+          </div>
           <div>
-            <p className="font-bold text-gray-900 dark:text-white text-sm">Mística Agenda</p>
+            <p className="font-bold text-[#1e1b4b] dark:text-white text-sm tracking-tight">Mística Agenda</p>
             <span className={cn(
-              "text-xs font-medium px-2 py-0.5 rounded-full",
+              "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
               user?.plan === "PREMIUM"
-                ? "bg-yellow-100 dark:bg-[rgba(170,85,249,0.15)] text-yellow-700 dark:text-[#aa55f9]"
+                ? "bg-amber-100 text-amber-700 dark:bg-[rgba(170,85,249,0.15)] dark:text-[#aa55f9]"
                 : user?.plan === "PRO"
-                ? "bg-purple-100 dark:bg-[rgba(170,85,249,0.1)] text-purple-700 dark:text-[#aa55f9]"
-                : "bg-gray-100 dark:bg-[rgba(255,255,255,0.05)] text-gray-500 dark:text-gray-500"
+                ? "bg-violet-100 text-violet-700 dark:bg-[rgba(170,85,249,0.1)] dark:text-[#aa55f9]"
+                : "bg-slate-100 text-slate-500 dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-500"
             )}>
               {user?.plan === "PREMIUM" ? "✨ Premium" : user?.plan === "PRO" ? "Pró" : "Grátis"}
             </span>
@@ -54,7 +55,7 @@ export default function Sidebar({ user }: {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {nav.map(({ href, icon: Icon, label, exact }) => {
           const active = exact
             ? pathname === href
@@ -64,15 +65,15 @@ export default function Sidebar({ user }: {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
                 active
                   ? [
-                      "bg-purple-100/70 text-purple-700 [box-shadow:inset_0_0_0_1px_rgba(124,58,237,0.15)]",
+                      "bg-violet-100 text-violet-700",
                       "dark:text-[#aa55f9] dark:bg-[rgba(170,85,249,0.12)]",
                       "dark:[box-shadow:inset_0_0_0_1px_rgba(170,85,249,0.2)]",
                     ].join(" ")
                   : [
-                      "text-[#5a4880] hover:bg-purple-50/60 hover:text-[#3d3060]",
+                      "text-slate-500 hover:bg-violet-50 hover:text-violet-700",
                       "dark:text-gray-400 dark:hover:bg-[rgba(170,85,249,0.06)] dark:hover:text-white",
                     ].join(" ")
               )}
@@ -80,12 +81,12 @@ export default function Sidebar({ user }: {
               <Icon
                 size={17}
                 className={active
-                  ? "[filter:drop-shadow(0_0_4px_rgba(124,58,237,0.5))] dark:[filter:drop-shadow(0_0_6px_rgba(170,85,249,0.8))]"
-                  : ""}
+                  ? "text-violet-600 dark:text-[#aa55f9] dark:[filter:drop-shadow(0_0_6px_rgba(170,85,249,0.8))]"
+                  : "text-slate-400 dark:text-gray-500"}
               />
               {label}
               {active && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-[#aa55f9] [box-shadow:0_0_5px_rgba(124,58,237,0.4)] dark:[box-shadow:0_0_6px_rgba(170,85,249,0.9)]" />
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-500 dark:bg-[#aa55f9] shadow-[0_0_5px_rgba(139,92,246,0.6)] dark:[box-shadow:0_0_6px_rgba(170,85,249,0.9)]" />
               )}
             </Link>
           )
@@ -93,34 +94,34 @@ export default function Sidebar({ user }: {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-[rgba(124,58,237,0.08)] dark:border-[rgba(170,85,249,0.1)] space-y-3">
+      <div className="px-4 pb-4 pt-3 border-t border-[rgba(139,92,246,0.07)] dark:border-[rgba(170,85,249,0.1)] space-y-3">
         {/* Tema toggle */}
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[#a99cc5] dark:text-gray-600">Tema</span>
+          <span className="text-xs font-medium text-slate-400 dark:text-gray-600">Tema</span>
           <ThemeToggle />
         </div>
 
         {/* Usuário */}
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
-            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-[rgba(170,85,249,0.15)] flex items-center justify-center text-sm font-bold text-purple-700 dark:text-[#aa55f9] dark:[box-shadow:0_0_10px_rgba(170,85,249,0.2)]">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)] dark:[box-shadow:0_0_10px_rgba(170,85,249,0.2)]">
               {user?.name?.[0]?.toUpperCase() ?? "T"}
             </div>
             {(user?.plan === "PREMIUM" || user?.plan === "PRO") && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-yellow-400 dark:bg-[#aa55f9] flex items-center justify-center dark:[box-shadow:0_0_8px_rgba(170,85,249,0.8)]">
-                <Crown size={9} className="text-yellow-900 dark:text-white" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 dark:bg-[#aa55f9] flex items-center justify-center dark:[box-shadow:0_0_8px_rgba(170,85,249,0.8)]">
+                <Crown size={9} className="text-amber-900 dark:text-white" />
               </div>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[#1c1735] dark:text-white truncate">{user?.name ?? "Taróloga"}</p>
-            <p className="text-xs text-[#7c6a9f] dark:text-gray-500 truncate">{user?.email}</p>
+            <p className="text-sm font-semibold text-[#1e1b4b] dark:text-white truncate">{user?.name ?? "Taróloga"}</p>
+            <p className="text-xs text-slate-400 dark:text-gray-500 truncate">{user?.email}</p>
           </div>
         </div>
 
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-2 text-sm text-[#7c6a9f] dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors w-full"
+          className="flex items-center gap-2 text-sm text-slate-400 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors w-full"
         >
           <LogOut size={15} />
           Sair
