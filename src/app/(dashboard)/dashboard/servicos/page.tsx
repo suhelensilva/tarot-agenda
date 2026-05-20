@@ -276,6 +276,23 @@ export default function ServicosPage() {
       </div>
 
 
+      {/* Categories chips */}
+      {categories.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {categories.map((c) => (
+            <div key={c.id} className="group flex items-center gap-2 bg-white border border-purple-200 hover:border-purple-400 rounded-full px-4 py-1.5 shadow-sm transition-all">
+              <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
+              <span className="text-sm text-purple-800 font-medium">{c.name}</span>
+              <span className="text-xs bg-purple-100 text-purple-500 font-semibold px-1.5 py-0.5 rounded-full">{c.services.length}</span>
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                <button onClick={() => openEditCat(c)} className="p-1 text-purple-400 hover:text-purple-600 rounded-full hover:bg-purple-50 transition-colors"><Pencil size={11} /></button>
+                <button onClick={() => handleDeleteCat(c)} className="p-1 text-purple-300 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"><Trash2 size={11} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center text-gray-400 py-12">Carregando...</div>
       ) : services.length === 0 ? (
@@ -293,22 +310,14 @@ export default function ServicosPage() {
             const isCollapsed = collapsed[key] !== false
             return (
               <div key={key}>
-                <div className="flex items-center gap-2 mb-3 group">
-                  <button onClick={() => toggleCollapse(key)} className="flex items-center gap-2 flex-1">
-                    {isCollapsed ? <ChevronRight size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
-                    <span className="text-sm font-semibold text-gray-700 group-hover:text-purple-600 transition-colors">{group.name}</span>
-                    <span className="text-xs text-gray-400">{group.services.length}</span>
-                  </button>
-                  {group.id && (() => {
-                    const cat = categories.find(c => c.id === group.id)
-                    return cat ? (
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEditCat(cat)} className="p-1 text-gray-400 hover:text-purple-600 rounded hover:bg-purple-50 transition-colors"><Pencil size={12} /></button>
-                        <button onClick={() => handleDeleteCat(cat)} className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"><Trash2 size={12} /></button>
-                      </div>
-                    ) : null
-                  })()}
-                </div>
+                <button
+                  onClick={() => toggleCollapse(key)}
+                  className="flex items-center gap-2 mb-3 group"
+                >
+                  {isCollapsed ? <ChevronRight size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-purple-600 transition-colors">{group.name}</span>
+                  <span className="text-xs text-gray-400">{group.services.length}</span>
+                </button>
 
                 {!isCollapsed && (
                   viewMode === "card" ? (
