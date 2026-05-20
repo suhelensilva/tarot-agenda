@@ -315,7 +315,6 @@ export default function ServicosPage() {
             const isCollapsed = collapsed[key] !== false
             return (
               <div key={key}>
-                <p className="text-sm font-semibold text-gray-500 mb-3">{group.name}</p>
 
                 {!isCollapsed && (
                   viewMode === "card" ? (
