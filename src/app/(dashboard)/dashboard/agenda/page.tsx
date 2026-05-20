@@ -43,6 +43,10 @@ export default function AgendaPage() {
   const [saving, setSaving] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [cancellationReason, setCancellationReason] = useState("")
+  const [showNewClient, setShowNewClient] = useState(false)
+  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "" })
+  const [savingClient, setSavingClient] = useState(false)
+  const [newClientError, setNewClientError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     clientId: "",
@@ -101,6 +105,9 @@ export default function AgendaPage() {
     const dateStr = d.toISOString().slice(0, 10)
     setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour: "09:00", endHour: "10:00", notes: "", meetingLink: "", amountPaid: "" })
     setSelected(null)
+    setShowNewClient(false)
+    setNewClient({ name: "", phone: "", email: "" })
+    setNewClientError(null)
     setShowForm(true)
   }
 
@@ -162,6 +169,36 @@ export default function AgendaPage() {
       await fetchAppointments()
     } finally {
       setUpdatingStatus(false)
+    }
+  }
+
+  async function handleCreateClient() {
+    if (!newClient.name.trim() || !newClient.phone.trim()) {
+      setNewClientError("Nome e telefone são obrigatórios")
+      return
+    }
+    setSavingClient(true)
+    setNewClientError(null)
+    try {
+      const res = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newClient.name.trim(),
+          phone: newClient.phone.trim(),
+          email: newClient.email.trim() || undefined,
+        }),
+      })
+      if (!res.ok) throw new Error("Erro ao criar cliente")
+      const created: Client = await res.json()
+      setClients((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
+      onClientChange(created.id)
+      setShowNewClient(false)
+      setNewClient({ name: "", phone: "", email: "" })
+    } catch {
+      setNewClientError("Erro ao criar cliente. Tente novamente.")
+    } finally {
+      setSavingClient(false)
     }
   }
 
@@ -405,18 +442,75 @@ export default function AgendaPage() {
 
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-                <select
-                  required
-                  value={form.clientId}
-                  onChange={(e) => onClientChange(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                >
-                  <option value="">Selecione a cliente</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-gray-700">Cliente *</label>
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewClient((v) => !v); setNewClientError(null) }}
+                    className="text-xs text-purple-600 hover:text-purple-500 font-medium flex items-center gap-1"
+                  >
+                    {showNewClient ? "← Voltar" : "+ Nova cliente"}
+                  </button>
+                </div>
+
+                {showNewClient ? (
+                  <div className="border border-purple-200 bg-purple-50 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-semibold text-purple-700">Cadastrar nova cliente</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+                        <input
+                          value={newClient.name}
+                          onChange={(e) => setNewClient((p) => ({ ...p, name: e.target.value }))}
+                          placeholder="Nome completo"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Telefone *</label>
+                        <input
+                          value={newClient.phone}
+                          onChange={(e) => setNewClient((p) => ({ ...p, phone: e.target.value }))}
+                          placeholder="(00) 00000-0000"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">E-mail <span className="text-gray-400">(opcional)</span></label>
+                      <input
+                        type="email"
+                        value={newClient.email}
+                        onChange={(e) => setNewClient((p) => ({ ...p, email: e.target.value }))}
+                        placeholder="email@exemplo.com"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                      />
+                    </div>
+                    {newClientError && (
+                      <p className="text-xs text-red-600">{newClientError}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleCreateClient}
+                      disabled={savingClient}
+                      className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      {savingClient ? "Criando..." : "Criar e selecionar"}
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    required
+                    value={form.clientId}
+                    onChange={(e) => onClientChange(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  >
+                    <option value="">Selecione a cliente</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
