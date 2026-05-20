@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      return NextResponse.json({ checkoutUrl: result.init_point })
+      const checkoutUrl = result.init_point ?? (result as unknown as Record<string, unknown>).sandbox_init_point as string | undefined
+      return NextResponse.json({ checkoutUrl })
     }
 
     // ── ANUAL: pagamento único ────────────────────────────────────────────────
@@ -75,7 +76,8 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({ checkoutUrl: prefResult.init_point })
+    const checkoutUrl = prefResult.init_point ?? (prefResult as unknown as Record<string, unknown>).sandbox_init_point as string | undefined
+    return NextResponse.json({ checkoutUrl })
   } catch (err) {
     console.error("[pagamentos/assinar]", err)
     return NextResponse.json({ error: "Erro ao criar pagamento" }, { status: 500 })
