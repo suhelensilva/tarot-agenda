@@ -5,6 +5,7 @@ import { Crown, Check, X, Sparkles, Zap, Lock } from "lucide-react"
 type PlanFeature = { text: string; included: boolean }
 
 const FREE_FEATURES: PlanFeature[] = [
+  { text: "1 atendente", included: true },
   { text: "Até 30 clientes", included: true },
   { text: "Agendamentos ilimitados", included: true },
   { text: "Até 5 serviços", included: true },
@@ -16,6 +17,7 @@ const FREE_FEATURES: PlanFeature[] = [
 ]
 
 const BASIC_FEATURES: PlanFeature[] = [
+  { text: "Até 2 atendentes", included: true },
   { text: "Até 80 clientes", included: true },
   { text: "Agendamentos ilimitados", included: true },
   { text: "Serviços ilimitados", included: true },
@@ -27,6 +29,7 @@ const BASIC_FEATURES: PlanFeature[] = [
 ]
 
 const PRO_FEATURES: PlanFeature[] = [
+  { text: "Atendentes ilimitados", included: true },
   { text: "Clientes ilimitados", included: true },
   { text: "Agendamentos ilimitados", included: true },
   { text: "Serviços ilimitados", included: true },
