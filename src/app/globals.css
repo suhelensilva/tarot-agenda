@@ -9,8 +9,9 @@
 }
 
 .dark {
-  --background: #0f0f13;
-  --foreground: #ededed;
+  --background: #0a0a0f;
+  --foreground: #e2e8f0;
+  --neon: #aa55f9;
 }
 
 @theme inline {
@@ -24,34 +25,23 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* Scrollbar dark */
+.dark ::-webkit-scrollbar { width: 6px; }
+.dark ::-webkit-scrollbar-track { background: #0f0f1a; }
+.dark ::-webkit-scrollbar-thumb { background: #aa55f920; border-radius: 3px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #aa55f950; }
 
 @layer base {
-  input,
-  textarea,
-  select {
-    color: #111827;
-  }
-
-  .dark input,
-  .dark textarea,
-  .dark select {
-    color: #f3f4f6;
-  }
-
-  input::placeholder,
-  textarea::placeholder {
-    color: #9ca3af;
-  }
-
-  .dark input::placeholder,
-  .dark textarea::placeholder {
-    color: #6b7280;
-  }
+  input, textarea, select { color: #111827; }
+  .dark input, .dark textarea, .dark select { color: #e2e8f0; }
+  input::placeholder, textarea::placeholder { color: #9ca3af; }
+  .dark input::placeholder, .dark textarea::placeholder { color: #4b5563; }
 }
 
-/* Autofill — tema claro */
+/* Autofill claro */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
@@ -60,20 +50,33 @@ input:-webkit-autofill:focus {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Autofill — tema escuro */
+/* Autofill escuro */
 .dark input:-webkit-autofill,
 .dark input:-webkit-autofill:hover,
 .dark input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #f3f4f6;
-  -webkit-box-shadow: 0 0 0px 1000px #1f2937 inset;
+  -webkit-text-fill-color: #e2e8f0;
+  -webkit-box-shadow: 0 0 0px 1000px #13131f inset;
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Autofill — páginas auth com fundo roxo */
+/* Auth pages */
 .text-white:-webkit-autofill,
 .text-white:-webkit-autofill:hover,
 .text-white:-webkit-autofill:focus {
   -webkit-text-fill-color: white !important;
   -webkit-box-shadow: 0 0 0px 1000px rgba(88, 28, 135, 0.8) inset !important;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Glow neon nos cards dark */
+.dark .neon-card {
+  background: #13131f;
+  border: 1px solid rgba(170, 85, 249, 0.15);
+  box-shadow: 0 0 0 1px rgba(170, 85, 249, 0.05), inset 0 1px 0 rgba(170, 85, 249, 0.08);
+}
+
+.dark .neon-card:hover {
+  border-color: rgba(170, 85, 249, 0.35);
+  box-shadow: 0 0 20px rgba(170, 85, 249, 0.08), 0 0 0 1px rgba(170, 85, 249, 0.15);
+  transition: all 0.2s ease;
 }
