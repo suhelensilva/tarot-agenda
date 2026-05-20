@@ -44,7 +44,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const data = schema.parse(body)
+    console.log("[agendamentos POST] body recebido:", JSON.stringify(body))
+
+    const parsed = schema.safeParse(body)
+    if (!parsed.success) {
+      const fields = parsed.error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", ")
+      console.error("[agendamentos POST] validação falhou:", fields)
+      return NextResponse.json({ error: `Campos inválidos: ${fields}` }, { status: 400 })
+    }
+    const data = parsed.data
 
     const appointment = await prisma.appointment.create({
       data: {
@@ -63,7 +71,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(appointment, { status: 201 })
   } catch (err) {
-    console.error("[agendamentos POST]", err)
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    console.error("[agendamentos POST] erro Prisma:", err)
+    const msg = err instanceof Error ? err.message : "Erro interno"
+    return NextResponse.json({ error: msg }, { status: 400 })
   }
 }
