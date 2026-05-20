@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Plus, X, Package, Clock, Tag, FolderOpen, Pencil, Trash2, ImageIcon, ChevronDown, ChevronRight } from "lucide-react"
+import { Plus, X, Package, Clock, Tag, FolderOpen, Pencil, Trash2, ImageIcon, ChevronDown, ChevronRight, LayoutGrid, List } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 
 type Category = {
@@ -69,6 +69,9 @@ export default function ServicosPage() {
 
   // Collapsed categories
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+
+  // View mode
+  const [viewMode, setViewMode] = useState<"card" | "list">("card")
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -240,6 +243,23 @@ export default function ServicosPage() {
           <p className="text-gray-500 text-sm mt-0.5">{active.length} serviço{active.length !== 1 ? "s" : ""} ativo{active.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode("card")}
+              className={`p-2 transition-colors ${viewMode === "card" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
+              title="Cards"
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 transition-colors ${viewMode === "list" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
+              title="Lista"
+            >
+              <List size={15} />
+            </button>
+          </div>
           <button
             onClick={openNewCat}
             className="flex items-center gap-2 border border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -296,16 +316,19 @@ export default function ServicosPage() {
                 </button>
 
                 {!isCollapsed && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {group.services.map((s) => (
-                      <ServiceCard
-                        key={s.id}
-                        service={s}
-                        onEdit={() => openEdit(s)}
-                        onDeactivate={() => handleDeactivate(s.id)}
-                      />
-                    ))}
-                  </div>
+                  viewMode === "card" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {group.services.map((s) => (
+                        <ServiceCard key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {group.services.map((s) => (
+                        <ServiceRow key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} />
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
             )
@@ -523,6 +546,59 @@ export default function ServicosPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── ServiceRow (list view) ─────────────────────────────────────────────────────
+
+function ServiceRow({ service: s, onEdit, onDeactivate }: {
+  service: Service
+  onEdit: () => void
+  onDeactivate: () => void
+}) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl flex items-center gap-4 px-4 py-3 hover:border-purple-200 hover:bg-purple-50/30 transition-colors">
+      {/* Thumb */}
+      {s.imageUrl ? (
+        <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+      ) : (
+        <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+          <Package size={18} className="text-purple-300" />
+        </div>
+      )}
+
+      {/* Name + description */}
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-gray-900 truncate">{s.name}</p>
+        {s.description && <p className="text-xs text-gray-400 truncate">{s.description}</p>}
+      </div>
+
+      {/* Price */}
+      <div className="shrink-0 text-sm font-semibold text-gray-900 w-24 text-right">
+        {s.price === 0 ? <span className="text-green-600">Gratuito</span> : formatCurrency(s.price)}
+      </div>
+
+      {/* Duration */}
+      <div className="shrink-0 flex items-center gap-1 text-sm text-gray-400 w-16">
+        <Clock size={13} />
+        {s.duration}min
+      </div>
+
+      {/* Type badge */}
+      <span className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full ${typeBadge[s.type]}`}>
+        {typeLabel[s.type]}
+      </span>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 shrink-0">
+        <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-purple-600 rounded-md hover:bg-purple-50 transition-colors" title="Editar">
+          <Pencil size={14} />
+        </button>
+        <button onClick={onDeactivate} className="p-1.5 text-gray-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors" title="Desativar">
+          <Trash2 size={14} />
+        </button>
+      </div>
     </div>
   )
 }
