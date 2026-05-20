@@ -8,6 +8,8 @@ const schema = z.array(z.object({
   startTime: z.string(),
   endTime: z.string(),
   active: z.boolean(),
+  lunchStart: z.string().optional().nullable(),
+  lunchEnd: z.string().optional().nullable(),
 }))
 
 export async function GET() {
@@ -21,7 +23,14 @@ export async function GET() {
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const found = saved.find((a) => a.dayOfWeek === i)
-    return { dayOfWeek: i, startTime: found?.startTime ?? "09:00", endTime: found?.endTime ?? "18:00", active: found?.active ?? false }
+    return {
+      dayOfWeek: i,
+      startTime: found?.startTime ?? "09:00",
+      endTime: found?.endTime ?? "18:00",
+      active: found?.active ?? false,
+      lunchStart: found?.lunchStart ?? null,
+      lunchEnd: found?.lunchEnd ?? null,
+    }
   })
 
   return NextResponse.json(days)

@@ -197,12 +197,14 @@ model MessageTemplate {
 }
 
 model Availability {
-  id        String  @id @default(cuid())
-  userId    String
-  dayOfWeek Int
-  startTime String
-  endTime   String
-  active    Boolean @default(true)
+  id          String  @id @default(cuid())
+  userId      String
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  active      Boolean @default(true)
+  lunchStart  String?
+  lunchEnd    String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -5,7 +5,7 @@ import { Smartphone, Calendar, Save, CheckCircle, ImageIcon, User } from "lucide
 
 const DAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
 
-type DayAvail = { dayOfWeek: number; startTime: string; endTime: string; active: boolean }
+type DayAvail = { dayOfWeek: number; startTime: string; endTime: string; active: boolean; lunchStart: string | null; lunchEnd: string | null }
 type Profile = {
   name: string
   logoUrl: string | null
@@ -307,31 +307,72 @@ export default function ConfiguracoesPage() {
 
         <div className="space-y-3 mb-6">
           {availability.map((day) => (
-            <div key={day.dayOfWeek} className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${day.active ? "bg-gray-50" : "opacity-50"}`}>
-              <div
-                onClick={() => updateDay(day.dayOfWeek, "active", !day.active)}
-                className={`w-10 h-5 rounded-full cursor-pointer transition-colors shrink-0 ${day.active ? "bg-purple-500" : "bg-gray-200"}`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full shadow mt-0.5 transition-transform ${day.active ? "translate-x-5" : "translate-x-1"}`} />
+            <div key={day.dayOfWeek} className={`p-3 rounded-lg transition-colors ${day.active ? "bg-gray-50" : "opacity-50"}`}>
+              <div className="flex items-center gap-4">
+                <div
+                  onClick={() => updateDay(day.dayOfWeek, "active", !day.active)}
+                  className={`w-10 h-5 rounded-full cursor-pointer transition-colors shrink-0 ${day.active ? "bg-purple-500" : "bg-gray-200"}`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full shadow mt-0.5 transition-transform ${day.active ? "translate-x-5" : "translate-x-1"}`} />
+                </div>
+                <span className="text-sm font-medium text-gray-700 w-20 shrink-0">{DAYS[day.dayOfWeek]}</span>
+                <div className="flex items-center gap-2 flex-1 flex-wrap">
+                  {/* Manhã */}
+                  <input
+                    type="time"
+                    value={day.startTime}
+                    onChange={(e) => updateDay(day.dayOfWeek, "startTime", e.target.value)}
+                    disabled={!day.active}
+                    className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40"
+                  />
+                  <span className="text-gray-400 text-sm">até</span>
+                  <input
+                    type="time"
+                    value={day.endTime}
+                    onChange={(e) => updateDay(day.dayOfWeek, "endTime", e.target.value)}
+                    disabled={!day.active}
+                    className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40"
+                  />
+
+                  {/* Toggle intervalo */}
+                  <button
+                    type="button"
+                    disabled={!day.active}
+                    onClick={() => {
+                      if (day.lunchStart) {
+                        setAvailability((prev) => prev.map((d) => d.dayOfWeek === day.dayOfWeek ? { ...d, lunchStart: null, lunchEnd: null } : d))
+                      } else {
+                        updateDay(day.dayOfWeek, "lunchStart", "12:00")
+                      }
+                    }}
+                    className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-40 ${day.lunchStart ? "bg-orange-50 border-orange-300 text-orange-600" : "border-gray-200 text-gray-400 hover:border-orange-300 hover:text-orange-500"}`}
+                  >
+                    {day.lunchStart ? "– intervalo" : "+ intervalo"}
+                  </button>
+                </div>
               </div>
-              <span className="text-sm font-medium text-gray-700 w-20 shrink-0">{DAYS[day.dayOfWeek]}</span>
-              <div className="flex items-center gap-2 flex-1">
-                <input
-                  type="time"
-                  value={day.startTime}
-                  onChange={(e) => updateDay(day.dayOfWeek, "startTime", e.target.value)}
-                  disabled={!day.active}
-                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40"
-                />
-                <span className="text-gray-400 text-sm">até</span>
-                <input
-                  type="time"
-                  value={day.endTime}
-                  onChange={(e) => updateDay(day.dayOfWeek, "endTime", e.target.value)}
-                  disabled={!day.active}
-                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-40"
-                />
-              </div>
+
+              {/* Intervalo de almoço */}
+              {day.lunchStart && (
+                <div className="flex items-center gap-2 mt-2 ml-[7.5rem]">
+                  <span className="text-xs text-orange-500 font-medium w-16 shrink-0">Intervalo</span>
+                  <input
+                    type="time"
+                    value={day.lunchStart}
+                    onChange={(e) => updateDay(day.dayOfWeek, "lunchStart", e.target.value)}
+                    disabled={!day.active}
+                    className="border border-orange-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40"
+                  />
+                  <span className="text-gray-400 text-sm">até</span>
+                  <input
+                    type="time"
+                    value={day.lunchEnd ?? "13:00"}
+                    onChange={(e) => updateDay(day.dayOfWeek, "lunchEnd", e.target.value)}
+                    disabled={!day.active}
+                    className="border border-orange-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:opacity-40"
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
