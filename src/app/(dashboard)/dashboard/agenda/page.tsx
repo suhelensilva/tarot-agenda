@@ -46,7 +46,7 @@ export default function AgendaPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [cancellationReason, setCancellationReason] = useState("")
   const [showNewClient, setShowNewClient] = useState(false)
-  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "" })
+  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "", birthDate: "" })
   const [savingClient, setSavingClient] = useState(false)
   const [newClientError, setNewClientError] = useState<string | null>(null)
   const planFetch = usePlanFetch()
@@ -250,6 +250,7 @@ export default function AgendaPage() {
           name: newClient.name.trim(),
           phone: newClient.phone.trim(),
           email: newClient.email.trim() || undefined,
+          birthDate: newClient.birthDate || undefined,
         }),
       })
       if (!res.ok) {
@@ -260,7 +261,7 @@ export default function AgendaPage() {
       setClients((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
       onClientChange(created.id)
       setShowNewClient(false)
-      setNewClient({ name: "", phone: "", email: "" })
+      setNewClient({ name: "", phone: "", email: "", birthDate: "" })
     } catch {
       setNewClientError("Erro ao criar cliente. Tente novamente.")
     } finally {
@@ -553,15 +554,26 @@ export default function AgendaPage() {
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">E-mail <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
-                      <input
-                        type="email"
-                        value={newClient.email}
-                        onChange={(e) => setNewClient((p) => ({ ...p, email: e.target.value }))}
-                        placeholder="email@exemplo.com"
-                        className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
-                      />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">E-mail <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
+                        <input
+                          type="email"
+                          value={newClient.email}
+                          onChange={(e) => setNewClient((p) => ({ ...p, email: e.target.value }))}
+                          placeholder="email@exemplo.com"
+                          className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nascimento <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
+                        <input
+                          type="date"
+                          value={newClient.birthDate}
+                          onChange={(e) => setNewClient((p) => ({ ...p, birthDate: e.target.value }))}
+                          className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
+                        />
+                      </div>
                     </div>
                     {newClientError && (
                       <p className="text-xs text-red-600 dark:text-red-400">{newClientError}</p>
@@ -632,7 +644,18 @@ export default function AgendaPage() {
                     required
                     type="time"
                     value={form.startHour}
-                    onChange={(e) => setForm({ ...form, startHour: e.target.value })}
+                    onChange={(e) => {
+                      const startHour = e.target.value
+                      const service = services.find((s) => s.id === form.serviceId)
+                      if (service && service.duration > 0) {
+                        const [h, m] = startHour.split(":").map(Number)
+                        const end = new Date(0, 0, 0, h, m + service.duration)
+                        const endHour = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
+                        setForm((f) => ({ ...f, startHour, endHour }))
+                      } else {
+                        setForm((f) => ({ ...f, startHour }))
+                      }
+                    }}
                     className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   />
                 </div>
