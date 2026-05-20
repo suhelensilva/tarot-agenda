@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Plus, X, Package, Clock, Tag, FolderOpen, Pencil, Trash2, ImageIcon, ChevronDown, ChevronRight, LayoutGrid, List } from "lucide-react"
+import { Plus, X, Package, Clock, Tag, FolderOpen, Pencil, Trash2, ImageIcon, LayoutGrid, List } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 
 type Category = {
@@ -276,20 +276,25 @@ export default function ServicosPage() {
       </div>
 
 
-      {/* Categories chips */}
+      {/* Categories chips — clique abre/fecha a seção */}
       {categories.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
-          {categories.map((c) => (
-            <div key={c.id} className="group flex items-center gap-2 bg-white border border-purple-200 hover:border-purple-400 rounded-full px-4 py-1.5 shadow-sm transition-all">
-              <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
-              <span className="text-sm text-purple-800 font-medium">{c.name}</span>
-              <span className="text-xs bg-purple-100 text-purple-500 font-semibold px-1.5 py-0.5 rounded-full">{c.services.length}</span>
-              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
-                <button onClick={() => openEditCat(c)} className="p-1 text-purple-400 hover:text-purple-600 rounded-full hover:bg-purple-50 transition-colors"><Pencil size={11} /></button>
-                <button onClick={() => handleDeleteCat(c)} className="p-1 text-purple-300 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"><Trash2 size={11} /></button>
+          {categories.map((c) => {
+            const isOpen = collapsed[c.id] === false
+            return (
+              <div key={c.id} className="group flex items-center gap-2 bg-white border border-purple-200 hover:border-purple-400 rounded-full px-4 py-1.5 shadow-sm transition-all cursor-pointer select-none"
+                onClick={() => toggleCollapse(c.id)}
+              >
+                <span className={`w-2 h-2 rounded-full shrink-0 transition-colors ${isOpen ? "bg-purple-600" : "bg-purple-300"}`} />
+                <span className={`text-sm font-medium transition-colors ${isOpen ? "text-purple-700" : "text-purple-500"}`}>{c.name}</span>
+                <span className="text-xs bg-purple-100 text-purple-500 font-semibold px-1.5 py-0.5 rounded-full">{c.services.length}</span>
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => openEditCat(c)} className="p-1 text-purple-400 hover:text-purple-600 rounded-full hover:bg-purple-50 transition-colors"><Pencil size={11} /></button>
+                  <button onClick={() => handleDeleteCat(c)} className="p-1 text-purple-300 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"><Trash2 size={11} /></button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -310,14 +315,7 @@ export default function ServicosPage() {
             const isCollapsed = collapsed[key] !== false
             return (
               <div key={key}>
-                <button
-                  onClick={() => toggleCollapse(key)}
-                  className="flex items-center gap-2 mb-3 group"
-                >
-                  {isCollapsed ? <ChevronRight size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-purple-600 transition-colors">{group.name}</span>
-                  <span className="text-xs text-gray-400">{group.services.length}</span>
-                </button>
+                <p className="text-sm font-semibold text-gray-500 mb-3">{group.name}</p>
 
                 {!isCollapsed && (
                   viewMode === "card" ? (
