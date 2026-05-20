@@ -3,8 +3,10 @@ import { MercadoPagoConfig, Payment, PreApproval, PreApprovalPlan } from "mercad
 export function getMPClient() {
   const token = process.env.MP_ACCESS_TOKEN
   if (!token) throw new Error("MP_ACCESS_TOKEN não configurado")
-  return new MercadoPagoConfig({ accessToken: token })
+  return new MercadoPagoConfig({ accessToken: token, options: { timeout: 5000 } })
 }
+
+export const MP_PUBLIC_KEY = process.env.MP_PUBLIC_KEY ?? ""
 
 export { Payment, PreApproval, PreApprovalPlan }
 
