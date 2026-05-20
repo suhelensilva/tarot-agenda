@@ -73,8 +73,15 @@ export default function Sidebar({ user }: { user: { name?: string | null; email?
 
       <div className="p-4 border-t border-gray-100">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-700">
-            {user?.name?.[0]?.toUpperCase() ?? "T"}
+          <div className="relative">
+            <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-700">
+              {user?.name?.[0]?.toUpperCase() ?? "T"}
+            </div>
+            {(user?.plan === "PREMIUM" || user?.plan === "PRO") && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center">
+                <Crown size={9} className="text-yellow-900" />
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{user?.name ?? "Taróloga"}</p>
