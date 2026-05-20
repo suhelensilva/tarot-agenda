@@ -35,12 +35,16 @@ export async function POST(req: NextRequest) {
             currency_id: "BRL",
           },
           back_url: `${baseUrl}/dashboard/assinatura?status=success&plan=${plan}&cycle=monthly`,
-          payer_email: process.env.MP_TEST_PAYER_EMAIL ?? session.user.email!,
+          payer_email: session.user.email!,
           external_reference: `${session.user.id}|${plan}|MONTHLY`,
         },
       })
 
-      const checkoutUrl = result.init_point ?? (result as unknown as Record<string, unknown>).sandbox_init_point as string | undefined
+      const checkoutUrl = result.init_point
+      if (!checkoutUrl) {
+        console.error("[pagamentos/assinar] init_point ausente", JSON.stringify(result, null, 2))
+        return NextResponse.json({ error: "URL de checkout não retornada pelo Mercado Pago" }, { status: 500 })
+      }
       return NextResponse.json({ checkoutUrl })
     }
 
@@ -77,7 +81,11 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    const checkoutUrl = prefResult.init_point ?? (prefResult as unknown as Record<string, unknown>).sandbox_init_point as string | undefined
+    const checkoutUrl = prefResult.init_point
+    if (!checkoutUrl) {
+      console.error("[pagamentos/assinar] init_point ausente (anual)", JSON.stringify(prefResult, null, 2))
+      return NextResponse.json({ error: "URL de checkout não retornada pelo Mercado Pago" }, { status: 500 })
+    }
     return NextResponse.json({ checkoutUrl })
   } catch (err) {
     console.error("[pagamentos/assinar]", JSON.stringify(err, null, 2))
