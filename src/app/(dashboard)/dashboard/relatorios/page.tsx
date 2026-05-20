@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { TrendingUp, Users, XCircle, BarChart2 } from "lucide-react"
@@ -52,55 +52,55 @@ export default function RelatoriosPage() {
   return (
     <PlanGate feature="relatorios" message="Relatórios e métricas estão disponíveis a partir do plano Pró.">
       <div className="p-8 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Relatórios</h1>
 
         {/* Cards resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="bg-green-50 text-green-600 w-9 h-9 rounded-lg flex items-center justify-center">
                 <TrendingUp size={18} />
               </div>
-              <span className="text-sm text-gray-500">Faturamento (6 meses)</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Faturamento (6 meses)</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalRevenue)}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalRevenue)}</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="bg-purple-50 text-purple-600 w-9 h-9 rounded-lg flex items-center justify-center">
                 <BarChart2 size={18} />
               </div>
-              <span className="text-sm text-gray-500">Sessões realizadas</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Sessões realizadas</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{totalSessions}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalSessions}</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="bg-red-50 text-red-600 w-9 h-9 rounded-lg flex items-center justify-center">
                 <XCircle size={18} />
               </div>
-              <span className="text-sm text-gray-500">Faltas</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Faltas</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{totalNoShow}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalNoShow}</p>
           </div>
         </div>
 
         {/* Faturamento mensal */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Faturamento mensal</h2>
+        <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
+          <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Faturamento mensal</h2>
           <div className="space-y-3">
             {data.monthlyRevenue.map((m) => (
               <div key={m.label} className="flex items-center gap-3">
-                <span className="text-sm text-gray-500 w-24 shrink-0">{m.label}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 w-24 shrink-0">{m.label}</span>
                 <div className="flex-1 bg-gray-100 rounded-full h-2">
                   <div
                     className="bg-purple-500 h-2 rounded-full transition-all"
                     style={{ width: `${(m.revenue / maxRevenue) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm font-semibold text-gray-900 w-28 text-right">{formatCurrency(m.revenue)}</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white w-28 text-right">{formatCurrency(m.revenue)}</span>
                 <span className="text-xs text-gray-400 w-16 text-right">{m.count} sess.</span>
               </div>
             ))}
@@ -109,22 +109,22 @@ export default function RelatoriosPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Status geral */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Situação dos agendamentos</h2>
+          <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
+            <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Situação dos agendamentos</h2>
             <div className="space-y-3">
               {data.statusCounts.map((s) => (
                 <div key={s.status} className="flex items-center gap-3">
                   <div className={`w-2.5 h-2.5 rounded-full ${statusColor[s.status] ?? "bg-gray-300"}`} />
-                  <span className="text-sm text-gray-600 flex-1">{statusLabel[s.status] ?? s.status}</span>
-                  <span className="text-sm font-semibold text-gray-900">{s._count}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300 flex-1">{statusLabel[s.status] ?? s.status}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{s._count}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Motivos de cancelamento */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Motivos de cancelamento</h2>
+          <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
+            <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Motivos de cancelamento</h2>
             {data.cancelReasons.length === 0 ? (
               <p className="text-gray-400 text-sm">Nenhum cancelamento com motivo registrado</p>
             ) : (
@@ -141,7 +141,7 @@ export default function RelatoriosPage() {
         </div>
 
         {/* Top clientes */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <Users size={18} className="text-gray-400" />
             <h2 className="font-semibold text-gray-900">Clientes — histórico</h2>

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -157,7 +157,7 @@ export default function ClientesPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Clientes</h1>
             <p className="text-gray-500 text-sm mt-0.5">{clients.length} cadastrado{clients.length !== 1 ? "s" : ""}</p>
           </div>
           <div className="flex items-center gap-2">

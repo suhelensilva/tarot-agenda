@@ -126,10 +126,10 @@ export default function ConfiguracoesPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Configurações</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configurações</h1>
 
       {/* Perfil — Logo e Fundo (Premium) */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5 relative overflow-hidden">
+      <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6 space-y-5 relative overflow-hidden">
         <div className="flex items-center gap-3 mb-1">
           <div className="bg-purple-50 text-purple-600 w-9 h-9 rounded-lg flex items-center justify-center">
             <User size={18} />
@@ -281,7 +281,7 @@ export default function ConfiguracoesPage() {
       </div>
 
       {/* WhatsApp */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="bg-green-50 text-green-600 w-9 h-9 rounded-lg flex items-center justify-center">
             <Smartphone size={18} />
@@ -323,7 +323,7 @@ export default function ConfiguracoesPage() {
       </div>
 
       {/* Disponibilidade */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="bg-purple-50 text-purple-600 w-9 h-9 rounded-lg flex items-center justify-center">
             <Calendar size={18} />

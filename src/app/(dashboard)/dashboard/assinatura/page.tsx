@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
@@ -196,7 +196,7 @@ export default function AssinaturaPage() {
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Assinatura</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Assinatura</h1>
           <p className="text-gray-500 text-sm mt-0.5">Escolha o plano ideal para o seu negócio</p>
         </div>
 
@@ -331,7 +331,7 @@ export default function AssinaturaPage() {
               {currentPlan === "FREE" && (
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Plano atual</p>
               )}
-              <h2 className="text-xl font-bold text-gray-900">Grátis</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Grátis</h2>
               <p className="text-3xl font-bold text-gray-900 mt-2">
                 R$0
                 <span className="text-base font-normal text-gray-500">/mês</span>
@@ -353,7 +353,7 @@ export default function AssinaturaPage() {
             )}
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-purple-500 mb-1">Pró</p>
-              <h2 className="text-xl font-bold text-gray-900">Pró</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pró</h2>
 
               {billing === "monthly" ? (
                 <>
@@ -418,7 +418,7 @@ export default function AssinaturaPage() {
             </div>
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 mb-1">Premium</p>
-              <h2 className="text-xl font-bold text-gray-900">Premium</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Premium</h2>
 
               {billing === "monthly" ? (
                 <>

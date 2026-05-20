@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { Plus, X, Package, Clock, Tag, FolderOpen, Pencil, Trash2, ImageIcon, LayoutGrid, List } from "lucide-react"
@@ -254,7 +254,7 @@ export default function ServicosPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Serviços</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Serviços</h1>
           <p className="text-gray-500 text-sm mt-0.5">{active.length} serviço{active.length !== 1 ? "s" : ""} ativo{active.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -586,7 +586,7 @@ function ServiceRow({ service: s, onEdit, onDeactivate }: {
   onDeactivate: () => void
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl flex items-center gap-4 px-4 py-3 hover:border-purple-200 hover:bg-purple-50/30 transition-colors">
+    <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl flex items-center gap-4 px-4 py-3 hover:border-purple-200 hover:bg-purple-50/30 transition-colors">
       {/* Thumb */}
       {s.imageUrl ? (
         <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
@@ -639,7 +639,7 @@ function ServiceCard({ service: s, onEdit, onDeactivate }: {
   onDeactivate: () => void
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl overflow-hidden">
       {s.imageUrl && (
         <div className="w-full aspect-square overflow-hidden">
           <img src={s.imageUrl} alt={s.name} className="w-full h-full object-cover" />
