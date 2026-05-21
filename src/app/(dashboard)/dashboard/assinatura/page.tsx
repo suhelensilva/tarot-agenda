@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
@@ -67,10 +67,10 @@ function FeatureList({ features }: { features: PlanFeature[] }) {
   return (
     <ul className="space-y-2.5 flex-1 mb-6">
       {features.map((f) => (
-        <li key={f.text} className={`flex items-start gap-2 text-sm ${f.included ? "text-gray-700" : "text-gray-400"}`}>
+        <li key={f.text} className={`flex items-start gap-2 text-sm ${f.included ? "text-gray-700 dark:text-gray-300" : "text-gray-400 dark:text-gray-600"}`}>
           {f.included
             ? <Check size={15} className="shrink-0 mt-0.5 text-purple-500" />
-            : <X size={15} className="shrink-0 mt-0.5 text-gray-300" />
+            : <X size={15} className="shrink-0 mt-0.5 text-gray-300 dark:text-gray-600" />
           }
           {f.text}
         </li>
@@ -100,17 +100,13 @@ export default function AssinaturaPage() {
   const [processingPayment, setProcessingPayment] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Detecta retorno do MP com status=success e fica polling até o plano atualizar
   useEffect(() => {
     const status = searchParams.get("status")
     if (status !== "success") return
 
     setProcessingPayment(true)
-
-    // Limpa URL sem recarregar
     window.history.replaceState({}, "", "/dashboard/assinatura")
 
-    // Polling: verifica a cada 2s se o banco já atualizou
     let attempts = 0
     pollRef.current = setInterval(async () => {
       attempts++
@@ -119,12 +115,11 @@ export default function AssinaturaPage() {
         const data = await res.json()
         if (data.subscription?.status === "ACTIVE") {
           clearInterval(pollRef.current!)
-          await updateSession() // força atualização do JWT
+          await updateSession()
           setProcessingPayment(false)
           setSubscription(data.subscription)
         }
       } catch { /* ignora */ }
-      // Desiste após 30 tentativas (~60s)
       if (attempts >= 30) {
         clearInterval(pollRef.current!)
         setProcessingPayment(false)
@@ -197,40 +192,40 @@ export default function AssinaturaPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Assinatura</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Escolha o plano ideal para o seu negócio</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Escolha o plano ideal para o seu negócio</p>
         </div>
 
         {/* Banner processando pagamento */}
         {processingPayment && (
-          <div className="mb-5 flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-xl px-5 py-4">
+          <div className="mb-5 flex items-center gap-3 bg-purple-50 dark:bg-[rgba(170,85,249,0.1)] border border-purple-200 dark:border-[rgba(170,85,249,0.3)] rounded-xl px-5 py-4">
             <Loader2 size={18} className="text-purple-500 animate-spin shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-purple-900">Confirmando seu pagamento…</p>
-              <p className="text-xs text-purple-600 mt-0.5">Aguarde alguns segundos, seus recursos serão liberados automaticamente.</p>
+              <p className="text-sm font-semibold text-purple-900 dark:text-[#aa55f9]">Confirmando seu pagamento…</p>
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">Aguarde alguns segundos, seus recursos serão liberados automaticamente.</p>
             </div>
           </div>
         )}
 
         {/* Banner sucesso — plano já ativo */}
         {!processingPayment && currentPlan !== "FREE" && searchParams.get("status") === null && subscription?.status === "ACTIVE" && (
-          <div className="mb-5 flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-4">
-            <PartyPopper size={18} className="text-green-600 shrink-0" />
-            <p className="text-sm font-semibold text-green-800">Plano {planLabel(currentPlan)} ativo! Aproveite todos os recursos. 🎉</p>
+          <div className="mb-5 flex items-center gap-3 bg-green-50 dark:bg-[rgba(34,197,94,0.08)] border border-green-200 dark:border-[rgba(34,197,94,0.25)] rounded-xl px-5 py-4">
+            <PartyPopper size={18} className="text-green-600 dark:text-green-400 shrink-0" />
+            <p className="text-sm font-semibold text-green-800 dark:text-green-400">Plano {planLabel(currentPlan)} ativo! Aproveite todos os recursos. 🎉</p>
           </div>
         )}
 
         {/* Current plan badge */}
-        <div className="mb-5 flex items-center justify-between gap-3 bg-purple-50 border border-purple-200 rounded-xl px-5 py-4">
+        <div className="mb-5 flex items-center justify-between gap-3 bg-purple-50 dark:bg-[rgba(170,85,249,0.1)] border border-purple-200 dark:border-[rgba(170,85,249,0.3)] rounded-xl px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-              <Crown size={18} className="text-purple-600" />
+            <div className="w-9 h-9 rounded-full bg-purple-100 dark:bg-[rgba(170,85,249,0.2)] flex items-center justify-center shrink-0">
+              <Crown size={18} className="text-purple-600 dark:text-[#aa55f9]" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-purple-900">
+              <p className="text-sm font-semibold text-purple-900 dark:text-[#aa55f9]">
                 Você está no plano <span className="font-bold">{planLabel(currentPlan)}</span>
                 {currentPlan === "PREMIUM" && " ✨"}
               </p>
-              <p className="text-xs text-purple-600 mt-0.5">
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
                 {hasActiveSub
                   ? `Assinatura ${cycleLabel} · ${subscription?.currentPeriodEnd ? `próxima renovação em ${fmtDate(subscription.currentPeriodEnd)}` : "ativa"}`
                   : currentPlan === "PREMIUM"
@@ -242,11 +237,10 @@ export default function AssinaturaPage() {
             </div>
           </div>
 
-          {/* Cancelar assinatura */}
           {hasActiveSub && !cancelConfirm && (
             <button
               onClick={() => setCancelConfirm(true)}
-              className="text-xs text-red-500 hover:text-red-700 underline underline-offset-2 shrink-0"
+              className="text-xs text-red-500 hover:text-red-700 dark:hover:text-red-400 underline underline-offset-2 shrink-0"
             >
               Cancelar assinatura
             </button>
@@ -255,11 +249,11 @@ export default function AssinaturaPage() {
 
         {/* Confirm cancel */}
         {cancelConfirm && (
-          <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-5 py-4">
+          <div className="mb-5 flex items-start gap-3 bg-red-50 dark:bg-[rgba(239,68,68,0.08)] border border-red-200 dark:border-[rgba(239,68,68,0.25)] rounded-xl px-5 py-4">
             <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-red-800">Cancelar assinatura?</p>
-              <p className="text-xs text-red-600 mt-0.5">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-400">Cancelar assinatura?</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
                 Seu plano voltará para Grátis imediatamente e você perderá acesso aos recursos pagos.
               </p>
               <div className="flex gap-3 mt-3">
@@ -274,7 +268,7 @@ export default function AssinaturaPage() {
                 <button
                   onClick={() => setCancelConfirm(false)}
                   disabled={cancelling}
-                  className="text-xs text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
+                  className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 px-4 py-2 rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.1)] hover:bg-gray-50 dark:hover:bg-white/5"
                 >
                   Não, manter
                 </button>
@@ -285,13 +279,13 @@ export default function AssinaturaPage() {
 
         {/* Billing toggle */}
         <div className="flex items-center justify-center mb-8">
-          <div className="inline-flex items-center bg-gray-100 rounded-xl p-1 gap-1">
+          <div className="inline-flex items-center bg-gray-100 dark:bg-[rgba(255,255,255,0.06)] rounded-xl p-1 gap-1">
             <button
               onClick={() => setBilling("monthly")}
               className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
                 billing === "monthly"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white dark:bg-[#1a1a2e] text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
               }`}
             >
               Mensal
@@ -300,12 +294,12 @@ export default function AssinaturaPage() {
               onClick={() => setBilling("annual")}
               className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${
                 billing === "annual"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white dark:bg-[#1a1a2e] text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
               }`}
             >
               Anual
-              <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-green-100 dark:bg-[rgba(34,197,94,0.15)] text-green-700 dark:text-green-400 text-xs font-bold px-2 py-0.5 rounded-full">
                 até {premDiscount}% off
               </span>
             </button>
@@ -314,8 +308,8 @@ export default function AssinaturaPage() {
 
         {/* Annual info banner */}
         {billing === "annual" && (
-          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 mb-6 max-w-4xl">
-            <TrendingDown size={16} className="shrink-0 text-green-600" />
+          <div className="flex items-center gap-2 bg-green-50 dark:bg-[rgba(34,197,94,0.08)] border border-green-200 dark:border-[rgba(34,197,94,0.2)] rounded-xl px-4 py-3 text-sm text-green-800 dark:text-green-400 mb-6 max-w-4xl">
+            <TrendingDown size={16} className="shrink-0 text-green-600 dark:text-green-400" />
             <span>
               No plano anual você paga <strong>1 cobrança</strong> no Pix (à vista) ou parcela em <strong>até 12x no cartão</strong>. Sem Pix parcelado.
             </span>
@@ -326,29 +320,29 @@ export default function AssinaturaPage() {
         <div className="grid md:grid-cols-3 gap-5 max-w-4xl">
 
           {/* Free */}
-          <div className={`rounded-2xl border-2 bg-white p-6 flex flex-col ${currentPlan === "FREE" ? "border-gray-300" : "border-gray-200"}`}>
+          <div className={`rounded-2xl border-2 bg-white dark:bg-[#13131f] p-6 flex flex-col ${currentPlan === "FREE" ? "border-gray-300 dark:border-gray-600" : "border-gray-200 dark:border-[rgba(255,255,255,0.08)]"}`}>
             <div className="mb-4">
               {currentPlan === "FREE" && (
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Plano atual</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Plano atual</p>
               )}
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Grátis</h2>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 R$0
-                <span className="text-base font-normal text-gray-500">/mês</span>
+                <span className="text-base font-normal text-gray-500 dark:text-gray-400">/mês</span>
               </p>
-              <p className="text-xs text-gray-400 mt-1">Para sempre gratuito</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Para sempre gratuito</p>
             </div>
             <FeatureList features={FREE_FEATURES} />
-            <div className="w-full rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-sm font-medium py-2.5 text-center cursor-default select-none">
+            <div className="w-full rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.08)] bg-gray-50 dark:bg-[rgba(255,255,255,0.04)] text-gray-400 dark:text-gray-600 text-sm font-medium py-2.5 text-center cursor-default select-none">
               {currentPlan === "FREE" ? "Plano atual" : "Grátis"}
             </div>
           </div>
 
           {/* Pró */}
-          <div className={`rounded-2xl border-2 bg-white p-6 flex flex-col relative ${currentPlan === "PRO" ? "border-purple-500" : "border-purple-300"}`}>
+          <div className={`rounded-2xl border-2 bg-white dark:bg-[#13131f] p-6 flex flex-col relative ${currentPlan === "PRO" ? "border-purple-500" : "border-purple-300 dark:border-[rgba(170,85,249,0.35)]"}`}>
             {currentPlan === "PRO" && (
               <div className="absolute top-4 right-4">
-                <span className="bg-purple-100 text-purple-700 text-xs font-semibold px-2.5 py-1 rounded-full">Atual</span>
+                <span className="bg-purple-100 dark:bg-[rgba(170,85,249,0.15)] text-purple-700 dark:text-[#aa55f9] text-xs font-semibold px-2.5 py-1 rounded-full">Atual</span>
               </div>
             )}
             <div className="mb-4">
@@ -357,25 +351,25 @@ export default function AssinaturaPage() {
 
               {billing === "monthly" ? (
                 <>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                     R${fmt(PRICES.PRO.monthly)}
-                    <span className="text-base font-normal text-gray-500">/mês</span>
+                    <span className="text-base font-normal text-gray-500 dark:text-gray-400">/mês</span>
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">Cobrado mensalmente</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Cobrado mensalmente</p>
                 </>
               ) : (
                 <>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                     R${fmt(PRICES.PRO.annual)}
-                    <span className="text-base font-normal text-gray-500">/mês</span>
+                    <span className="text-base font-normal text-gray-500 dark:text-gray-400">/mês</span>
                   </p>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-gray-400 line-through">R${fmt(PRICES.PRO.monthly)}/mês</p>
-                    <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 line-through">R${fmt(PRICES.PRO.monthly)}/mês</p>
+                    <span className="bg-green-100 dark:bg-[rgba(34,197,94,0.15)] text-green-700 dark:text-green-400 text-xs font-bold px-2 py-0.5 rounded-full">
                       {proDiscount}% off
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     R${fmt(PRICES.PRO.annual * 12)}/ano — Pix à vista ou 12x no cartão
                   </p>
                 </>
@@ -383,11 +377,11 @@ export default function AssinaturaPage() {
             </div>
             <FeatureList features={PRO_FEATURES} />
             {currentPlan === "PRO" ? (
-              <div className="w-full rounded-lg border border-purple-200 bg-purple-50 text-purple-600 text-sm font-medium py-2.5 text-center">
+              <div className="w-full rounded-lg border border-purple-200 dark:border-[rgba(170,85,249,0.3)] bg-purple-50 dark:bg-[rgba(170,85,249,0.08)] text-purple-600 dark:text-[#aa55f9] text-sm font-medium py-2.5 text-center">
                 ✓ Plano atual
               </div>
             ) : currentPlan === "PREMIUM" ? (
-              <div className="w-full rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-sm font-medium py-2.5 text-center cursor-default">
+              <div className="w-full rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.08)] bg-gray-50 dark:bg-[rgba(255,255,255,0.04)] text-gray-400 dark:text-gray-600 text-sm font-medium py-2.5 text-center cursor-default">
                 Você já tem o Premium
               </div>
             ) : (
@@ -400,16 +394,16 @@ export default function AssinaturaPage() {
                 {loading === "PRO" ? "Aguarde..." : "Assinar Pró"}
               </button>
             )}
-            <p className="text-xs text-center text-gray-400 mt-2 flex items-center justify-center gap-1">
+            <p className="text-xs text-center text-gray-400 dark:text-gray-600 mt-2 flex items-center justify-center gap-1">
               <Lock size={11} /> Pagamento seguro via Mercado Pago
             </p>
           </div>
 
           {/* Premium */}
-          <div className={`rounded-2xl border-2 bg-white p-6 flex flex-col relative overflow-hidden ${currentPlan === "PREMIUM" ? "border-purple-600" : "border-purple-500"}`}>
+          <div className={`rounded-2xl border-2 bg-white dark:bg-[#13131f] p-6 flex flex-col relative overflow-hidden ${currentPlan === "PREMIUM" ? "border-purple-600" : "border-purple-500 dark:border-[rgba(170,85,249,0.6)]"}`}>
             <div className="absolute top-4 right-4">
               {currentPlan === "PREMIUM" ? (
-                <span className="bg-purple-100 text-purple-700 text-xs font-semibold px-2.5 py-1 rounded-full">Atual</span>
+                <span className="bg-purple-100 dark:bg-[rgba(170,85,249,0.15)] text-purple-700 dark:text-[#aa55f9] text-xs font-semibold px-2.5 py-1 rounded-full">Atual</span>
               ) : (
                 <span className="flex items-center gap-1 bg-purple-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
                   <Sparkles size={11} /> Recomendado
@@ -417,30 +411,30 @@ export default function AssinaturaPage() {
               )}
             </div>
             <div className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 mb-1">Premium</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-[#aa55f9] mb-1">Premium</p>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Premium</h2>
 
               {billing === "monthly" ? (
                 <>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                     R${fmt(PRICES.PREMIUM.monthly)}
-                    <span className="text-base font-normal text-gray-500">/mês</span>
+                    <span className="text-base font-normal text-gray-500 dark:text-gray-400">/mês</span>
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">Cobrado mensalmente</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Cobrado mensalmente</p>
                 </>
               ) : (
                 <>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                     R${fmt(PRICES.PREMIUM.annual)}
-                    <span className="text-base font-normal text-gray-500">/mês</span>
+                    <span className="text-base font-normal text-gray-500 dark:text-gray-400">/mês</span>
                   </p>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-gray-400 line-through">R${fmt(PRICES.PREMIUM.monthly)}/mês</p>
-                    <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 line-through">R${fmt(PRICES.PREMIUM.monthly)}/mês</p>
+                    <span className="bg-green-100 dark:bg-[rgba(34,197,94,0.15)] text-green-700 dark:text-green-400 text-xs font-bold px-2 py-0.5 rounded-full">
                       {premDiscount}% off
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     R${fmt(PRICES.PREMIUM.annual * 12)}/ano — Pix à vista ou 12x no cartão
                   </p>
                 </>
@@ -448,7 +442,7 @@ export default function AssinaturaPage() {
             </div>
             <FeatureList features={PREMIUM_FEATURES} />
             {currentPlan === "PREMIUM" ? (
-              <div className="w-full rounded-lg border border-purple-200 bg-purple-50 text-purple-600 text-sm font-medium py-2.5 text-center">
+              <div className="w-full rounded-lg border border-purple-200 dark:border-[rgba(170,85,249,0.3)] bg-purple-50 dark:bg-[rgba(170,85,249,0.08)] text-purple-600 dark:text-[#aa55f9] text-sm font-medium py-2.5 text-center">
                 ✓ Plano atual
               </div>
             ) : (
@@ -461,7 +455,7 @@ export default function AssinaturaPage() {
                 {loading === "PREMIUM" ? "Aguarde..." : "Assinar Premium"}
               </button>
             )}
-            <p className="text-xs text-center text-gray-400 mt-2 flex items-center justify-center gap-1">
+            <p className="text-xs text-center text-gray-400 dark:text-gray-600 mt-2 flex items-center justify-center gap-1">
               <Lock size={11} /> Pagamento seguro via Mercado Pago
             </p>
           </div>
@@ -470,7 +464,7 @@ export default function AssinaturaPage() {
 
         {/* FAQ */}
         <div className="mt-10 max-w-xl">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">Perguntas frequentes</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Perguntas frequentes</h3>
           <div className="space-y-3">
             {[
               {
@@ -490,9 +484,9 @@ export default function AssinaturaPage() {
                 a: "Você usa o Mística Agenda gratuitamente com até 30 clientes e as funções essenciais de agendamento, para sempre.",
               },
             ].map(({ q, a }) => (
-              <div key={q} className="border border-gray-100 rounded-xl p-4 bg-gray-50">
-                <p className="text-sm font-medium text-gray-800 mb-1">{q}</p>
-                <p className="text-sm text-gray-500">{a}</p>
+              <div key={q} className="border border-gray-100 dark:border-[rgba(170,85,249,0.1)] rounded-xl p-4 bg-gray-50 dark:bg-[rgba(255,255,255,0.03)]">
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">{q}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{a}</p>
               </div>
             ))}
           </div>
