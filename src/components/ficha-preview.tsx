@@ -1,7 +1,7 @@
 "use client"
 
 import { type RefObject } from "react"
-import { Download, X } from "lucide-react"
+import { Download, Pencil, X } from "lucide-react"
 import { formatDate, formatCurrency } from "@/lib/utils"
 
 // ─── Tipos compartilhados ─────────────────────────────────────────────────────
@@ -43,6 +43,7 @@ export type FichaPreviewData = {
   energeticTips?: string | null
   spiritualPractice?: string | null
   additionalServices?: string | null
+  links?: Array<{ label: string; url: string }>
 }
 
 // ─── Ficha Interna A4 ─────────────────────────────────────────────────────────
@@ -172,6 +173,26 @@ export function FichaInternaPreview({
             <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 14px" }} />
             <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 8px" }}>✨ Sugestão terapêutica para alinhamento:</p>
             <p style={{ fontSize: 13, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.7 }}>{data.therapeuticSuggestions}</p>
+          </div>
+        )}
+
+        {/* Links */}
+        {(data.links ?? []).filter((l) => l.url).length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 14px" }} />
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>🔗 Links úteis:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {(data.links ?? []).filter((l) => l.url).map((l, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#7c3aed", flexShrink: 0, display: "inline-block" }} />
+                  <span style={{ fontSize: 13, color: "#374151", fontWeight: 600, minWidth: 80 }}>{l.label || "Link"}</span>
+                  <a href={l.url} target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: 12, color: "#7c3aed", textDecoration: "underline", wordBreak: "break-all" }}>
+                    {l.url}
+                  </a>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -333,6 +354,34 @@ export function RelatorioPreview({
           </div>
         )}
 
+        {/* Links */}
+        {(data.links ?? []).filter((l) => l.url).length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, fontStyle: "italic", color: accentColor, fontFamily: bodyFont, margin: "0 0 6px" }}>
+              🔗 Links úteis
+            </p>
+            <div style={{ borderTop: `1px solid ${accentColor}`, opacity: 0.3, margin: "0 0 10px" }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {(data.links ?? []).filter((l) => l.url).map((l, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                  <span style={{ fontSize: 15, lineHeight: 1.3, color: accentColor }}>•</span>
+                  <div>
+                    {l.label && (
+                      <span style={{ fontSize: 13, fontWeight: 700, color: textColor, fontFamily: bodyFont, marginRight: 6 }}>
+                        {l.label}:
+                      </span>
+                    )}
+                    <a href={l.url} target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: 13, color: accentColor, textDecoration: "underline", wordBreak: "break-all", fontFamily: bodyFont }}>
+                      {l.url}
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Spacer — empurra a assinatura para o rodapé */}
         <div style={{ flex: 1 }} />
 
@@ -355,7 +404,7 @@ export function RelatorioPreview({
 // ─── Modal de visualização ────────────────────────────────────────────────────
 
 export function FichaPreviewModal({
-  data, client, service, profile, onClose, onDownload,
+  data, client, service, profile, onClose, onDownload, onEdit,
 }: {
   data: FichaPreviewData
   client: FichaClientData | undefined
@@ -363,6 +412,7 @@ export function FichaPreviewModal({
   profile: FichaProfile
   onClose: () => void
   onDownload: () => void
+  onEdit?: () => void
 }) {
   const isInternal = data.type === "INTERNAL"
   return (
@@ -376,6 +426,14 @@ export function FichaPreviewModal({
             {isInternal ? "Ficha Interna" : "Relatório"} — {client?.name ?? "visualização"}
           </p>
           <div className="flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Pencil size={13} /> Editar
+              </button>
+            )}
             <button
               onClick={onDownload}
               className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"

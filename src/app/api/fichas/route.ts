@@ -40,6 +40,8 @@ const schema = z.object({
   energeticObservations: z.string().nullable().optional(),
   therapeuticSuggestions: z.string().nullable().optional(),
   returnSchedule: z.string().nullable().optional(),
+  // Links — ambos os tipos
+  links: z.array(z.object({ label: z.string(), url: z.string() })).optional(),
 })
 
 export async function GET(req: NextRequest) {
@@ -101,6 +103,7 @@ export async function POST(req: NextRequest) {
         energeticObservations: data.energeticObservations,
         therapeuticSuggestions: data.therapeuticSuggestions,
         returnSchedule: data.returnSchedule,
+        links: data.links ?? [],
       },
     })
 
