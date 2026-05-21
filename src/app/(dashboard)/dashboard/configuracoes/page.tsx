@@ -206,21 +206,21 @@ export default function ConfiguracoesPage() {
           <>
             {/* Logo */}
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Logo <span className="text-gray-400 font-normal">(aparece no canto esquerdo de fichas e relatórios)</span></p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Logo <span className="text-gray-400 dark:text-gray-500 font-normal">(aparece no canto esquerdo de fichas e relatórios)</span></p>
               <input ref={logoRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => e.target.files?.[0] && handleImageUpload("logoUrl", e.target.files[0])} />
               {profile.logoUrl ? (
                 <div className="flex items-center gap-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={profile.logoUrl} alt="Logo" className="h-16 w-auto object-contain border border-gray-200 rounded-lg p-1" />
+                  <img src={profile.logoUrl} alt="Logo" className="h-16 w-auto object-contain border border-gray-200 dark:border-[rgba(255,255,255,0.1)] rounded-lg p-1" />
                   <div className="flex flex-col gap-1">
-                    <button onClick={() => logoRef.current?.click()} className="text-sm text-purple-600 hover:text-purple-500 font-medium">Trocar logo</button>
-                    <button onClick={() => setProfile((p) => ({ ...p, logoUrl: null }))} className="text-sm text-red-500 hover:text-red-700">Remover</button>
+                    <button onClick={() => logoRef.current?.click()} className="text-sm text-purple-500 dark:text-purple-400 hover:text-purple-400 dark:hover:text-purple-300 font-medium transition-colors">Trocar logo</button>
+                    <button onClick={() => setProfile((p) => ({ ...p, logoUrl: null }))} className="text-sm text-gray-400 dark:text-gray-500 hover:text-rose-400 dark:hover:text-rose-400 transition-colors">Remover</button>
                   </div>
                 </div>
               ) : (
                 <button onClick={() => logoRef.current?.click()}
-                  className="flex items-center gap-2 border-2 border-dashed border-gray-200 hover:border-purple-300 rounded-xl px-6 py-4 text-sm text-gray-400 hover:text-purple-500 transition-colors w-full">
+                  className="flex items-center gap-2 border-2 border-dashed border-gray-200 dark:border-[rgba(255,255,255,0.1)] hover:border-purple-300 dark:hover:border-purple-500/40 rounded-xl px-6 py-4 text-sm text-gray-400 dark:text-gray-500 hover:text-purple-500 dark:hover:text-purple-400 transition-colors w-full">
                   <ImageIcon size={16} /> Clique para adicionar sua logo
                 </button>
               )}
@@ -228,46 +228,46 @@ export default function ConfiguracoesPage() {
 
             {/* Fundo padrão dos relatórios */}
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">Fundo padrão dos relatórios <span className="text-gray-400 font-normal">(imagem A4 do Canva)</span></p>
-              <p className="text-xs text-gray-400 mb-2">Uma vez definido, será usado em todos os relatórios. Você pode remover por relatório individualmente.</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fundo padrão dos relatórios <span className="text-gray-400 dark:text-gray-500 font-normal">(imagem A4 do Canva)</span></p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Uma vez definido, será usado em todos os relatórios. Você pode remover por relatório individualmente.</p>
               <input ref={bgRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => e.target.files?.[0] && handleImageUpload("reportBg", e.target.files[0])} />
               {profile.reportBg ? (
                 <div className="flex items-center gap-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={profile.reportBg} alt="Fundo" className="h-20 w-auto object-contain border border-gray-200 rounded-lg" />
+                  <img src={profile.reportBg} alt="Fundo" className="h-20 w-auto object-contain border border-gray-200 dark:border-[rgba(255,255,255,0.1)] rounded-lg" />
                   <div className="flex flex-col gap-1">
-                    <button onClick={() => bgRef.current?.click()} className="text-sm text-purple-600 hover:text-purple-500 font-medium">Trocar fundo</button>
-                    <button onClick={() => setProfile((p) => ({ ...p, reportBg: null }))} className="text-sm text-red-500 hover:text-red-700">Remover padrão</button>
+                    <button onClick={() => bgRef.current?.click()} className="text-sm text-purple-500 dark:text-purple-400 hover:text-purple-400 dark:hover:text-purple-300 font-medium transition-colors">Trocar fundo</button>
+                    <button onClick={() => setProfile((p) => ({ ...p, reportBg: null }))} className="text-sm text-gray-400 dark:text-gray-500 hover:text-rose-400 dark:hover:text-rose-400 transition-colors">Remover padrão</button>
                   </div>
                 </div>
               ) : (
                 <button onClick={() => bgRef.current?.click()}
-                  className="flex items-center gap-2 border-2 border-dashed border-gray-200 hover:border-purple-300 rounded-xl px-6 py-4 text-sm text-gray-400 hover:text-purple-500 transition-colors w-full">
+                  className="flex items-center gap-2 border-2 border-dashed border-gray-200 dark:border-[rgba(255,255,255,0.1)] hover:border-purple-300 dark:hover:border-purple-500/40 rounded-xl px-6 py-4 text-sm text-gray-400 dark:text-gray-500 hover:text-purple-500 dark:hover:text-purple-400 transition-colors w-full">
                   <ImageIcon size={16} /> Clique para adicionar fundo A4
                 </button>
               )}
             </div>
 
             {/* Identidade do relatório */}
-            <div className="mt-2 border border-gray-200 rounded-xl p-5 space-y-4">
-              <p className="text-sm font-semibold text-gray-700">✍️ Identidade do relatório</p>
+            <div className="mt-2 border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-5 space-y-4">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">✍️ Identidade do relatório</p>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assinatura (nome que aparece no rodapé)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assinatura (nome que aparece no rodapé)</label>
                 <input value={profile.signature} onChange={(e) => setProfile({ ...profile, signature: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(255,255,255,0.1)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
                   placeholder="Ex: Suelen Silva | Luz e Alma Terapias" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Slogan (subtítulo no relatório)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Slogan (subtítulo no relatório)</label>
                 <input value={profile.slogan} onChange={(e) => setProfile({ ...profile, slogan: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full border border-gray-200 dark:border-[rgba(255,255,255,0.1)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
                   placeholder="Ex: Leituras com amor e luz" />
               </div>
 
-              <p className="text-sm font-medium text-gray-700 pt-1">Fontes e cores</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 pt-1">Fontes e cores</p>
 
               <ConfigFontColorRow
                 label="Título"
@@ -297,13 +297,13 @@ export default function ConfiguracoesPage() {
               />
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Cor de destaque <span className="text-gray-400 font-normal">(seções, divisórias)</span>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Cor de destaque <span className="text-gray-400 dark:text-gray-500 font-normal">(seções, divisórias)</span>
                 </label>
                 <div className="flex items-center gap-2">
                   <input type="color" value={profile.reportAccentColor} onChange={(e) => setProfile({ ...profile, reportAccentColor: e.target.value })}
-                    className="w-9 h-9 rounded cursor-pointer border border-gray-200 p-0.5" />
-                  <span className="text-xs text-gray-400 font-mono">{profile.reportAccentColor}</span>
+                    className="w-9 h-9 rounded cursor-pointer border border-gray-200 dark:border-[rgba(255,255,255,0.1)] p-0.5" />
+                  <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">{profile.reportAccentColor}</span>
                 </div>
               </div>
             </div>
