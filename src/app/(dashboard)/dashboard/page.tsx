@@ -2,11 +2,13 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { formatCurrency } from "@/lib/utils"
 import { CalendarDays, Users, TrendingUp, Clock, Cake } from "lucide-react"
-import { startOfMonth, endOfMonth } from "date-fns"
 
 function getMMDD(date: Date | string): string {
+  // Usa fuso de SP para não errar o dia nos extremos do dia
   const d = new Date(date)
-  return `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  const s = d.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) // "YYYY-MM-DD"
+  const parts = s.split("-")
+  return `${parts[1]}-${parts[2]}` // "MM-DD"
 }
 function formatBirthday(birthDate: Date | string): string {
   const d = new Date(birthDate)
@@ -33,10 +35,21 @@ export default async function DashboardPage() {
   const session = await auth()
   const userId = session!.user.id
   const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-  const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
-  const monthStart = startOfMonth(now)
-  const monthEnd   = endOfMonth(now)
+
+  // Fuso horário de Brasília (UTC-3). O Vercel roda em UTC, então precisamos
+  // calcular as bordas do "hoje" com base no horário local do Brasil.
+  const TZ = "America/Sao_Paulo"
+  const todayStr = now.toLocaleDateString("en-CA", { timeZone: TZ }) // "YYYY-MM-DD"
+  const [ty, tm, td] = todayStr.split("-").map(Number)
+  // Meia-noite em SP = 03:00 UTC (UTC-3); fim do dia SP = 02:59:59 UTC do dia seguinte
+  const todayStart = new Date(Date.UTC(ty, tm - 1, td,      3,  0,  0,   0))
+  const todayEnd   = new Date(Date.UTC(ty, tm - 1, td + 1,  2, 59, 59, 999))
+
+  // Mês corrente no fuso de SP
+  const monthStr = now.toLocaleDateString("en-CA", { timeZone: TZ }).slice(0, 7) // "YYYY-MM"
+  const [my, mm] = monthStr.split("-").map(Number)
+  const monthStart = new Date(Date.UTC(my, mm - 1, 1,  3,  0,  0,   0))
+  const monthEnd   = new Date(Date.UTC(my, mm,     1,  2, 59, 59, 999)) // 1º do próximo mês 02:59 UTC
 
   const [totalClients, appointmentsThisMonth, upcomingToday, revenue, clientsWithBirthday] = await Promise.all([
     prisma.client.count({ where: { userId } }),
@@ -124,7 +137,7 @@ export default async function DashboardPage() {
               {upcomingToday.map((apt: typeof upcomingToday[0]) => (
                 <div key={apt.id} className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 dark:bg-[rgba(170,85,249,0.06)] dark:border dark:border-[rgba(170,85,249,0.1)]">
                   <div className="text-sm font-mono text-purple-600 dark:text-[#aa55f9] font-bold w-12">
-                    {new Date(apt.startTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(apt.startTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-900 dark:text-white text-sm">{apt.client.name}</p>
