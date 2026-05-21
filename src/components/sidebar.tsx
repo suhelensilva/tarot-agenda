@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import {
   CalendarDays, Users, LayoutDashboard, Package,
-  MessageSquare, BarChart3, Settings, LogOut, Link2, Crown, CreditCard,
+  BarChart3, Settings, LogOut, Link2, Crown, CreditCard,
 } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 
@@ -15,7 +15,6 @@ const nav = [
   { href: "/dashboard/agenda",        icon: CalendarDays,    label: "Agenda",        exact: false },
   { href: "/dashboard/clientes",      icon: Users,           label: "Clientes",      exact: false },
   { href: "/dashboard/servicos",      icon: Package,         label: "Serviços",      exact: false },
-  { href: "/dashboard/mensagens",     icon: MessageSquare,   label: "Mensagens",     exact: false },
   { href: "/dashboard/link",          icon: Link2,           label: "Link Público",  exact: false },
   { href: "/dashboard/relatorios",    icon: BarChart3,       label: "Relatórios",    exact: false },
   { href: "/dashboard/configuracoes", icon: Settings,        label: "Configurações", exact: false },
