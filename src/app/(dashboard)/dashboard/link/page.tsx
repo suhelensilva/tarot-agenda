@@ -367,26 +367,10 @@ export default function LinkPage() {
       <div className="hidden xl:flex w-80 shrink-0 flex-col items-center justify-start pt-8 pb-8 px-6 border-l border-gray-200 dark:border-[rgba(170,85,249,0.1)] bg-gray-50 dark:bg-[rgba(255,255,255,0.02)] sticky top-0 h-screen overflow-y-auto">
         <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-5">Prévia ao vivo</p>
 
-        {/* Frame do celular */}
-        <div className="relative w-[220px] shrink-0">
-          {/* Corpo do celular */}
-          <div className="rounded-[2.2rem] border-[7px] border-gray-800 dark:border-gray-700 bg-gray-800 dark:bg-gray-700 shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden">
-            {/* Notch */}
-            <div className="flex justify-center pt-2 pb-1 bg-gray-800 dark:bg-gray-700">
-              <div className="w-14 h-4 rounded-full bg-gray-900 dark:bg-gray-600" />
-            </div>
-            {/* Tela */}
-            <div className="overflow-hidden" style={{ height: "420px" }}>
-              <div style={{ transform: "scale(0.565)", transformOrigin: "top left", width: "389px", height: "743px" }}>
-                <LivePreview config={config} userName={userName} />
-              </div>
-            </div>
-            {/* Botão home */}
-            <div className="flex justify-center py-2 bg-gray-800 dark:bg-gray-700">
-              <div className="w-12 h-1 rounded-full bg-gray-600 dark:bg-gray-500" />
-            </div>
-          </div>
-        </div>
+        {/* Frame do celular com SVG overlay */}
+        <PhoneFrame>
+          <LivePreview config={config} userName={userName} />
+        </PhoneFrame>
 
         <p className="text-[10px] text-gray-400 dark:text-gray-600 mt-4 text-center leading-relaxed">
           Prévia em tempo real.<br />Clique em <strong>Salvar</strong> para publicar.
@@ -485,6 +469,57 @@ function MiniThemeCard({ theme }: { theme: typeof THEMES[number] }) {
       {[1, 2, 3].map((n) => (
         <div key={n} className={`w-full h-2.5 ${id === "TEMA3" || id === "TEMA5" ? "rounded-full" : "rounded"}`} style={{ backgroundColor: btn, opacity: 0.9 }} />
       ))}
+    </div>
+  )
+}
+
+// ── PhoneFrame ────────────────────────────────────────────────────────────────
+// SVG baseado na imagem enviada: iPhone com notch, botões laterais, home bar
+// A área da tela é transparente — o conteúdo aparece por baixo
+
+function PhoneFrame({ children }: { children: React.ReactNode }) {
+  const c = "#2d3748" // cor do frame (dark blue-gray igual à imagem)
+  return (
+    <div className="relative w-[220px] shrink-0 drop-shadow-[0_20px_40px_rgba(0,0,0,0.35)]"
+      style={{ aspectRatio: "310/634" }}>
+
+      {/* Conteúdo da tela — fica por baixo do frame SVG */}
+      <div className="absolute overflow-hidden"
+        style={{ top: "3.5%", left: "5.2%", right: "5.2%", bottom: "3.5%", borderRadius: "8.5%" }}>
+        {children}
+      </div>
+
+      {/* SVG do frame — fica por cima, com a tela recortada */}
+      <svg viewBox="0 0 310 634" fill="none" xmlns="http://www.w3.org/2000/svg"
+        className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 10 }}>
+        <defs>
+          {/* Máscara: preenche tudo de branco, recorta a tela de preto → resultado: frame visível, tela transparente */}
+          <mask id="phone-screen-mask">
+            <rect width="310" height="634" fill="white" />
+            <rect x="16" y="22" width="278" height="592" rx="28" fill="black" />
+          </mask>
+        </defs>
+
+        {/* Preenchimento do bezel (área do frame sem a tela) */}
+        <rect width="310" height="634" fill={c} mask="url(#phone-screen-mask)" />
+
+        {/* Borda externa arredondada */}
+        <rect x="5" y="5" width="300" height="624" rx="42" stroke={c} strokeWidth="10" />
+
+        {/* Notch (pílula no topo, centrada) */}
+        <rect x="112" y="5" width="86" height="22" rx="11" fill={c} />
+
+        {/* Home indicator (barra fina no rodapé) */}
+        <rect x="118" y="618" width="74" height="5" rx="2.5" fill={c} opacity="0.55" />
+
+        {/* Botões de volume (esquerda) */}
+        <rect x="0" y="130" width="5" height="34" rx="2.5" fill={c} />
+        <rect x="0" y="182" width="5" height="60" rx="2.5" fill={c} />
+        <rect x="0" y="256" width="5" height="60" rx="2.5" fill={c} />
+
+        {/* Botão power (direita) */}
+        <rect x="305" y="188" width="5" height="74" rx="2.5" fill={c} />
+      </svg>
     </div>
   )
 }
