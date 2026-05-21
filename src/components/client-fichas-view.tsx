@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { ArrowLeft, ClipboardList, FileText, Maximize2, Pencil, Plus, Trash2 } from "lucide-react"
+import { FONT_OPTIONS } from "@/lib/fonts"
 import { formatDate, formatCurrency } from "@/lib/utils"
 import {
   FichaInternaPreview,
@@ -1046,15 +1047,6 @@ export default function ClientFichasView({
 
 // ─── FontColorRow sub-component ───────────────────────────────────────────────
 
-const FONT_OPTIONS = [
-  { value: "Georgia, serif", label: "Georgia (elegante)" },
-  { value: "Palatino Linotype, Palatino, serif", label: "Palatino (clássica)" },
-  { value: "Garamond, serif", label: "Garamond (refinada)" },
-  { value: "Trebuchet MS, sans-serif", label: "Trebuchet (arredondada)" },
-  { value: "Arial, sans-serif", label: "Arial (moderna)" },
-  { value: "Brush Script MT, cursive", label: "Brush Script (manuscrita)" },
-]
-
 function FontColorRow({
   label, hint, fontValue, onFontChange, colorValue, onColorChange,
 }: {
@@ -1077,8 +1069,14 @@ function FontColorRow({
           onChange={(e) => onFontChange(e.target.value)}
           className="flex-1 border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400"
         >
-          {FONT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value} className="bg-white dark:bg-[#1a1a2e] text-gray-900 dark:text-gray-100">{o.label}</option>
+          {["Clássica", "Moderna", "Manuscrita"].map((cat) => (
+            <optgroup key={cat} label={cat}>
+              {FONT_OPTIONS.filter((o) => o.category === cat).map((o) => (
+                <option key={o.value} value={o.value} className="bg-white dark:bg-[#1a1a2e] text-gray-900 dark:text-gray-100">
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <div className="flex items-center gap-1.5 shrink-0">

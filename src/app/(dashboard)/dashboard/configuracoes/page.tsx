@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import { Smartphone, Calendar, Save, CheckCircle, ImageIcon, User, Crown, Lock, Link2, Plus, Trash2 } from "lucide-react"
+import { FONT_OPTIONS } from "@/lib/fonts"
 import { useSession } from "next-auth/react"
 import { getPlanLimits } from "@/lib/plan"
 import Link from "next/link"
@@ -513,15 +514,6 @@ export default function ConfiguracoesPage() {
 
 // ─── ConfigFontColorRow ────────────────────────────────────────────────────────
 
-const FONT_OPTIONS = [
-  { value: "Georgia, serif", label: "Georgia (elegante)" },
-  { value: "Palatino Linotype, Palatino, serif", label: "Palatino (clássica)" },
-  { value: "Garamond, serif", label: "Garamond (refinada)" },
-  { value: "Trebuchet MS, sans-serif", label: "Trebuchet (arredondada)" },
-  { value: "Arial, sans-serif", label: "Arial (moderna)" },
-  { value: "Brush Script MT, cursive", label: "Brush Script (manuscrita)" },
-]
-
 function ConfigFontColorRow({
   label, hint, fontValue, onFontChange, colorValue, onColorChange,
 }: {
@@ -533,19 +525,25 @@ function ConfigFontColorRow({
   onColorChange: (v: string) => void
 }) {
   return (
-    <div className="border border-gray-100 rounded-lg p-3 space-y-2">
+    <div className="border border-gray-200 dark:border-[rgba(170,85,249,0.15)] dark:bg-[rgba(255,255,255,0.02)] rounded-lg p-3 space-y-2">
       <div>
-        <p className="text-xs font-semibold text-gray-700">{label}</p>
-        <p className="text-xs text-gray-400">{hint}</p>
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">{label}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">{hint}</p>
       </div>
       <div className="flex items-center gap-3">
         <select
           value={fontValue}
           onChange={(e) => onFontChange(e.target.value)}
-          className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400"
+          className="flex-1 border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400"
         >
-          {FONT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+          {["Clássica", "Moderna", "Manuscrita"].map((cat) => (
+            <optgroup key={cat} label={cat}>
+              {FONT_OPTIONS.filter((o) => o.category === cat).map((o) => (
+                <option key={o.value} value={o.value} className="bg-white dark:bg-[#1a1a2e]">
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -553,9 +551,9 @@ function ConfigFontColorRow({
             type="color"
             value={colorValue}
             onChange={(e) => onColorChange(e.target.value)}
-            className="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
+            className="w-8 h-8 rounded cursor-pointer border border-gray-200 dark:border-[rgba(170,85,249,0.2)] p-0.5"
           />
-          <span className="text-xs text-gray-400 font-mono w-14">{colorValue}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500 font-mono w-14">{colorValue}</span>
         </div>
       </div>
       {/* Font preview */}
