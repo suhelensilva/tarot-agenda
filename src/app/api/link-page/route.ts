@@ -22,6 +22,7 @@ export async function GET() {
     select: {
       id: true,
       name: true,
+      plan: true,
       publicBio: true,
       publicTheme: true,
       publicFont: true,

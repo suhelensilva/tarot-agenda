@@ -51,6 +51,7 @@ model User {
   fichas           Ficha[]
   subscription     Subscription?
   publicButtons    PublicButton[]
+  expenses         Expense[]
 
   @@map("users")
 }
@@ -285,6 +286,7 @@ model Ficha {
   energeticObservations   String?
   therapeuticSuggestions  String?
   returnSchedule          String?
+  links                   Json      @default("[]")  // [{label, url}]
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -350,4 +352,19 @@ enum SubscriptionStatus {
   CANCELLED
   EXPIRED
   PAST_DUE
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  userId      String
+  description String
+  category    String   @default("Outros")
+  amount      Float
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("expenses")
 }

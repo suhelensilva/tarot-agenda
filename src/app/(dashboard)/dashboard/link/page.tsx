@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import {
   Copy, ExternalLink, Plus, Trash2, ChevronUp, ChevronDown,
-  Link2, Calendar, Check, ImageIcon, X, Pencil,
+  Link2, Calendar, Check, ImageIcon, X, Pencil, Lock, Sparkles,
 } from "lucide-react"
 import { usePlanFetch } from "@/components/upgrade-provider"
 
@@ -96,6 +96,7 @@ export default function LinkPage() {
 
   const [userId, setUserId]   = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [plan, setPlan]       = useState<"FREE"|"PRO"|"PREMIUM">("FREE")
   const [config, setConfig]   = useState<Config>({
     publicBio: "", publicTheme: "TEMA1", publicFont: "Poppins",
     publicBgColor: null, publicButtonColor: null, publicButtonTextColor: null,
@@ -127,6 +128,7 @@ export default function LinkPage() {
     const data = await r.json()
     setUserId(data.id)
     setUserName(data.name)
+    setPlan(data.plan ?? "FREE")
     setConfig({
       publicBio:             data.publicBio             ?? "",
       publicTheme:           data.publicTheme            ?? "TEMA1",
@@ -199,6 +201,8 @@ export default function LinkPage() {
 
   const theme      = THEMES.find((t) => t.id === config.publicTheme) ?? THEMES[0]
   const publicLink = userId ? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/agendar/${userId}` : ""
+  const isPro      = plan === "PRO" || plan === "PREMIUM"
+  const isPremium  = plan === "PREMIUM"
 
   return (
     <div className="flex gap-0 h-full min-h-screen">
@@ -219,10 +223,12 @@ export default function LinkPage() {
                 <ExternalLink size={13} /> Ver página
               </a>
             )}
-            <button onClick={handleSave} disabled={saving}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors">
-              {saved ? <><Check size={14} /> Salvo!</> : saving ? "Salvando…" : "Salvar"}
-            </button>
+            {isPro && (
+              <button onClick={handleSave} disabled={saving}
+                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors">
+                {saved ? <><Check size={14} /> Salvo!</> : saving ? "Salvando…" : "Salvar"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -236,130 +242,192 @@ export default function LinkPage() {
           </div>
         )}
 
-        {/* ── 1. TEMA ────────────────────────────────────────────────────────── */}
-        <Section title="Tema" subtitle="Escolha o layout da sua página">
-          <div className="grid grid-cols-5 gap-2.5">
-            {THEMES.map((t) => (
-              <button key={t.id} onClick={() => setConfig((c) => ({ ...c, publicTheme: t.id }))}
-                className={`relative rounded-xl overflow-hidden border-2 transition-all ${
-                  config.publicTheme === t.id
-                    ? "border-purple-500 dark:border-[#aa55f9] ring-2 ring-purple-300/40 dark:ring-[rgba(170,85,249,0.3)]"
-                    : "border-gray-200 dark:border-[rgba(255,255,255,0.08)] hover:border-purple-300 dark:hover:border-[rgba(170,85,249,0.4)]"
-                }`}>
-                <MiniThemeCard theme={t} />
-                <div className="py-1.5 text-center bg-white dark:bg-[#1a1a2e]">
-                  <p className="text-xs font-semibold text-gray-800 dark:text-white">{t.name}</p>
-                </div>
-                {config.publicTheme === t.id && (
-                  <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-purple-500 dark:bg-[#aa55f9] flex items-center justify-center shadow">
-                    <Check size={10} className="text-white" />
-                  </div>
-                )}
-              </button>
-            ))}
+        {/* ── FREE: sem editor, só CTA ─────────────────────────────────────── */}
+        {plan === "FREE" && (
+          <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-[rgba(124,58,237,0.08)] dark:to-[rgba(170,85,249,0.05)] border border-purple-200 dark:border-[rgba(170,85,249,0.25)] rounded-2xl p-6 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-[rgba(170,85,249,0.15)] flex items-center justify-center mx-auto mb-3">
+              <Sparkles size={22} className="text-purple-500 dark:text-[#aa55f9]" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Personalize seu link</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-sm mx-auto">
+              No plano gratuito sua página já está ativa com layout básico. Faça upgrade para personalizar tema, cores, foto e muito mais.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="bg-white dark:bg-[#13131f] border border-purple-200 dark:border-[rgba(170,85,249,0.2)] rounded-xl p-4 text-left flex-1 max-w-xs mx-auto sm:mx-0">
+                <p className="text-xs font-bold text-purple-600 dark:text-[#aa55f9] mb-2 uppercase tracking-wide">PRO · R$19,90/mês</p>
+                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>✓ Botões e links ilimitados</li>
+                  <li>✓ Trocar a cor dos botões</li>
+                  <li>✓ Sem marca d&apos;água</li>
+                </ul>
+              </div>
+              <div className="bg-purple-600 dark:bg-[rgba(170,85,249,0.2)] rounded-xl p-4 text-left flex-1 max-w-xs mx-auto sm:mx-0">
+                <p className="text-xs font-bold text-white dark:text-[#aa55f9] mb-2 uppercase tracking-wide">PREMIUM · R$39,90/mês</p>
+                <ul className="text-xs text-white/90 dark:text-gray-300 space-y-1">
+                  <li>✓ Tudo do PRO</li>
+                  <li>✓ 5 temas exclusivos</li>
+                  <li>✓ Foto e bio de perfil</li>
+                  <li>✓ Fontes e cores personalizadas</li>
+                </ul>
+              </div>
+            </div>
           </div>
-        </Section>
+        )}
 
-        {/* ── 2. PERFIL ──────────────────────────────────────────────────────── */}
-        <Section title="Perfil" subtitle="Foto e bio que aparecem na página">
-          <div className="flex gap-4">
-            <div className="shrink-0">
-              <div onClick={() => fileRef.current?.click()}
-                className="w-20 h-20 rounded-full border-2 border-dashed border-gray-200 dark:border-[rgba(170,85,249,0.25)] flex items-center justify-center cursor-pointer hover:border-purple-400 dark:hover:border-[rgba(170,85,249,0.5)] overflow-hidden relative group transition-colors">
-                {config.publicPhotoUrl ? (
-                  <>
-                    <img src={config.publicPhotoUrl} alt="" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                      <ImageIcon size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+        {/* ── PRO / PREMIUM: editor completo ───────────────────────────────── */}
+        {isPro && (
+          <>
+            {/* ── 1. TEMA ──────────────────────────────────────────────────── */}
+            <LockedSection locked={!isPremium} lockLabel="Temas exclusivos — plano Premium" title="Tema" subtitle="Escolha o layout da sua página">
+              <div className="grid grid-cols-5 gap-2.5">
+                {THEMES.map((t) => (
+                  <button key={t.id} onClick={() => isPremium && setConfig((c) => ({ ...c, publicTheme: t.id }))}
+                    className={`relative rounded-xl overflow-hidden border-2 transition-all ${
+                      !isPremium ? "opacity-60 cursor-not-allowed" :
+                      config.publicTheme === t.id
+                        ? "border-purple-500 dark:border-[#aa55f9] ring-2 ring-purple-300/40 dark:ring-[rgba(170,85,249,0.3)]"
+                        : "border-gray-200 dark:border-[rgba(255,255,255,0.08)] hover:border-purple-300 dark:hover:border-[rgba(170,85,249,0.4)]"
+                    }`}>
+                    <MiniThemeCard theme={t} />
+                    <div className="py-1.5 text-center bg-white dark:bg-[#1a1a2e]">
+                      <p className="text-xs font-semibold text-gray-800 dark:text-white">{t.name}</p>
                     </div>
-                  </>
-                ) : uploading ? (
-                  <p className="text-xs text-purple-400">Enviando…</p>
+                    {isPremium && config.publicTheme === t.id && (
+                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-purple-500 dark:bg-[#aa55f9] flex items-center justify-center shadow">
+                        <Check size={10} className="text-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </LockedSection>
+
+            {/* ── 2. PERFIL ─────────────────────────────────────────────────── */}
+            <LockedSection locked={!isPremium} lockLabel="Foto e bio — plano Premium" title="Perfil" subtitle="Foto e bio que aparecem na página">
+              <div className="flex gap-4">
+                <div className="shrink-0">
+                  <div onClick={() => isPremium && fileRef.current?.click()}
+                    className={`w-20 h-20 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden relative group transition-colors ${
+                      isPremium ? "border-gray-200 dark:border-[rgba(170,85,249,0.25)] cursor-pointer hover:border-purple-400 dark:hover:border-[rgba(170,85,249,0.5)]"
+                                : "border-gray-200 dark:border-[rgba(255,255,255,0.1)] cursor-not-allowed opacity-60"
+                    }`}>
+                    {config.publicPhotoUrl ? (
+                      <>
+                        <img src={config.publicPhotoUrl} alt="" className="w-full h-full object-cover" />
+                        {isPremium && (
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                            <ImageIcon size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        )}
+                      </>
+                    ) : uploading ? (
+                      <p className="text-xs text-purple-400">Enviando…</p>
+                    ) : (
+                      <ImageIcon size={22} className="text-gray-300 dark:text-gray-600" />
+                    )}
+                  </div>
+                  {isPremium && config.publicPhotoUrl && (
+                    <button onClick={async () => {
+                      setConfig((c) => ({ ...c, publicPhotoUrl: null }))
+                      await fetch("/api/link-page", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicPhotoUrl: null }) })
+                    }} className="mt-1 text-xs text-red-400 hover:text-red-500 w-full text-center">Remover</button>
+                  )}
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f && isPremium) handlePhotoUpload(f) }} />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio / descrição</label>
+                  <textarea rows={3} value={config.publicBio ?? ""} disabled={!isPremium}
+                    onChange={(e) => setConfig((c) => ({ ...c, publicBio: e.target.value }))}
+                    placeholder={isPremium ? "Ex: Taróloga especialista em amor e propósito de vida ✨" : "Disponível no plano Premium"}
+                    className={`w-full border rounded-lg px-3 py-2.5 text-sm placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] resize-none ${
+                      isPremium ? "border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] text-gray-900 dark:text-gray-200"
+                                : "border-gray-100 dark:border-[rgba(255,255,255,0.05)] bg-gray-50 dark:bg-[rgba(255,255,255,0.02)] text-gray-400 cursor-not-allowed"
+                    }`} />
+                </div>
+              </div>
+            </LockedSection>
+
+            {/* ── 3. BOTÕES ─────────────────────────────────────────────────── */}
+            <Section title="Botões" subtitle="Adicione links e botões de agendamento">
+              <div className="space-y-2 mb-3">
+                {config.publicButtons.length === 0 && (
+                  <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-3">Nenhum botão ainda.</p>
+                )}
+                {config.publicButtons.map((b, i) => (
+                  <div key={b.id} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${
+                    b.active ? "bg-white dark:bg-[#13131f] border-gray-200 dark:border-[rgba(170,85,249,0.15)]"
+                             : "bg-gray-50 dark:bg-[rgba(255,255,255,0.02)] border-gray-100 dark:border-[rgba(255,255,255,0.05)] opacity-60"
+                  }`}>
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                      b.type === "BOOK" ? "bg-purple-100 dark:bg-[rgba(170,85,249,0.15)] text-purple-600 dark:text-[#aa55f9]"
+                                       : "bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                    }`}>
+                      {b.type === "BOOK" ? <Calendar size={13} /> : <Link2 size={13} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{b.label}</p>
+                      {b.url && <p className="text-xs text-gray-400 truncate">{b.url}</p>}
+                      {b.type === "BOOK" && <p className="text-xs text-purple-400 dark:text-[#aa55f9]/70">Abre o agendamento</p>}
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <button onClick={() => handleMoveBtn(b.id, "up")} disabled={i === 0} className="p-1 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"><ChevronUp size={13} /></button>
+                      <button onClick={() => handleMoveBtn(b.id, "down")} disabled={i === config.publicButtons.length - 1} className="p-1 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"><ChevronDown size={13} /></button>
+                      <button onClick={() => handleToggleBtn(b.id, b.active)} className={`text-xs px-1.5 py-0.5 rounded font-medium ${b.active ? "text-gray-400 hover:text-gray-600 dark:text-gray-500" : "text-green-500"}`}>{b.active ? "Ocultar" : "Mostrar"}</button>
+                      <button onClick={() => openEditBtn(b)} className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-[#aa55f9] rounded transition-colors"><Pencil size={12} /></button>
+                      <button onClick={() => handleDeleteBtn(b.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"><Trash2 size={12} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={openNewBtn}
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-400 dark:text-gray-500 hover:border-purple-400 dark:hover:border-[rgba(170,85,249,0.5)] hover:text-purple-500 dark:hover:text-[#aa55f9] rounded-xl py-2.5 text-sm transition-colors">
+                <Plus size={14} /> Adicionar botão
+              </button>
+            </Section>
+
+            {/* ── 4. ESTILO ─────────────────────────────────────────────────── */}
+            <Section title="Estilo" subtitle="Fonte e cores da sua página">
+              {/* Fonte — apenas Premium */}
+              <LockedField locked={!isPremium} lockLabel="Fontes personalizadas — plano Premium">
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fonte</label>
+                  <div className={`grid grid-cols-3 gap-2 max-h-52 overflow-y-auto pr-1 ${!isPremium ? "pointer-events-none opacity-40" : ""}`}>
+                    {FONTS.map((f) => (
+                      <button key={f.name} onClick={() => isPremium && setConfig((c) => ({ ...c, publicFont: f.name }))}
+                        className={`px-2.5 py-2 rounded-lg border text-left transition-all ${
+                          config.publicFont === f.name
+                            ? "border-purple-400 dark:border-[#aa55f9] bg-purple-50 dark:bg-[rgba(170,85,249,0.1)]"
+                            : "border-gray-200 dark:border-[rgba(255,255,255,0.08)] hover:border-purple-300 dark:hover:border-[rgba(170,85,249,0.3)]"
+                        }`}>
+                        <p className="text-[9px] text-gray-400 dark:text-gray-500 leading-none mb-0.5">{f.category}</p>
+                        <p className="text-sm text-gray-800 dark:text-white truncate leading-tight" style={{ fontFamily: `'${f.name}', sans-serif` }}>{f.name}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </LockedField>
+
+              {/* Cores — PRO pode mudar apenas cor dos botões, Premium pode tudo */}
+              <div className="grid grid-cols-3 gap-4">
+                {/* Fundo — Premium only */}
+                {isPremium ? (
+                  <ColorField label="Fundo" hint={theme.bg} value={config.publicBgColor ?? ""} defaultValue={theme.bg} onChange={(v) => setConfig((c) => ({ ...c, publicBgColor: v || null }))} />
                 ) : (
-                  <ImageIcon size={22} className="text-gray-300 dark:text-gray-600" />
+                  <LockedColorField label="Fundo" lockLabel="Premium" />
+                )}
+                {/* Botões — PRO e Premium */}
+                <ColorField label="Botões" hint="#7c3aed" value={config.publicButtonColor ?? ""} defaultValue="#7c3aed" onChange={(v) => setConfig((c) => ({ ...c, publicButtonColor: v || null }))} />
+                {/* Texto dos botões — Premium only */}
+                {isPremium ? (
+                  <ColorField label="Texto dos botões" hint={theme.btnText} value={config.publicButtonTextColor ?? ""} defaultValue={theme.btnText} onChange={(v) => setConfig((c) => ({ ...c, publicButtonTextColor: v || null }))} />
+                ) : (
+                  <LockedColorField label="Texto dos botões" lockLabel="Premium" />
                 )}
               </div>
-              {config.publicPhotoUrl && (
-                <button onClick={async () => {
-                  setConfig((c) => ({ ...c, publicPhotoUrl: null }))
-                  await fetch("/api/link-page", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicPhotoUrl: null }) })
-                }} className="mt-1 text-xs text-red-400 hover:text-red-500 w-full text-center">Remover</button>
-              )}
-              <input ref={fileRef} type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f) }} />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio / descrição</label>
-              <textarea rows={3} value={config.publicBio ?? ""}
-                onChange={(e) => setConfig((c) => ({ ...c, publicBio: e.target.value }))}
-                placeholder="Ex: Taróloga especialista em amor e propósito de vida ✨"
-                className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] resize-none" />
-            </div>
-          </div>
-        </Section>
-
-        {/* ── 3. BOTÕES ──────────────────────────────────────────────────────── */}
-        <Section title="Botões" subtitle="Adicione links e botões de agendamento">
-          <div className="space-y-2 mb-3">
-            {config.publicButtons.length === 0 && (
-              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-3">Nenhum botão ainda.</p>
-            )}
-            {config.publicButtons.map((b, i) => (
-              <div key={b.id} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${
-                b.active ? "bg-white dark:bg-[#13131f] border-gray-200 dark:border-[rgba(170,85,249,0.15)]"
-                         : "bg-gray-50 dark:bg-[rgba(255,255,255,0.02)] border-gray-100 dark:border-[rgba(255,255,255,0.05)] opacity-60"
-              }`}>
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                  b.type === "BOOK" ? "bg-purple-100 dark:bg-[rgba(170,85,249,0.15)] text-purple-600 dark:text-[#aa55f9]"
-                                   : "bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                }`}>
-                  {b.type === "BOOK" ? <Calendar size={13} /> : <Link2 size={13} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{b.label}</p>
-                  {b.url && <p className="text-xs text-gray-400 truncate">{b.url}</p>}
-                  {b.type === "BOOK" && <p className="text-xs text-purple-400 dark:text-[#aa55f9]/70">Abre o agendamento</p>}
-                </div>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <button onClick={() => handleMoveBtn(b.id, "up")} disabled={i === 0} className="p-1 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"><ChevronUp size={13} /></button>
-                  <button onClick={() => handleMoveBtn(b.id, "down")} disabled={i === config.publicButtons.length - 1} className="p-1 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"><ChevronDown size={13} /></button>
-                  <button onClick={() => handleToggleBtn(b.id, b.active)} className={`text-xs px-1.5 py-0.5 rounded font-medium ${b.active ? "text-gray-400 hover:text-gray-600 dark:text-gray-500" : "text-green-500"}`}>{b.active ? "Ocultar" : "Mostrar"}</button>
-                  <button onClick={() => openEditBtn(b)} className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-[#aa55f9] rounded transition-colors"><Pencil size={12} /></button>
-                  <button onClick={() => handleDeleteBtn(b.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"><Trash2 size={12} /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button onClick={openNewBtn}
-            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-400 dark:text-gray-500 hover:border-purple-400 dark:hover:border-[rgba(170,85,249,0.5)] hover:text-purple-500 dark:hover:text-[#aa55f9] rounded-xl py-2.5 text-sm transition-colors">
-            <Plus size={14} /> Adicionar botão
-          </button>
-        </Section>
-
-        {/* ── 4. ESTILO ──────────────────────────────────────────────────────── */}
-        <Section title="Estilo" subtitle="Fonte e cores da sua página">
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fonte</label>
-            <div className="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto pr-1">
-              {FONTS.map((f) => (
-                <button key={f.name} onClick={() => setConfig((c) => ({ ...c, publicFont: f.name }))}
-                  className={`px-2.5 py-2 rounded-lg border text-left transition-all ${
-                    config.publicFont === f.name
-                      ? "border-purple-400 dark:border-[#aa55f9] bg-purple-50 dark:bg-[rgba(170,85,249,0.1)]"
-                      : "border-gray-200 dark:border-[rgba(255,255,255,0.08)] hover:border-purple-300 dark:hover:border-[rgba(170,85,249,0.3)]"
-                  }`}>
-                  <p className="text-[9px] text-gray-400 dark:text-gray-500 leading-none mb-0.5">{f.category}</p>
-                  <p className="text-sm text-gray-800 dark:text-white truncate leading-tight" style={{ fontFamily: `'${f.name}', sans-serif` }}>{f.name}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <ColorField label="Fundo" hint={theme.bg} value={config.publicBgColor ?? ""} defaultValue={theme.bg} onChange={(v) => setConfig((c) => ({ ...c, publicBgColor: v || null }))} />
-            <ColorField label="Botões" hint={theme.btn} value={config.publicButtonColor ?? ""} defaultValue={theme.btn} onChange={(v) => setConfig((c) => ({ ...c, publicButtonColor: v || null }))} />
-            <ColorField label="Texto dos botões" hint={theme.btnText} value={config.publicButtonTextColor ?? ""} defaultValue={theme.btnText} onChange={(v) => setConfig((c) => ({ ...c, publicButtonTextColor: v || null }))} />
-          </div>
-        </Section>
+            </Section>
+          </>
+        )}
 
       </div>{/* fim coluna esquerda */}
 
@@ -428,6 +496,67 @@ function Section({ title, subtitle, children }: { title: string; subtitle: strin
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>
       </div>
       {children}
+    </div>
+  )
+}
+
+// ── LockedSection ─────────────────────────────────────────────────────────────
+// Seção que pode ser bloqueada com um overlay e badge de upgrade
+
+function LockedSection({ title, subtitle, children, locked, lockLabel }: {
+  title: string; subtitle: string; children: React.ReactNode; locked: boolean; lockLabel: string
+}) {
+  return (
+    <div className={`relative bg-white dark:bg-[#13131f] border rounded-xl p-5 ${
+      locked ? "border-gray-100 dark:border-[rgba(255,255,255,0.05)]" : "border-gray-200 dark:border-[rgba(170,85,249,0.15)]"
+    }`}>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className={`font-semibold ${locked ? "text-gray-400 dark:text-gray-600" : "text-gray-900 dark:text-white"}`}>{title}</h2>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>
+        </div>
+        {locked && (
+          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-400/10 border border-amber-200 dark:border-amber-400/20 px-2 py-0.5 rounded-full">
+            <Lock size={9} /> Premium
+          </span>
+        )}
+      </div>
+      <div className={locked ? "pointer-events-none select-none opacity-35" : ""}>
+        {children}
+      </div>
+      {locked && (
+        <div className="absolute inset-0 rounded-xl cursor-not-allowed" title={lockLabel} />
+      )}
+    </div>
+  )
+}
+
+// ── LockedField ───────────────────────────────────────────────────────────────
+
+function LockedField({ children, locked, lockLabel }: { children: React.ReactNode; locked: boolean; lockLabel: string }) {
+  if (!locked) return <>{children}</>
+  return (
+    <div className="relative">
+      <div className="pointer-events-none select-none opacity-35">{children}</div>
+      <div className="absolute inset-0 cursor-not-allowed" title={lockLabel} />
+    </div>
+  )
+}
+
+// ── LockedColorField ──────────────────────────────────────────────────────────
+
+function LockedColorField({ label, lockLabel }: { label: string; lockLabel: string }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-400 dark:text-gray-600 mb-1.5">{label}</label>
+      <div className="flex items-center gap-2" title={lockLabel}>
+        <div className="w-8 h-8 rounded-lg border-2 border-gray-100 dark:border-[rgba(255,255,255,0.06)] bg-gray-100 dark:bg-[rgba(255,255,255,0.04)] flex items-center justify-center cursor-not-allowed">
+          <Lock size={10} className="text-gray-400 dark:text-gray-600" />
+        </div>
+        <div className="flex-1 border border-gray-100 dark:border-[rgba(255,255,255,0.05)] rounded-md px-2 py-1.5 bg-gray-50 dark:bg-[rgba(255,255,255,0.02)]">
+          <span className="text-[10px] text-gray-400 dark:text-gray-600 font-medium">{lockLabel}</span>
+        </div>
+      </div>
     </div>
   )
 }

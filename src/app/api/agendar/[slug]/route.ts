@@ -11,6 +11,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     select: {
       id: true,
       name: true,
+      plan: true,
       publicBio: true,
       publicTheme: true,
       publicFont: true,
@@ -32,7 +33,39 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
 
   if (!user) return NextResponse.json({ error: "Não encontrado" }, { status: 404 })
 
-  return NextResponse.json(user)
+  // Aplica restrições por plano antes de retornar
+  const plan = user.plan ?? "FREE"
+
+  if (plan === "FREE") {
+    // FREE: sem personalização nenhuma
+    return NextResponse.json({
+      ...user,
+      plan,
+      publicBio: null,
+      publicTheme: "BASIC",
+      publicFont: null,
+      publicBgColor: null,
+      publicButtonColor: null,
+      publicButtonTextColor: null,
+      publicPhotoUrl: null,
+    })
+  }
+
+  if (plan === "PRO") {
+    // PRO: pode usar cor dos botões, mas tema fixo e sem foto/bio/fonte
+    return NextResponse.json({
+      ...user,
+      plan,
+      publicBio: null,
+      publicTheme: "BASIC",
+      publicFont: null,
+      publicBgColor: null,
+      publicPhotoUrl: null,
+    })
+  }
+
+  // PREMIUM: tudo liberado
+  return NextResponse.json({ ...user, plan })
 }
 
 const bookSchema = z.object({

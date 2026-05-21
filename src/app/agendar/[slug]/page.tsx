@@ -14,6 +14,7 @@ type PButton      = { id: string; label: string; type: "BOOK" | "LINK"; url: str
 type PageData = {
   id: string
   name: string | null
+  plan: "FREE" | "PRO" | "PREMIUM"
   publicBio: string | null
   publicTheme: string | null
   publicFont: string | null
@@ -29,6 +30,9 @@ type PageData = {
 // ── Theme config ──────────────────────────────────────────────────────────────
 
 const THEME_DEFAULTS: Record<string, { bg: string; btn: string; btnText: string; btnRadius: string; photoBg: string }> = {
+  // Planos FREE e PRO: layout básico fixo
+  BASIC: { bg: "#ffffff", btn: "#7c3aed", btnText: "#ffffff", btnRadius: "0.5rem",  photoBg: "#ede9fe" },
+  // Planos PREMIUM: 5 temas personalizáveis
   TEMA1: { bg: "#f5f0eb", btn: "#7c6248", btnText: "#ffffff", btnRadius: "0.5rem",  photoBg: "#d9cfc5" },
   TEMA2: { bg: "#1a1a1a", btn: "#ffffff", btnText: "#1a1a1a", btnRadius: "9999px",  photoBg: "#333"    },
   TEMA3: { bg: "#f0e0d0", btn: "#c97d50", btnText: "#ffffff", btnRadius: "9999px",  photoBg: "#ddc4b0" },
@@ -84,13 +88,14 @@ export default function AgendarPage() {
     </div>
   )
 
-  const themeId   = data.publicTheme ?? "TEMA1"
-  const defaults  = THEME_DEFAULTS[themeId] ?? THEME_DEFAULTS.TEMA1
-  const bgColor   = data.publicBgColor      || defaults.bg
+  const isPremium = data.plan === "PREMIUM"
+  const themeId   = data.publicTheme ?? (isPremium ? "TEMA1" : "BASIC")
+  const defaults  = THEME_DEFAULTS[themeId] ?? THEME_DEFAULTS.BASIC
+  const bgColor   = (isPremium ? data.publicBgColor : null)     || defaults.bg
   const btnColor  = data.publicButtonColor  || defaults.btn
   const btnText   = data.publicButtonTextColor || defaults.btnText
   const btnRadius = defaults.btnRadius
-  const font      = data.publicFont ?? "Poppins"
+  const font      = (isPremium ? data.publicFont : null) ?? "Poppins"
 
   // Decide which buttons to show
   const buttons = data.publicButtons.length > 0
@@ -112,6 +117,9 @@ export default function AgendarPage() {
 
         {/* Phone card */}
         <div className="w-full max-w-sm rounded-3xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.5)]" style={pageStyle}>
+          {/* FREE e PRO: layout básico fixo */}
+          {(themeId === "BASIC") && <TemaBasic data={data} btnColor={btnColor} btnText={btnText} btnRadius={btnRadius} buttons={buttons} onBtn={handleButtonClick} showBranding={data.plan === "FREE"} />}
+          {/* PREMIUM: 5 temas personalizáveis */}
           {themeId === "TEMA1" && <Tema1 data={data} bgColor={bgColor} btnColor={btnColor} btnText={btnText} btnRadius={btnRadius} buttons={buttons} onBtn={handleButtonClick} />}
           {themeId === "TEMA2" && <Tema2 data={data} bgColor={bgColor} btnColor={btnColor} btnText={btnText} btnRadius={btnRadius} buttons={buttons} onBtn={handleButtonClick} />}
           {themeId === "TEMA3" && <Tema3 data={data} bgColor={bgColor} btnColor={btnColor} btnText={btnText} btnRadius={btnRadius} buttons={buttons} onBtn={handleButtonClick} />}
@@ -155,6 +163,63 @@ type ThemeProps = {
   btnRadius: string
   buttons: PButton[]
   onBtn: (b: PButton) => void
+}
+
+// ── TEMA BASIC — FREE / PRO ───────────────────────────────────────────────────
+
+function TemaBasic({ data, btnColor, btnText, btnRadius, buttons, onBtn, showBranding }: {
+  data: PageData; btnColor: string; btnText: string; btnRadius: string
+  buttons: PButton[]; onBtn: (b: PButton) => void; showBranding: boolean
+}) {
+  return (
+    <div className="flex flex-col items-center px-6 pt-12 pb-8 gap-5 min-h-[600px] bg-white">
+      {/* Avatar com inicial */}
+      <div
+        className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold shadow-sm"
+        style={{ backgroundColor: btnColor + "20", color: btnColor }}
+      >
+        {data.name?.[0]?.toUpperCase() ?? "?"}
+      </div>
+
+      {/* Nome */}
+      <h1 className="text-2xl font-bold text-gray-900 text-center tracking-tight">
+        {data.name}
+      </h1>
+
+      {/* Divisor */}
+      <div className="w-16 h-0.5 rounded-full" style={{ backgroundColor: btnColor + "60" }} />
+
+      {/* Botões */}
+      <div className="w-full space-y-3">
+        {buttons.map((b) => (
+          <PubButton
+            key={b.id}
+            label={b.label}
+            type={b.type}
+            btnColor={btnColor}
+            btnText={btnText}
+            btnRadius={btnRadius}
+            onClick={() => onBtn(b)}
+          />
+        ))}
+      </div>
+
+      {/* Watermark FREE */}
+      {showBranding && (
+        <p className="mt-auto pt-4 text-xs text-gray-400 text-center">
+          Agendamento por{" "}
+          <a
+            href="https://misticaagenda.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Mística Agenda
+          </a>
+        </p>
+      )}
+    </div>
+  )
 }
 
 // ── TEMA 1 — Luz (Minimal, cream) ─────────────────────────────────────────────
