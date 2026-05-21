@@ -10,6 +10,7 @@ const schema = z.object({
   price: z.number().min(0),
   duration: z.number().min(1),
   type: z.enum(["ONE_TIME", "MONTHLY", "RECURRING"]),
+  showOnPublicLink: z.boolean().optional(),
   categoryId: z.string().optional().nullable(),
   imageUrl: z.string().optional().nullable(),
 })

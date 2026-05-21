@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Plus, X, Package, Clock, Tag, FolderOpen, Pencil, Trash2, ImageIcon, LayoutGrid, List } from "lucide-react"
+import { Plus, X, Package, Clock, Tag, FolderOpen, Pencil, Trash2, ImageIcon, LayoutGrid, List, Eye, EyeOff } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { usePlanFetch } from "@/components/upgrade-provider"
 
@@ -19,6 +19,7 @@ type Service = {
   duration: number
   type: "ONE_TIME" | "MONTHLY" | "RECURRING"
   active: boolean
+  showOnPublicLink: boolean
   imageUrl: string | null
   categoryId: string | null
   category: { id: string; name: string } | null
@@ -34,11 +35,13 @@ type FormData = {
   type: "ONE_TIME" | "MONTHLY" | "RECURRING"
   categoryId: string
   imageUrl: string
+  showOnPublicLink: boolean
 }
 
 const empty: FormData = {
   name: "", description: "", price: "", free: false,
   duration: "60", type: "ONE_TIME", categoryId: "", imageUrl: "",
+  showOnPublicLink: true,
 }
 
 const typeLabel = { ONE_TIME: "Avulso", MONTHLY: "Mensal", RECURRING: "Recorrente" }
@@ -131,6 +134,7 @@ export default function ServicosPage() {
       type: s.type,
       categoryId: s.categoryId ?? "",
       imageUrl: s.imageUrl ?? "",
+      showOnPublicLink: s.showOnPublicLink,
     })
     setShowForm(true)
   }
@@ -146,6 +150,7 @@ export default function ServicosPage() {
       type: form.type,
       categoryId: form.categoryId || null,
       imageUrl: form.imageUrl || null,
+      showOnPublicLink: form.showOnPublicLink,
     }
     const url = editing ? `/api/servicos/${editing.id}` : "/api/servicos"
     const method = editing ? "PUT" : "POST"
@@ -171,6 +176,15 @@ export default function ServicosPage() {
   async function handlePermanentDelete(id: string) {
     if (!confirm("Excluir permanentemente?")) return
     await fetch(`/api/servicos/${id}?permanent=true`, { method: "DELETE" })
+    fetchAll()
+  }
+
+  async function handleTogglePublic(id: string, current: boolean) {
+    await fetch(`/api/servicos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ showOnPublicLink: !current }),
+    })
     fetchAll()
   }
 
@@ -343,13 +357,13 @@ export default function ServicosPage() {
                   viewMode === "card" ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                       {group.services.map((s) => (
-                        <ServiceCard key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} />
+                        <ServiceCard key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} onTogglePublic={() => handleTogglePublic(s.id, s.showOnPublicLink)} />
                       ))}
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {group.services.map((s) => (
-                        <ServiceRow key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} />
+                        <ServiceRow key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} onTogglePublic={() => handleTogglePublic(s.id, s.showOnPublicLink)} />
                       ))}
                     </div>
                   )
@@ -564,6 +578,32 @@ export default function ServicosPage() {
                 </div>
               </div>
 
+              {/* Visibilidade no link público */}
+              <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-[rgba(170,85,249,0.15)] bg-gray-50/50 dark:bg-[rgba(255,255,255,0.03)]">
+                <div className="flex items-center gap-2">
+                  {form.showOnPublicLink
+                    ? <Eye size={15} className="text-purple-500 dark:text-[#aa55f9]" />
+                    : <EyeOff size={15} className="text-gray-400 dark:text-gray-500" />}
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Visível no link público</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      {form.showOnPublicLink ? "Aparece para clientes no link de agendamento" : "Oculto no link de agendamento"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, showOnPublicLink: !f.showOnPublicLink }))}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    form.showOnPublicLink ? "bg-purple-500 dark:bg-[#aa55f9]" : "bg-gray-200 dark:bg-gray-700"
+                  }`}
+                >
+                  <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transform transition-transform ${
+                    form.showOnPublicLink ? "translate-x-4.5" : "translate-x-0.5"
+                  }`} />
+                </button>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-400 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving || uploading} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white py-2.5 rounded-lg text-sm font-medium transition-colors">
@@ -580,19 +620,20 @@ export default function ServicosPage() {
 
 // ── ServiceRow (list view) ─────────────────────────────────────────────────────
 
-function ServiceRow({ service: s, onEdit, onDeactivate }: {
+function ServiceRow({ service: s, onEdit, onDeactivate, onTogglePublic }: {
   service: Service
   onEdit: () => void
   onDeactivate: () => void
+  onTogglePublic: () => void
 }) {
   return (
-    <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl flex items-center gap-4 px-4 py-3 hover:border-purple-200 hover:bg-purple-50/30 transition-colors">
+    <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl flex items-center gap-4 px-4 py-3 hover:border-purple-200 hover:bg-purple-50/30 dark:hover:border-[rgba(170,85,249,0.3)] dark:hover:bg-[rgba(170,85,249,0.04)] transition-colors">
       {/* Thumb */}
       {s.imageUrl ? (
         <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
       ) : (
-        <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-          <Package size={18} className="text-purple-300" />
+        <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-[rgba(170,85,249,0.1)] flex items-center justify-center shrink-0">
+          <Package size={18} className="text-purple-300 dark:text-[rgba(170,85,249,0.5)]" />
         </div>
       )}
 
@@ -618,12 +659,25 @@ function ServiceRow({ service: s, onEdit, onDeactivate }: {
         {typeLabel[s.type]}
       </span>
 
+      {/* Public link toggle */}
+      <button
+        onClick={onTogglePublic}
+        title={s.showOnPublicLink ? "Ocultar do link público" : "Mostrar no link público"}
+        className={`shrink-0 p-1.5 rounded-md transition-colors ${
+          s.showOnPublicLink
+            ? "text-purple-500 dark:text-[#aa55f9] hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.1)]"
+            : "text-gray-300 dark:text-gray-600 hover:text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
+        }`}
+      >
+        {s.showOnPublicLink ? <Eye size={14} /> : <EyeOff size={14} />}
+      </button>
+
       {/* Actions */}
       <div className="flex items-center gap-1 shrink-0">
-        <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-purple-600 rounded-md hover:bg-purple-50 transition-colors" title="Editar">
+        <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-[#aa55f9] rounded-md hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.1)] transition-colors" title="Editar">
           <Pencil size={14} />
         </button>
-        <button onClick={onDeactivate} className="p-1.5 text-gray-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors" title="Desativar">
+        <button onClick={onDeactivate} className="p-1.5 text-gray-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Desativar">
           <Trash2 size={14} />
         </button>
       </div>
@@ -633,10 +687,11 @@ function ServiceRow({ service: s, onEdit, onDeactivate }: {
 
 // ── ServiceCard ────────────────────────────────────────────────────────────────
 
-function ServiceCard({ service: s, onEdit, onDeactivate }: {
+function ServiceCard({ service: s, onEdit, onDeactivate, onTogglePublic }: {
   service: Service
   onEdit: () => void
   onDeactivate: () => void
+  onTogglePublic: () => void
 }) {
   return (
     <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl overflow-hidden">
@@ -671,10 +726,34 @@ function ServiceCard({ service: s, onEdit, onDeactivate }: {
           <div className="text-sm text-gray-400 dark:text-gray-500">{s._count.appointments} atend.</div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-3">
           <button onClick={onEdit} className="flex-1 text-sm border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 py-1.5 rounded-lg transition-colors">Editar</button>
           <button onClick={onDeactivate} className="flex-1 text-sm border border-red-100 dark:border-red-500/20 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 py-1.5 rounded-lg transition-colors">Desativar</button>
         </div>
+
+        {/* Public link toggle */}
+        <button
+          onClick={onTogglePublic}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-colors text-left ${
+            s.showOnPublicLink
+              ? "border-purple-100 dark:border-[rgba(170,85,249,0.2)] bg-purple-50/50 dark:bg-[rgba(170,85,249,0.06)] hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.1)]"
+              : "border-gray-100 dark:border-[rgba(255,255,255,0.06)] bg-gray-50/50 dark:bg-[rgba(255,255,255,0.02)] hover:bg-gray-50 dark:hover:bg-white/5"
+          }`}
+        >
+          <span className={`flex items-center gap-1.5 text-xs font-medium ${
+            s.showOnPublicLink ? "text-purple-600 dark:text-[#aa55f9]" : "text-gray-400 dark:text-gray-500"
+          }`}>
+            {s.showOnPublicLink ? <Eye size={12} /> : <EyeOff size={12} />}
+            {s.showOnPublicLink ? "Visível no link público" : "Oculto no link público"}
+          </span>
+          <div className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
+            s.showOnPublicLink ? "bg-purple-500 dark:bg-[#aa55f9]" : "bg-gray-200 dark:bg-gray-700"
+          }`}>
+            <span className={`inline-block h-3 w-3 rounded-full bg-white shadow-sm transform transition-transform ${
+              s.showOnPublicLink ? "translate-x-3.5" : "translate-x-0.5"
+            }`} />
+          </div>
+        </button>
       </div>
     </div>
   )

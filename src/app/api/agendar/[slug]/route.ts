@@ -8,7 +8,26 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
 
   const user = await prisma.user.findUnique({
     where: { id: slug },
-    select: { id: true, name: true, availability: true, services: { where: { active: true }, select: { id: true, name: true, price: true, duration: true } } },
+    select: {
+      id: true,
+      name: true,
+      publicBio: true,
+      publicTheme: true,
+      publicFont: true,
+      publicBgColor: true,
+      publicButtonColor: true,
+      publicButtonTextColor: true,
+      publicPhotoUrl: true,
+      availability: true,
+      publicButtons: {
+        where: { active: true },
+        orderBy: { order: "asc" },
+      },
+      services: {
+        where: { active: true, showOnPublicLink: true },
+        select: { id: true, name: true, price: true, duration: true },
+      },
+    },
   })
 
   if (!user) return NextResponse.json({ error: "Não encontrado" }, { status: 404 })

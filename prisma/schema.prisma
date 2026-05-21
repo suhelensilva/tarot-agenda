@@ -26,6 +26,16 @@ model User {
   reportFont            String?
   reportTextColor       String?
   reportAccentColor     String?
+
+  // Página pública (link in bio)
+  publicBio             String?
+  publicTheme           String?   @default("TEMA1")
+  publicFont            String?   @default("Poppins")
+  publicBgColor         String?
+  publicButtonColor     String?
+  publicButtonTextColor String?
+  publicPhotoUrl        String?
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -40,6 +50,7 @@ model User {
   availability     Availability[]
   fichas           Ficha[]
   subscription     Subscription?
+  publicButtons    PublicButton[]
 
   @@map("users")
 }
@@ -116,9 +127,10 @@ model Service {
   description String?
   price       Float
   duration    Int
-  type        ServiceType @default(ONE_TIME)
-  active      Boolean     @default(true)
-  imageUrl    String?
+  type              ServiceType @default(ONE_TIME)
+  active            Boolean     @default(true)
+  showOnPublicLink  Boolean     @default(true)
+  imageUrl          String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -310,6 +322,26 @@ model Subscription {
 enum BillingCycle {
   MONTHLY
   ANNUAL
+}
+
+model PublicButton {
+  id        String           @id @default(cuid())
+  userId    String
+  label     String
+  type      PublicButtonType @default(LINK)
+  url       String?
+  order     Int              @default(0)
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("public_buttons")
+}
+
+enum PublicButtonType {
+  BOOK
+  LINK
 }
 
 enum SubscriptionStatus {
