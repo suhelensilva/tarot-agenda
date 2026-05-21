@@ -607,9 +607,10 @@ function MiniThemeCard({ theme }: { theme: typeof THEMES[number] }) {
 // A área da tela é transparente — o conteúdo aparece por baixo
 
 function PhoneFrame({ children }: { children: React.ReactNode }) {
-  const c = "#2d3748" // cor do frame (dark blue-gray igual à imagem)
+  const c  = "#b0bec5" // frame: cinza neutro estilo silver (não preta)
+  const c2 = "#90a4ae" // botões/detalhes: cinza ligeiramente mais escuro
   return (
-    <div className="relative w-[220px] shrink-0 drop-shadow-[0_20px_40px_rgba(0,0,0,0.35)]"
+    <div className="relative w-[220px] shrink-0 drop-shadow-[0_16px_32px_rgba(0,0,0,0.18)]"
       style={{ aspectRatio: "310/634" }}>
 
       {/* Conteúdo da tela — fica por baixo do frame SVG */}
@@ -622,32 +623,31 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
       <svg viewBox="0 0 310 634" fill="none" xmlns="http://www.w3.org/2000/svg"
         className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 10 }}>
         <defs>
-          {/* Máscara: preenche tudo de branco, recorta a tela de preto → resultado: frame visível, tela transparente */}
           <mask id="phone-screen-mask">
             <rect width="310" height="634" fill="white" />
             <rect x="16" y="22" width="278" height="592" rx="28" fill="black" />
           </mask>
         </defs>
 
-        {/* Preenchimento do bezel (área do frame sem a tela) */}
+        {/* Preenchimento do bezel */}
         <rect width="310" height="634" fill={c} mask="url(#phone-screen-mask)" />
 
-        {/* Borda externa arredondada */}
-        <rect x="5" y="5" width="300" height="624" rx="42" stroke={c} strokeWidth="10" />
+        {/* Borda externa — mais fina e clara */}
+        <rect x="4" y="4" width="302" height="626" rx="42" stroke={c2} strokeWidth="5" />
 
-        {/* Notch (pílula no topo, centrada) */}
-        <rect x="112" y="5" width="86" height="22" rx="11" fill={c} />
+        {/* Notch */}
+        <rect x="112" y="5" width="86" height="20" rx="10" fill={c2} />
 
-        {/* Home indicator (barra fina no rodapé) */}
-        <rect x="118" y="618" width="74" height="5" rx="2.5" fill={c} opacity="0.55" />
+        {/* Home indicator */}
+        <rect x="118" y="619" width="74" height="5" rx="2.5" fill={c2} opacity="0.5" />
 
-        {/* Botões de volume (esquerda) */}
-        <rect x="0" y="130" width="5" height="34" rx="2.5" fill={c} />
-        <rect x="0" y="182" width="5" height="60" rx="2.5" fill={c} />
-        <rect x="0" y="256" width="5" height="60" rx="2.5" fill={c} />
+        {/* Botões de volume */}
+        <rect x="0" y="130" width="4" height="34" rx="2" fill={c2} />
+        <rect x="0" y="182" width="4" height="60" rx="2" fill={c2} />
+        <rect x="0" y="256" width="4" height="60" rx="2" fill={c2} />
 
-        {/* Botão power (direita) */}
-        <rect x="305" y="188" width="5" height="74" rx="2.5" fill={c} />
+        {/* Botão power */}
+        <rect x="306" y="188" width="4" height="74" rx="2" fill={c2} />
       </svg>
     </div>
   )
