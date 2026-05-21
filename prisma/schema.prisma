@@ -52,6 +52,7 @@ model User {
   subscription     Subscription?
   publicButtons    PublicButton[]
   expenses         Expense[]
+  paymentLinks     PaymentLink[]
 
   @@map("users")
 }
@@ -352,6 +353,18 @@ enum SubscriptionStatus {
   CANCELLED
   EXPIRED
   PAST_DUE
+}
+
+model PaymentLink {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  url       String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_links")
 }
 
 model Expense {
