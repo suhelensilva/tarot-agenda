@@ -177,7 +177,17 @@ export default function LinkPage() {
       fd.append("folder", "link-page")
       const res = await planFetch("/api/upload", { method: "POST", body: fd })
       const data = await res.json()
-      if (data.url) setConfig((c) => ({ ...c, publicPhotoUrl: data.url }))
+      if (data.url) {
+        setConfig((c) => ({ ...c, publicPhotoUrl: data.url }))
+        // Salva imediatamente para não perder ao navegar
+        await fetch("/api/link-page", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicPhotoUrl: data.url }),
+        })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2500)
+      }
     } finally {
       setUploading(false)
     }
@@ -329,7 +339,14 @@ export default function LinkPage() {
             </div>
             {config.publicPhotoUrl && (
               <button
-                onClick={() => setConfig((c) => ({ ...c, publicPhotoUrl: null }))}
+                onClick={async () => {
+                  setConfig((c) => ({ ...c, publicPhotoUrl: null }))
+                  await fetch("/api/link-page", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ publicPhotoUrl: null }),
+                  })
+                }}
                 className="mt-1.5 text-xs text-red-400 hover:text-red-500 w-full text-center"
               >Remover</button>
             )}
