@@ -126,7 +126,7 @@ export default function LinkPage() {
     document.head.appendChild(link)
   }, [])
 
-  // Fetch config
+  // Fetch config (carrega tudo — só usar na montagem)
   const fetchConfig = useCallback(async () => {
     const r = await fetch("/api/link-page")
     const data = await r.json()
@@ -141,6 +141,13 @@ export default function LinkPage() {
       publicPhotoUrl:        data.publicPhotoUrl         ?? null,
       publicButtons:         data.publicButtons          ?? [],
     })
+  }, [])
+
+  // Atualiza só os botões (sem sobrescrever o resto das configs)
+  const fetchButtons = useCallback(async () => {
+    const r = await fetch("/api/link-page/buttons")
+    const data = await r.json()
+    setConfig((c) => ({ ...c, publicButtons: Array.isArray(data) ? data : [] }))
   }, [])
 
   useEffect(() => { fetchConfig() }, [fetchConfig])
@@ -220,13 +227,13 @@ export default function LinkPage() {
     }
     setSavingBtn(false)
     setShowBtnForm(false)
-    fetchConfig()
+    fetchButtons()
   }
 
   async function handleDeleteBtn(id: string) {
     if (!confirm("Remover botão?")) return
     await fetch(`/api/link-page/buttons/${id}`, { method: "DELETE" })
-    fetchConfig()
+    fetchButtons()
   }
 
   async function handleMoveBtn(id: string, direction: "up" | "down") {
@@ -235,7 +242,7 @@ export default function LinkPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ direction }),
     })
-    fetchConfig()
+    fetchButtons()
   }
 
   async function handleToggleBtn(id: string, active: boolean) {
@@ -244,7 +251,7 @@ export default function LinkPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: !active }),
     })
-    fetchConfig()
+    fetchButtons()
   }
 
   // ── Derived ──────────────────────────────────────────────────────────────────
