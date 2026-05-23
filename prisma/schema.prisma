@@ -36,6 +36,8 @@ model User {
   publicButtonTextColor String?
   publicPhotoUrl        String?
 
+  stripeCustomerId String?   @unique   // ID do customer no Stripe
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -309,10 +311,9 @@ model Subscription {
   userId          String           @unique
   plan            Plan
   billingCycle    BillingCycle
-  status          SubscriptionStatus @default(PENDING)
-  mpSubscriptionId String?         // ID da assinatura recorrente no MP
-  mpPaymentId     String?          // ID do pagamento único (anual)
-  currentPeriodEnd DateTime?       // Quando expira o período atual
+  status               SubscriptionStatus @default(PENDING)
+  stripeSubscriptionId String?           // ID da assinatura no Stripe
+  currentPeriodEnd     DateTime?         // Quando expira o período atual
   cancelledAt     DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt

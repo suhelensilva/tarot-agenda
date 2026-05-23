@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { getMPClient, PLAN_PRICES, PLAN_NAMES } from "@/lib/mercadopago"
-import { Preference } from "mercadopago"
+import { prisma } from "@/lib/prisma"
+import { stripe, STRIPE_PRICES } from "@/lib/stripe"
 import { z } from "zod"
 
 const schema = z.object({
   plan: z.enum(["PRO", "PREMIUM"]),
   cycle: z.enum(["MONTHLY", "ANNUAL"]),
-  paymentMethod: z.enum(["pix", "credit_card"]).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -16,58 +15,62 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { plan, cycle, paymentMethod } = schema.parse(body)
+    const { plan, cycle } = schema.parse(body)
 
-    const client = getMPClient()
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://mistica-agenda.vercel.app"
-    const planName = PLAN_NAMES[plan]
-    const amount = PLAN_PRICES[plan][cycle]
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+    if (!user) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 })
 
-    const preference = new Preference(client)
+    // Criar ou reutilizar customer no Stripe
+    let customerId = user.stripeCustomerId ?? undefined
 
-    // Mensal: Pix à vista ou cartão (sem parcelamento)
-    // Anual:  Pix à vista ou cartão em até 12x
-    const isMonthly = cycle === "MONTHLY"
-    const cycleLabel = isMonthly ? "Mensal" : "Anual"
-    const installments = isMonthly ? 1 : (paymentMethod === "credit_card" ? 12 : 1)
-
-    const excludedTypes = paymentMethod === "pix"
-      ? [{ id: "credit_card" }, { id: "debit_card" }, { id: "ticket" }]
-      : [{ id: "ticket" }]
-
-    const result = await preference.create({
-      body: {
-        items: [{
-          id: `${plan}_${cycle}`,
-          title: `Mística Agenda — Plano ${planName} ${cycleLabel}`,
-          quantity: 1,
-          unit_price: amount,
-          currency_id: "BRL",
-        }],
-        payment_methods: {
-          excluded_payment_types: excludedTypes,
-          installments,
-        },
-        back_urls: {
-          success: `${baseUrl}/dashboard/assinatura?status=success&plan=${plan}&cycle=${cycle.toLowerCase()}`,
-          failure: `${baseUrl}/dashboard/assinatura?status=failure`,
-          pending: `${baseUrl}/dashboard/assinatura?status=pending`,
-        },
-        auto_return: "approved",
-        external_reference: `${session.user.id}|${plan}|${cycle}`,
-        notification_url: `${baseUrl}/api/pagamentos/webhook`,
-      },
-    })
-
-    const checkoutUrl = result.init_point
-    if (!checkoutUrl) {
-      console.error("[pagamentos/assinar] init_point ausente", JSON.stringify(result, null, 2))
-      return NextResponse.json({ error: "URL de checkout não retornada pelo Mercado Pago" }, { status: 500 })
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email ?? undefined,
+        name: user.name ?? undefined,
+        metadata: { userId: user.id },
+      })
+      customerId = customer.id
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { stripeCustomerId: customerId },
+      })
     }
 
-    return NextResponse.json({ checkoutUrl })
+    const priceId = STRIPE_PRICES[plan][cycle]
+    if (!priceId) {
+      return NextResponse.json(
+        { error: `Price ID não configurado para ${plan} ${cycle}. Configure STRIPE_PRICE_${plan}_${cycle} no .env` },
+        { status: 500 }
+      )
+    }
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${baseUrl}/dashboard/assinatura?status=success`,
+      cancel_url: `${baseUrl}/dashboard/assinatura?status=cancelled`,
+      // Passa plano e ciclo nos metadados para o webhook usar
+      subscription_data: {
+        metadata: {
+          userId: user.id,
+          plan,
+          cycle,
+        },
+      },
+      // Permite cartão de crédito e débito (Pix não disponível no Stripe BR ainda em modo subscription)
+      payment_method_types: ["card"],
+      locale: "pt-BR",
+    })
+
+    if (!checkoutSession.url) {
+      return NextResponse.json({ error: "URL de checkout não retornada pelo Stripe" }, { status: 500 })
+    }
+
+    return NextResponse.json({ checkoutUrl: checkoutSession.url })
   } catch (err) {
-    console.error("[pagamentos/assinar]", JSON.stringify(err, null, 2))
+    console.error("[pagamentos/assinar]", err)
     const msg = err instanceof Error ? err.message : JSON.stringify(err)
     return NextResponse.json({ error: msg }, { status: 500 })
   }

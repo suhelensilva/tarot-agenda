@@ -146,7 +146,6 @@ export default function AssinaturaPage() {
         body: JSON.stringify({
           plan,
           cycle: billing === "monthly" ? "MONTHLY" : "ANNUAL",
-          paymentMethod: billing === "annual" ? "credit_card" : undefined,
         }),
       })
       const data = await res.json()
@@ -311,7 +310,7 @@ export default function AssinaturaPage() {
           <div className="flex items-center gap-2 bg-green-50 dark:bg-[rgba(34,197,94,0.08)] border border-green-200 dark:border-[rgba(34,197,94,0.2)] rounded-xl px-4 py-3 text-sm text-green-800 dark:text-green-400 mb-6 max-w-4xl">
             <TrendingDown size={16} className="shrink-0 text-green-600 dark:text-green-400" />
             <span>
-              No plano anual você paga <strong>1 cobrança</strong> no Pix (à vista) ou parcela em <strong>até 12x no cartão</strong>. Sem Pix parcelado.
+              No plano anual você paga <strong>1 cobrança anual</strong> no cartão de crédito com desconto. O Stripe renova automaticamente a cada ano.
             </span>
           </div>
         )}
@@ -370,7 +369,7 @@ export default function AssinaturaPage() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    R${fmt(PRICES.PRO.annual * 12)}/ano — Pix à vista ou 12x no cartão
+                    R${fmt(PRICES.PRO.annual * 12)}/ano — cobrado anualmente no cartão
                   </p>
                 </>
               )}
@@ -395,7 +394,7 @@ export default function AssinaturaPage() {
               </button>
             )}
             <p className="text-xs text-center text-gray-400 dark:text-gray-600 mt-2 flex items-center justify-center gap-1">
-              <Lock size={11} /> Pagamento seguro via Mercado Pago
+              <Lock size={11} /> Pagamento seguro via Stripe
             </p>
           </div>
 
@@ -435,7 +434,7 @@ export default function AssinaturaPage() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    R${fmt(PRICES.PREMIUM.annual * 12)}/ano — Pix à vista ou 12x no cartão
+                    R${fmt(PRICES.PREMIUM.annual * 12)}/ano — cobrado anualmente no cartão
                   </p>
                 </>
               )}
@@ -456,7 +455,7 @@ export default function AssinaturaPage() {
               </button>
             )}
             <p className="text-xs text-center text-gray-400 dark:text-gray-600 mt-2 flex items-center justify-center gap-1">
-              <Lock size={11} /> Pagamento seguro via Mercado Pago
+              <Lock size={11} /> Pagamento seguro via Stripe
             </p>
           </div>
 
@@ -469,11 +468,11 @@ export default function AssinaturaPage() {
             {[
               {
                 q: "Qual a diferença entre mensal e anual?",
-                a: `No mensal você é cobrada todo mês (Pró R$${fmt(PRICES.PRO.monthly)} ou Premium R$${fmt(PRICES.PREMIUM.monthly)}). No anual você paga uma única vez com desconto — Pró R$${fmt(PRICES.PRO.annual * 12)}/ano (${proDiscount}% off) ou Premium R$${fmt(PRICES.PREMIUM.annual * 12)}/ano (${premDiscount}% off).`,
+                a: `No mensal você é cobrada todo mês via cartão (Pró R$${fmt(PRICES.PRO.monthly)} ou Premium R$${fmt(PRICES.PREMIUM.monthly)}). No anual você paga uma única cobrança anual com desconto — Pró R$${fmt(PRICES.PRO.annual * 12)}/ano (${proDiscount}% off) ou Premium R$${fmt(PRICES.PREMIUM.annual * 12)}/ano (${premDiscount}% off).`,
               },
               {
-                q: "Posso pagar o anual parcelado?",
-                a: "Sim! O plano anual pode ser pago à vista no Pix ou parcelado em até 12x no cartão de crédito. Pix parcelado não está disponível.",
+                q: "Quais formas de pagamento são aceitas?",
+                a: "Cartão de crédito e débito (Visa, Mastercard, Elo, Amex e outros), processados com segurança pelo Stripe.",
               },
               {
                 q: "Posso cancelar quando quiser?",
