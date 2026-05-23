@@ -47,8 +47,8 @@ export function TrialBanner() {
             isUrgent ? "text-amber-600 dark:text-amber-500" : "text-purple-600 dark:text-purple-400"
           }`}>
             {isUrgent
-              ? "Assine agora e não perca nenhum recurso que você já está usando."
-              : "Está gostando? Assine o Premium e mantenha acesso ilimitado a tudo."
+              ? "Assine agora e não perca nenhum recurso Premium que você já está usando."
+              : "Está gostando dos recursos Premium? Assine e mantenha acesso ilimitado a tudo."
             }
           </p>
         </div>
