@@ -46,20 +46,40 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id
         token.plan = (user as { plan?: string }).plan
       }
-      // Sempre busca o plano atualizado do banco (captura upgrades sem precisar re-login)
+
+      // Sempre busca plano atualizado do banco (captura upgrades sem re-login)
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { plan: true },
+          select: { plan: true, trialEndsAt: true, subscription: { select: { status: true } } },
         })
-        if (dbUser) token.plan = dbUser.plan
+
+        if (dbUser) {
+          // Se trial expirou e não tem assinatura paga ativa → rebaixa para FREE
+          const trialExpired = dbUser.trialEndsAt && dbUser.trialEndsAt < new Date()
+          const hasPaidSub = dbUser.subscription?.status === "ACTIVE"
+
+          if (trialExpired && !hasPaidSub && dbUser.plan !== "FREE") {
+            await prisma.user.update({
+              where: { id: token.id as string },
+              data: { plan: "FREE" },
+            })
+            token.plan = "FREE"
+            token.trialEndsAt = null
+          } else {
+            token.plan = dbUser.plan
+            token.trialEndsAt = dbUser.trialEndsAt?.toISOString() ?? null
+          }
+        }
       }
+
       return token
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string
         session.user.plan = token.plan as string
+        session.user.trialEndsAt = (token.trialEndsAt as string | null) ?? null
       }
       return session
     },

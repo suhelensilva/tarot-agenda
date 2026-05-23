@@ -37,6 +37,7 @@ model User {
   publicPhotoUrl        String?
 
   stripeCustomerId String?   @unique   // ID do customer no Stripe
+  trialEndsAt      DateTime?           // Fim do trial de 7 dias gratuito
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
