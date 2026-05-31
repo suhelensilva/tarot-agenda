@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useEffect, useState, useRef } from "react"
-import { Smartphone, Calendar, Save, CheckCircle, ImageIcon, User, Crown, Lock, Link2, Plus, Trash2 } from "lucide-react"
+import { Smartphone, Calendar, Save, CheckCircle, ImageIcon, User, Crown, Lock, Link2, Plus, Trash2, Gift, ExternalLink } from "lucide-react"
 import { FONT_OPTIONS } from "@/lib/fonts"
 import { useSession } from "next-auth/react"
 import { getPlanLimits } from "@/lib/plan"
@@ -10,6 +10,7 @@ import Link from "next/link"
 const DAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
 
 type DayAvail = { dayOfWeek: number; startTime: string; endTime: string; active: boolean; lunchStart: string | null; lunchEnd: string | null }
+type LoyaltyCard = { slot: number; imageUrl: string }
 type Profile = {
   name: string
   logoUrl: string | null
@@ -23,6 +24,8 @@ type Profile = {
   reportFont: string
   reportTextColor: string
   reportAccentColor: string
+  loyaltyCards: LoyaltyCard[]
+  thankYouUrl: string
 }
 
 export default function ConfiguracoesPage() {
@@ -43,6 +46,8 @@ export default function ConfiguracoesPage() {
     reportFont: "Georgia, serif",
     reportTextColor: "#374151",
     reportAccentColor: "#7c3aed",
+    loyaltyCards: [],
+    thankYouUrl: "",
   })
   const [savingProfile, setSavingProfile] = useState(false)
   const [savedProfile, setSavedProfile] = useState(false)
@@ -74,6 +79,8 @@ export default function ConfiguracoesPage() {
       reportFont: d.reportFont ?? "Georgia, serif",
       reportTextColor: d.reportTextColor ?? "#374151",
       reportAccentColor: d.reportAccentColor ?? "#7c3aed",
+      loyaltyCards: Array.isArray(d.loyaltyCards) ? d.loyaltyCards : [],
+      thankYouUrl: d.thankYouUrl ?? "",
     }))
   }, [])
 
@@ -81,6 +88,36 @@ export default function ConfiguracoesPage() {
     const reader = new FileReader()
     reader.onload = (e) => setProfile((p) => ({ ...p, [field]: e.target?.result as string }))
     reader.readAsDataURL(file)
+  }
+
+  function handleLoyaltyCardUpload(slot: number, file: File) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new window.Image()
+      img.onload = () => {
+        const canvas = document.createElement("canvas")
+        const max = 900
+        let w = img.width, h = img.height
+        if (w > max || h > max) {
+          if (w > h) { h = Math.round(h * max / w); w = max }
+          else { w = Math.round(w * max / h); h = max }
+        }
+        canvas.width = w; canvas.height = h
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h)
+        const compressed = canvas.toDataURL("image/jpeg", 0.8)
+        setProfile((p) => ({
+          ...p,
+          loyaltyCards: [...p.loyaltyCards.filter((c) => c.slot !== slot), { slot, imageUrl: compressed }]
+            .sort((a, b) => a.slot - b.slot),
+        }))
+      }
+      img.src = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function removeLoyaltyCard(slot: number) {
+    setProfile((p) => ({ ...p, loyaltyCards: p.loyaltyCards.filter((c) => c.slot !== slot) }))
   }
 
   async function saveProfile() {
@@ -441,6 +478,114 @@ export default function ConfiguracoesPage() {
         >
           <Save size={15} />
           {savingAvail ? "Salvando..." : savedAvail ? "Salvo!" : "Salvar disponibilidade"}
+        </button>
+      </div>
+
+      {/* ── Cartão Fidelidade ── */}
+      <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6 space-y-5">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 w-9 h-9 rounded-lg flex items-center justify-center">
+            <Gift size={18} />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Cartão Fidelidade</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Cadastre uma imagem para cada sessão (1 a 10). Você poderá enviar pelo WhatsApp na hora do atendimento.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-5 gap-3">
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((slot) => {
+            const card = profile.loyaltyCards.find((c) => c.slot === slot)
+            const inputId = `loyalty-slot-${slot}`
+            return (
+              <div key={slot} className="flex flex-col items-center gap-1.5">
+                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Sessão {slot}</span>
+                <input
+                  id={inputId}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleLoyaltyCardUpload(slot, e.target.files[0])}
+                />
+                {card ? (
+                  <div className="relative group w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={card.imageUrl}
+                      alt={`Sessão ${slot}`}
+                      className="w-full aspect-square object-cover rounded-xl border-2 border-amber-400 dark:border-amber-500/60"
+                    />
+                    <div className="absolute inset-0 bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                      <button
+                        onClick={() => document.getElementById(inputId)?.click()}
+                        className="text-white text-xs font-medium px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg"
+                      >
+                        Trocar
+                      </button>
+                      <button
+                        onClick={() => removeLoyaltyCard(slot)}
+                        className="text-red-300 hover:text-red-200 text-xs"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => document.getElementById(inputId)?.click()}
+                    className="w-full aspect-square rounded-xl border-2 border-dashed border-gray-200 dark:border-[rgba(255,255,255,0.1)] hover:border-amber-300 dark:hover:border-amber-500/40 flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-amber-400 transition-colors"
+                  >
+                    <ImageIcon size={20} />
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <button
+          onClick={saveProfile}
+          disabled={savingProfile}
+          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+        >
+          <Save size={15} />
+          {savingProfile ? "Salvando..." : savedProfile ? "✓ Salvo!" : "Salvar cartões"}
+        </button>
+      </div>
+
+      {/* ── Link de Obrigado ── */}
+      <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6 space-y-4">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 w-9 h-9 rounded-lg flex items-center justify-center">
+            <ExternalLink size={18} />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Página de Obrigado</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Link que aparece após o cliente concluir uma compra ou agendamento</p>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL da página</label>
+          <input
+            type="url"
+            value={profile.thankYouUrl}
+            onChange={(e) => setProfile({ ...profile, thankYouUrl: e.target.value })}
+            placeholder="https://seusite.com/obrigada"
+            className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+          />
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            Pode ser uma página do Notion, Canva, seu site ou qualquer link de agradecimento personalizado.
+          </p>
+        </div>
+
+        <button
+          onClick={saveProfile}
+          disabled={savingProfile}
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+        >
+          <Save size={15} />
+          {savingProfile ? "Salvando..." : savedProfile ? "✓ Salvo!" : "Salvar link"}
         </button>
       </div>
 

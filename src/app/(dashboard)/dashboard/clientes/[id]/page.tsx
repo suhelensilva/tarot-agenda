@@ -45,6 +45,7 @@ type FormData = {
 
 type TabPerfil = "dados" | "fichas" | "atendimentos"
 type PaymentLink = { id: string; name: string; url: string }
+type LoyaltyCard = { slot: number; imageUrl: string }
 
 const emptyForm: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "" }
 
@@ -95,10 +96,12 @@ export default function ClienteDetailPage() {
 
   // WhatsApp modal
   const [showWhatsModal, setShowWhatsModal] = useState(false)
-  const [whatsMode, setWhatsMode] = useState<"free" | "payment">("free")
+  const [whatsMode, setWhatsMode] = useState<"free" | "payment" | "loyalty">("free")
   const [whatsMsg, setWhatsMsg] = useState("")
   const [paymentLinks, setPaymentLinks] = useState<PaymentLink[]>([])
   const [selectedLink, setSelectedLink] = useState<PaymentLink | null>(null)
+  const [loyaltyCards, setLoyaltyCards] = useState<LoyaltyCard[]>([])
+  const [selectedCard, setSelectedCard] = useState<LoyaltyCard | null>(null)
 
   // ── Fetch client ──────────────────────────────────────────────────────────
 
@@ -190,10 +193,15 @@ export default function ClienteDetailPage() {
     setWhatsMode("free")
     setWhatsMsg("")
     setSelectedLink(null)
+    setSelectedCard(null)
     setShowWhatsModal(true)
     fetch("/api/links-pagamento")
       .then((r) => r.json())
       .then((d) => setPaymentLinks(Array.isArray(d) ? d : []))
+      .catch(() => {})
+    fetch("/api/perfil")
+      .then((r) => r.json())
+      .then((d) => setLoyaltyCards(Array.isArray(d.loyaltyCards) ? d.loyaltyCards : []))
       .catch(() => {})
   }
 
@@ -203,6 +211,16 @@ export default function ClienteDetailPage() {
     let text = whatsMsg.trim()
     if (whatsMode === "payment" && selectedLink) {
       text = text ? `${text}\n\n${selectedLink.url}` : selectedLink.url
+    }
+    if (whatsMode === "loyalty" && selectedCard) {
+      // Abre WhatsApp com mensagem; a imagem é baixada separadamente
+      const sessionText = `Sessão ${selectedCard.slot} registrada! 🌟`
+      text = text ? `${text}\n\n${sessionText}` : sessionText
+      // Dispara o download da imagem do cartão
+      const a = document.createElement("a")
+      a.href = selectedCard.imageUrl
+      a.download = `cartao-fidelidade-sessao-${selectedCard.slot}.jpg`
+      a.click()
     }
     const url = `https://wa.me/${phone}${text ? `?text=${encodeURIComponent(text)}` : ""}`
     window.open(url, "_blank")
@@ -545,21 +563,25 @@ export default function ClienteDetailPage() {
               {/* Tipo de mensagem */}
               <div>
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">O que vai enviar?</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {(["free", "payment"] as const).map((mode) => (
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { mode: "free",    icon: <MessageCircle size={14} />, label: "Mensagem", color: "purple" },
+                    { mode: "payment", icon: <Link2 size={14} />,         label: "Pagamento", color: "green" },
+                    { mode: "loyalty", icon: <span className="text-sm">🎁</span>, label: "Fidelidade", color: "amber" },
+                  ] as const).map(({ mode, icon, label, color }) => (
                     <button
                       key={mode}
-                      onClick={() => { setWhatsMode(mode); setSelectedLink(null) }}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                      onClick={() => { setWhatsMode(mode); setSelectedLink(null); setSelectedCard(null) }}
+                      className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border text-xs font-medium transition-colors ${
                         whatsMode === mode
-                          ? mode === "payment"
-                            ? "bg-green-50 dark:bg-green-500/10 border-green-400 text-green-700 dark:text-green-400"
-                            : "bg-purple-50 dark:bg-purple-500/10 border-purple-400 text-purple-700 dark:text-purple-400"
+                          ? color === "green"  ? "bg-green-50 dark:bg-green-500/10 border-green-400 text-green-700 dark:text-green-400"
+                          : color === "amber"  ? "bg-amber-50 dark:bg-amber-500/10 border-amber-400 text-amber-700 dark:text-amber-400"
+                          :                     "bg-purple-50 dark:bg-purple-500/10 border-purple-400 text-purple-700 dark:text-purple-400"
                           : "border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-500 dark:text-gray-400 hover:border-gray-300"
                       }`}
                     >
-                      {mode === "free" ? <MessageCircle size={14} /> : <Link2 size={14} />}
-                      {mode === "free" ? "Mensagem livre" : "Link de pagamento"}
+                      {icon}
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -598,6 +620,47 @@ export default function ClienteDetailPage() {
                 </div>
               )}
 
+              {/* Cartão Fidelidade */}
+              {whatsMode === "loyalty" && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Selecionar sessão</p>
+                  {loyaltyCards.length === 0 ? (
+                    <p className="text-sm text-gray-400 dark:text-gray-500 italic">
+                      Nenhum cartão cadastrado.{" "}
+                      <a href="/dashboard/configuracoes" target="_blank" className="text-purple-500 underline">Cadastrar em Configurações</a>
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-5 gap-2">
+                      {loyaltyCards.map((card) => (
+                        <button
+                          key={card.slot}
+                          onClick={() => setSelectedCard(selectedCard?.slot === card.slot ? null : card)}
+                          className={`relative rounded-xl overflow-hidden border-2 transition-all ${
+                            selectedCard?.slot === card.slot
+                              ? "border-amber-400 shadow-lg scale-105"
+                              : "border-transparent hover:border-amber-300"
+                          }`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={card.imageUrl} alt={`Sessão ${card.slot}`} className="w-full aspect-square object-cover" />
+                          <span className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-[10px] font-bold text-center py-0.5">
+                            Sessão {card.slot}
+                          </span>
+                          {selectedCard?.slot === card.slot && (
+                            <span className="absolute top-1 right-1 bg-amber-400 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {selectedCard && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+                      🎁 A imagem será baixada automaticamente ao clicar em enviar.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Mensagem */}
               <div>
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
@@ -626,7 +689,7 @@ export default function ClienteDetailPage() {
               {/* Botão enviar */}
               <button
                 onClick={sendWhatsApp}
-                disabled={whatsMode === "payment" && !selectedLink}
+                disabled={(whatsMode === "payment" && !selectedLink) || (whatsMode === "loyalty" && !selectedCard)}
                 className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
               >
                 <Send size={15} /> Abrir WhatsApp

@@ -38,6 +38,8 @@ model User {
 
   stripeCustomerId String?   @unique   // ID do customer no Stripe
   trialEndsAt      DateTime?           // Fim do trial de 7 dias gratuito
+  loyaltyCards     Json      @default("[]") // Até 10 imagens do cartão fidelidade [{slot, imageUrl}]
+  thankYouUrl      String?             // Link da página de obrigado pela compra
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

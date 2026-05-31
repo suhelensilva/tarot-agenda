@@ -16,6 +16,8 @@ export async function GET() {
         reportTitleFont: true, reportTitleColor: true,
         reportSignatureFont: true, reportSignatureColor: true,
         reportFont: true, reportTextColor: true, reportAccentColor: true,
+        loyaltyCards: true,
+        thankYouUrl: true,
       },
     })
     return NextResponse.json(user)
@@ -37,6 +39,7 @@ export async function PUT(req: NextRequest) {
       "reportTitleFont", "reportTitleColor",
       "reportSignatureFont", "reportSignatureColor",
       "reportFont", "reportTextColor", "reportAccentColor",
+      "loyaltyCards", "thankYouUrl",
     ]
     const data = Object.fromEntries(
       Object.entries(body).filter(([k]) => allowed.includes(k))
@@ -52,6 +55,8 @@ export async function PUT(req: NextRequest) {
         reportTitleFont: true, reportTitleColor: true,
         reportSignatureFont: true, reportSignatureColor: true,
         reportFont: true, reportTextColor: true, reportAccentColor: true,
+        loyaltyCards: true,
+        thankYouUrl: true,
       },
     })
 
