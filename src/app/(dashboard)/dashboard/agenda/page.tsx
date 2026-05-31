@@ -424,7 +424,7 @@ export default function AgendaPage() {
             {selected.service && (
               <div className="flex items-center gap-3 text-sm">
                 <Package size={15} className="text-gray-400 shrink-0" />
-                <span className="text-gray-700 dark:text-gray-300">{selected.service.name} · {formatCurrency(selected.service.price)}</span>
+                <span className="text-gray-700 dark:text-gray-300">{selected.service.name}</span>
               </div>
             )}
             {selected.meetingLink && (
@@ -616,7 +616,7 @@ export default function AgendaPage() {
                 >
                   <option value="">Sem serviço específico</option>
                   {services.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} — {formatCurrency(s.price)}</option>
+                    <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
               </div>
