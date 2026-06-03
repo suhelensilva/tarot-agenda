@@ -674,18 +674,6 @@ export default function AgendaPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valor (R$)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.amountPaid}
-                  onChange={(e) => setForm({ ...form, amountPaid: e.target.value })}
-                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
-                  placeholder="0,00"
-                />
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link da chamada</label>
