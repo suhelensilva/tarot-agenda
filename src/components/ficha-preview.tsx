@@ -38,7 +38,7 @@ export type FichaPreviewData = {
   energeticObservations?: string | null
   therapeuticSuggestions?: string | null
   returnSchedule?: string | null
-  involvedPeople?: Array<{ name: string; birthDate?: string | null; relation?: string | null }>
+  involvedPeople?: Array<{ name: string; birthDate?: string | null; relation?: string | null; notes?: string | null }>
   questions?: Array<{ question: string; cards?: string | null; interpretation?: string | null }>
   energeticTips?: string | null
   spiritualPractice?: string | null
@@ -123,6 +123,30 @@ export function FichaInternaPreview({
             <span style={{ fontWeight: 600, color: "#374151" }}>Foco da sessão: </span>
             {data.mainSubject}
           </p>
+        )}
+
+        {/* Pessoas envolvidas */}
+        {(data.involvedPeople ?? []).filter((p) => p.name).length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 14px" }} />
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>👥 Pessoas envolvidas:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {(data.involvedPeople ?? []).filter((p) => p.name).map((p, i) => (
+                <div key={i} style={{ background: "#f5f3ff", borderRadius: 6, padding: "8px 12px" }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "#111827", margin: "0 0 2px" }}>
+                    {p.name}
+                    {p.relation && <span style={{ fontWeight: 400, color: "#6b7280" }}> · {p.relation}</span>}
+                  </p>
+                  {p.birthDate && (
+                    <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 2px" }}>Nascimento: {formatDate(p.birthDate)}</p>
+                  )}
+                  {p.notes && (
+                    <p style={{ fontSize: 12, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.6 }}>{p.notes}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Cartas */}
@@ -215,7 +239,6 @@ export function RelatorioPreview({
   const textColor = profile.reportTextColor || "#374151"
   const accentColor = profile.reportAccentColor || "#7c3aed"
   const therapistName = profile.signature || "Sua Terapeuta"
-  const firstPerson = (data.involvedPeople ?? []).find((p) => p.name)
   const today = new Date().toLocaleDateString("pt-BR")
 
   // A4 at 96 dpi = 1123px height × 794px width
@@ -284,11 +307,26 @@ export function RelatorioPreview({
 
         {/* ── Content body ── */}
 
-        {firstPerson && (
-          <p style={{ fontSize: 13, fontWeight: 700, fontStyle: "italic", color: textColor, fontFamily: bodyFont, margin: "0 0 14px" }}>
-            Pessoa de interesse: {firstPerson.name}
-            {firstPerson.birthDate ? ` – ${formatDate(firstPerson.birthDate)}` : ""}
-          </p>
+        {(data.involvedPeople ?? []).filter((p) => p.name).length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, fontStyle: "italic", color: accentColor, fontFamily: bodyFont, margin: "0 0 8px" }}>
+              👥 Pessoas envolvidas
+            </p>
+            {(data.involvedPeople ?? []).filter((p) => p.name).map((p, i) => (
+              <div key={i} style={{ background: "#f5f3ff", borderRadius: 6, padding: "7px 12px", marginBottom: 6 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: titleColor, fontFamily: bodyFont, margin: "0 0 2px" }}>
+                  {p.name}
+                  {p.relation && <span style={{ fontWeight: 400, color: "#6b7280" }}> · {p.relation}</span>}
+                </p>
+                {p.birthDate && (
+                  <p style={{ fontSize: 12, color: "#6b7280", fontFamily: bodyFont, margin: "0 0 2px" }}>Nascimento: {formatDate(p.birthDate)}</p>
+                )}
+                {p.notes && (
+                  <p style={{ fontSize: 12, color: textColor, fontFamily: bodyFont, margin: 0, whiteSpace: "pre-line", lineHeight: 1.6 }}>{p.notes}</p>
+                )}
+              </div>
+            ))}
+          </div>
         )}
 
         {(data.questions ?? []).filter((q) => q.question).map((q, i) => (
