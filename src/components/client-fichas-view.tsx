@@ -723,65 +723,65 @@ export default function ClientFichasView({
               </>
             )}
 
+            {/* Pessoas envolvidas — ambos os tipos */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  👥 Pessoas envolvidas
+                </label>
+                <button
+                  type="button"
+                  onClick={addPerson}
+                  className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-500 font-medium border border-purple-200 hover:border-purple-400 rounded-md px-2 py-1 transition-colors"
+                >
+                  <Plus size={12} /> Adicionar
+                </button>
+              </div>
+              {form.involvedPeople.length === 0 ? (
+                <p className="text-xs text-gray-400 dark:text-gray-500 italic">Nenhuma pessoa adicionada (ex: mãe, pai, namorado...)</p>
+              ) : (
+                <div className="space-y-3">
+                  {form.involvedPeople.map((p, i) => (
+                    <div key={i} className="border border-gray-200 dark:border-[rgba(170,85,249,0.15)] dark:bg-[rgba(255,255,255,0.02)] rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Pessoa {i + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removePerson(i)}
+                          className="text-red-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                      <input
+                        value={p.name}
+                        onChange={(e) => updatePerson(i, "name", e.target.value)}
+                        className={INPUT_CLS}
+                        placeholder="Nome"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="date"
+                          value={p.birthDate}
+                          onChange={(e) => updatePerson(i, "birthDate", e.target.value)}
+                          className={INPUT_CLS}
+                        />
+                        <input
+                          value={p.relation}
+                          onChange={(e) => updatePerson(i, "relation", e.target.value)}
+                          className={INPUT_CLS}
+                          placeholder="Relação (ex: mãe, pai, namorado)"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* REPORT-only fields */}
             {!isInternal && (
               <>
-                {/* Mais pessoas envolvidas */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Mais pessoas envolvidas
-                    </label>
-                    <button
-                      type="button"
-                      onClick={addPerson}
-                      className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-500 font-medium border border-purple-200 hover:border-purple-400 rounded-md px-2 py-1 transition-colors"
-                    >
-                      <Plus size={12} /> Adicionar
-                    </button>
-                  </div>
-                  {form.involvedPeople.length === 0 ? (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 italic">Nenhuma pessoa adicionada</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {form.involvedPeople.map((p, i) => (
-                        <div key={i} className="border border-gray-200 dark:border-[rgba(170,85,249,0.15)] dark:bg-[rgba(255,255,255,0.02)] rounded-lg p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Pessoa {i + 1}</span>
-                            <button
-                              type="button"
-                              onClick={() => removePerson(i)}
-                              className="text-red-400 hover:text-red-600 transition-colors"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                          <input
-                            value={p.name}
-                            onChange={(e) => updatePerson(i, "name", e.target.value)}
-                            className={INPUT_CLS}
-                            placeholder="Nome"
-                          />
-                          <div className="grid grid-cols-2 gap-2">
-                            <input
-                              type="date"
-                              value={p.birthDate}
-                              onChange={(e) => updatePerson(i, "birthDate", e.target.value)}
-                              className={INPUT_CLS}
-                            />
-                            <input
-                              value={p.relation}
-                              onChange={(e) => updatePerson(i, "relation", e.target.value)}
-                              className={INPUT_CLS}
-                              placeholder="Relação (ex: mãe)"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
                 {/* Perguntas */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
