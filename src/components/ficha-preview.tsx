@@ -106,12 +106,6 @@ export function FichaInternaPreview({
               <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1 }}>Pacote recomendado</span>
               <p style={{ fontSize: 14, fontWeight: 600, color: "#5b21b6", margin: "2px 0 0" }}>{service?.name || data.productName}</p>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1 }}>Valor da Sessão</span>
-              <p style={{ fontSize: 15, fontWeight: 700, color: "#7c3aed", margin: "2px 0 0" }}>
-                {service ? formatCurrency(service.price) : "—"}
-              </p>
-            </div>
           </div>
         )}
 

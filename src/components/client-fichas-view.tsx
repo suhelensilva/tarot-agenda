@@ -649,7 +649,7 @@ export default function ClientFichasView({
                 <option value="">— Nenhum —</option>
                 {activeServices.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} — {formatCurrency(s.price)}
+                    {s.name}
                   </option>
                 ))}
               </select>
