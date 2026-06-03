@@ -52,7 +52,7 @@ type SavedFicha = {
   energeticObservations: string | null
   therapeuticSuggestions: string | null
   returnSchedule: string | null
-  involvedPeople: Array<{ name: string; birthDate?: string | null; relation?: string | null }>
+  involvedPeople: Array<{ name: string; birthDate?: string | null; relation?: string | null; notes?: string | null }>
   questions: Array<{ question: string; cards?: string | null; interpretation?: string | null }>
   energeticTips: string | null
   spiritualPractice: string | null
@@ -754,18 +754,12 @@ export default function ClientFichasView({
                           <Trash2 size={13} />
                         </button>
                       </div>
-                      <input
-                        value={p.name}
-                        onChange={(e) => updatePerson(i, "name", e.target.value)}
-                        className={INPUT_CLS}
-                        placeholder="Nome"
-                      />
                       <div className="grid grid-cols-2 gap-2">
                         <input
-                          type="date"
-                          value={p.birthDate}
-                          onChange={(e) => updatePerson(i, "birthDate", e.target.value)}
+                          value={p.name}
+                          onChange={(e) => updatePerson(i, "name", e.target.value)}
                           className={INPUT_CLS}
+                          placeholder="Nome"
                         />
                         <input
                           value={p.relation}
@@ -774,12 +768,18 @@ export default function ClientFichasView({
                           placeholder="Relação (ex: mãe, pai, namorado)"
                         />
                       </div>
+                      <input
+                        type="date"
+                        value={p.birthDate}
+                        onChange={(e) => updatePerson(i, "birthDate", e.target.value)}
+                        className={INPUT_CLS}
+                      />
                       <textarea
                         rows={2}
                         value={p.notes}
                         onChange={(e) => updatePerson(i, "notes", e.target.value)}
                         className={TEXTAREA_CLS}
-                        placeholder="Por que essa pessoa apareceu na leitura? (breve descrição)"
+                        placeholder="Por que essa pessoa apareceu na leitura?"
                       />
                     </div>
                   ))}
