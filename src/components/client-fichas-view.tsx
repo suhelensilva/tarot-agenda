@@ -16,7 +16,7 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type InvolvedPerson = { name: string; birthDate: string; relation: string }
+type InvolvedPerson = { name: string; birthDate: string; relation: string; notes: string }
 type Question       = { question: string; cards: string; interpretation: string }
 type FichaLink      = { label: string; url: string }
 
@@ -293,6 +293,7 @@ export default function ClientFichasView({
         name: p.name,
         birthDate: p.birthDate ?? "",
         relation: p.relation ?? "",
+        notes: (p as InvolvedPerson).notes ?? "",
       })),
       mainComplaint: ficha.mainComplaint ?? "",
       complaintText: ficha.complaintText ?? "",
@@ -458,7 +459,7 @@ export default function ClientFichasView({
   function addPerson() {
     setForm((f) => ({
       ...f,
-      involvedPeople: [...f.involvedPeople, { name: "", birthDate: "", relation: "" }],
+      involvedPeople: [...f.involvedPeople, { name: "", birthDate: "", relation: "", notes: "" }],
     }))
   }
 
@@ -773,6 +774,13 @@ export default function ClientFichasView({
                           placeholder="Relação (ex: mãe, pai, namorado)"
                         />
                       </div>
+                      <textarea
+                        rows={2}
+                        value={p.notes}
+                        onChange={(e) => updatePerson(i, "notes", e.target.value)}
+                        className={TEXTAREA_CLS}
+                        placeholder="Por que essa pessoa apareceu na leitura? (breve descrição)"
+                      />
                     </div>
                   ))}
                 </div>
