@@ -776,7 +776,7 @@ export default function ClientFichasView({
                       />
                       <textarea
                         rows={2}
-                        value={p.notes}
+                        value={p.notes ?? ""}
                         onChange={(e) => updatePerson(i, "notes", e.target.value)}
                         className={TEXTAREA_CLS}
                         placeholder="Por que essa pessoa apareceu na leitura?"
