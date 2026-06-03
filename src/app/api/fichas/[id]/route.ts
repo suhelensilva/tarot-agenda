@@ -11,6 +11,7 @@ const schema = z.object({
     name: z.string(),
     birthDate: z.string().optional(),
     relation: z.string().optional(),
+    notes: z.string().optional(),
   })).optional(),
   // Relatório
   mainComplaint: z.string().nullable().optional(),

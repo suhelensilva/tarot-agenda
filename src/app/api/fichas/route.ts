@@ -8,6 +8,7 @@ const involvedPersonSchema = z.object({
   name: z.string(),
   birthDate: z.string().optional(),
   relation: z.string().optional(),
+  notes: z.string().optional(),
 })
 
 const sessionCardSchema = z.object({
