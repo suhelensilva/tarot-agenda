@@ -25,6 +25,13 @@ export function formatCurrency(value: number) {
 }
 
 export function formatDate(date: Date | string) {
+  // Strings no formato YYYY-MM-DD (vindo de <input type="date">) devem ser
+  // tratadas como data local — sem conversão UTC — para evitar o shift de -1 dia
+  // que ocorre em fusos negativos (Brasil UTC-3).
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split("-")
+    return `${day}/${month}/${year}`
+  }
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
