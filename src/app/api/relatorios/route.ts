@@ -15,26 +15,24 @@ import { ptBR } from "date-fns/locale"
 type Period = "today" | "week" | "month" | "semester" | "year" | "custom"
 
 function getPeriodRange(period: Period, from?: string, to?: string) {
-  const now = new Date()
+  // O servidor roda em UTC. Brasil é UTC-3: usamos "now" ajustado para o fuso
+  // local em todos os cálculos de período, evitando que após as 21h o servidor
+  // já avance para o dia/semana/mês seguinte enquanto o usuário ainda está no dia atual.
+  const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000
+  const now = new Date(Date.now() - BRAZIL_OFFSET_MS) // "now" no horário do Brasil
 
   if (period === "custom" && from && to) {
     return {
-      start: parseISO(from),
-      end:   new Date(to + "T23:59:59"),
+      start:     parseISO(from),
+      end:       new Date(to + "T23:59:59"),
       prevStart: null,
       prevEnd:   null,
     }
   }
 
   if (period === "today") {
-    // O servidor roda em UTC. Convertemos "now" para horário do Brasil (UTC-3)
-    // só para descobrir qual data local é "hoje". Em seguida usamos a meia-noite
-    // UTC dessa data como início do intervalo, porque despesas e agendamentos
-    // são salvos com new Date("YYYY-MM-DD") = meia-noite UTC.
-    const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000 // UTC-3
-    const localNow = new Date(now.getTime() - BRAZIL_OFFSET_MS)
-    const todayStr     = localNow.toISOString().slice(0, 10) // "YYYY-MM-DD" do Brasil
-    const yesterdayStr = new Date(localNow.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const todayStr     = now.toISOString().slice(0, 10)
+    const yesterdayStr = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
     return {
       start:     new Date(todayStr     + "T00:00:00.000Z"),
       end:       new Date(todayStr     + "T23:59:59.999Z"),
@@ -59,7 +57,6 @@ function getPeriodRange(period: Period, from?: string, to?: string) {
   }
 
   if (period === "semester") {
-    // últimos 6 meses completos
     const start = startOfMonth(subMonths(now, 5))
     const end   = endOfMonth(now)
     const ps    = startOfMonth(subMonths(now, 11))
