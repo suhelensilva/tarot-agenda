@@ -5,13 +5,14 @@ import {
   startOfWeek, endOfWeek,
   startOfMonth, endOfMonth,
   startOfYear, endOfYear,
-  subMonths, subWeeks, subYears,
+  startOfDay, endOfDay,
+  subMonths, subWeeks, subYears, subDays,
   eachWeekOfInterval, eachMonthOfInterval, eachDayOfInterval,
   format, parseISO,
 } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
-type Period = "week" | "month" | "semester" | "year" | "custom"
+type Period = "today" | "week" | "month" | "semester" | "year" | "custom"
 
 function getPeriodRange(period: Period, from?: string, to?: string) {
   const now = new Date()
@@ -23,6 +24,13 @@ function getPeriodRange(period: Period, from?: string, to?: string) {
       prevStart: null,
       prevEnd:   null,
     }
+  }
+
+  if (period === "today") {
+    const start    = startOfDay(now)
+    const end      = endOfDay(now)
+    const yesterday = subDays(now, 1)
+    return { start, end, prevStart: startOfDay(yesterday), prevEnd: endOfDay(yesterday) }
   }
 
   if (period === "week") {
@@ -58,6 +66,19 @@ function getPeriodRange(period: Period, from?: string, to?: string) {
 
 /** Gera labels e intervalos para o gráfico de área */
 function getChartBuckets(period: Period, start: Date, end: Date) {
+  if (period === "today") {
+    // 6 blocos de 4 horas: 00h, 04h, 08h, 12h, 16h, 20h
+    return Array.from({ length: 6 }, (_, i) => {
+      const blockStart = new Date(start.getTime() + i * 4 * 3600_000)
+      const blockEnd   = new Date(blockStart.getTime() + 4 * 3600_000 - 1)
+      return {
+        label: format(blockStart, "HH'h'", { locale: ptBR }),
+        start: blockStart,
+        end:   blockEnd,
+      }
+    })
+  }
+
   if (period === "week") {
     const days = eachDayOfInterval({ start, end })
     return days.map((d) => ({

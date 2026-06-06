@@ -14,7 +14,7 @@ import { PlanGate } from "@/components/plan-gate"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Period     = "week" | "month" | "semester" | "year" | "custom"
+type Period     = "today" | "week" | "month" | "semester" | "year" | "custom"
 type Summary    = { totalRevenue: number; totalExpenses: number; profit: number; profitMargin: number; revenueDelta: number | null; expensesDelta: number | null }
 type ChartPoint = { label: string; revenue: number; expenses: number; profit: number }
 type ExpenseCat = { category: string; amount: number }
@@ -25,7 +25,7 @@ type ReportData  = { summary: Summary; chartData: ChartPoint[]; expenseBreakdown
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const PERIOD_LABELS: Record<Period, string> = { week: "Semanal", month: "Mensal", semester: "Semestral", year: "Anual", custom: "Personalizado" }
+const PERIOD_LABELS: Record<Period, string> = { week: "Semanal", month: "Mensal", semester: "Semestral", year: "Anual", today: "Hoje", custom: "Personalizado" }
 
 const EXPENSE_CATEGORIES = ["Aluguel","Taxa de plataforma","Taxa de cartão","Marketing","Materiais","Cursos / Formação","Transporte","Internet","Outros"]
 
