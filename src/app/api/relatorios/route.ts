@@ -27,18 +27,19 @@ function getPeriodRange(period: Period, from?: string, to?: string) {
   }
 
   if (period === "today") {
-    // O servidor roda em UTC. O Brasil é UTC-3, então calculamos o "hoje" local
-    // convertendo now para o fuso brasileiro antes de aplicar startOfDay/endOfDay.
+    // O servidor roda em UTC. Convertemos "now" para horário do Brasil (UTC-3)
+    // só para descobrir qual data local é "hoje". Em seguida usamos a meia-noite
+    // UTC dessa data como início do intervalo, porque despesas e agendamentos
+    // são salvos com new Date("YYYY-MM-DD") = meia-noite UTC.
     const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000 // UTC-3
-    const localNow       = new Date(now.getTime() - BRAZIL_OFFSET_MS)
-    const localStart     = startOfDay(localNow)
-    const localEnd       = endOfDay(localNow)
-    const localYesterday = subDays(localNow, 1)
+    const localNow = new Date(now.getTime() - BRAZIL_OFFSET_MS)
+    const todayStr     = localNow.toISOString().slice(0, 10) // "YYYY-MM-DD" do Brasil
+    const yesterdayStr = new Date(localNow.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
     return {
-      start:     new Date(localStart.getTime()              + BRAZIL_OFFSET_MS),
-      end:       new Date(localEnd.getTime()                + BRAZIL_OFFSET_MS),
-      prevStart: new Date(startOfDay(localYesterday).getTime() + BRAZIL_OFFSET_MS),
-      prevEnd:   new Date(endOfDay(localYesterday).getTime()   + BRAZIL_OFFSET_MS),
+      start:     new Date(todayStr     + "T00:00:00.000Z"),
+      end:       new Date(todayStr     + "T23:59:59.999Z"),
+      prevStart: new Date(yesterdayStr + "T00:00:00.000Z"),
+      prevEnd:   new Date(yesterdayStr + "T23:59:59.999Z"),
     }
   }
 
