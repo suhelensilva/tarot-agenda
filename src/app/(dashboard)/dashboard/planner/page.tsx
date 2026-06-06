@@ -137,7 +137,7 @@ export default function PlannerPage() {
         <div className="flex items-center gap-2">
           <Heart size={22} className="text-[#e91e8c] dark:text-[#f472b6] fill-[#e91e8c] dark:fill-[#f472b6]" />
           <h1 className={`text-4xl text-[#c2185b] dark:text-[#f9a8d4] ${dancingScript.className}`}>
-            Digital Planner
+            Planner
           </h1>
         </div>
 
@@ -213,7 +213,7 @@ export default function PlannerPage() {
               <div className="flex items-center gap-2">
                 <div className="w-1 h-5 rounded-full bg-[#e91e8c] dark:bg-[#f472b6]" />
                 <h2 className={`font-semibold text-[#880e4f] dark:text-[#f9a8d4] text-lg tracking-wide ${dancingScript.className}`}>
-                  Schedule
+                  Agenda
                 </h2>
               </div>
               {/* Add schedule form */}
@@ -316,7 +316,7 @@ export default function PlannerPage() {
                     <Check size={11} className="text-white" strokeWidth={3} />
                   </div>
                   <span className={`font-semibold text-lg text-[#880e4f] dark:text-[#f9a8d4] ${dancingScript.className}`}>
-                    To Do List
+                    Tarefas
                   </span>
                 </div>
                 {todos.length > 0 && (
@@ -400,7 +400,7 @@ export default function PlannerPage() {
                 <div className="flex items-center gap-2">
                   <Heart size={14} className="text-[#e91e8c] dark:text-[#f472b6] fill-[#e91e8c] dark:fill-[#f472b6]" />
                   <span className={`font-semibold text-lg text-[#880e4f] dark:text-[#f9a8d4] ${dancingScript.className}`}>
-                    Notes
+                    Notas
                   </span>
                 </div>
                 {savedNote && (
