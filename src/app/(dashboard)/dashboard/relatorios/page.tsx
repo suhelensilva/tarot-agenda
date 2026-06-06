@@ -375,22 +375,29 @@ export default function RelatoriosPage() {
               </div>
               <div className="divide-y divide-gray-50 dark:divide-[rgba(255,255,255,0.04)]">
                 {allExpenses.map((e) => (
-                  <div key={e.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 px-1 py-2.5 hover:bg-gray-50 dark:hover:bg-[rgba(255,255,255,0.02)] rounded-lg transition-colors">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
-                        <ArrowDownRight size={12} className="text-rose-500" />
-                      </span>
-                      <span className="text-sm text-gray-700 dark:text-gray-200 truncate">{e.description}</span>
+                  <div key={e.id} className="flex items-center gap-3 px-1 py-3 hover:bg-gray-50 dark:hover:bg-[rgba(255,255,255,0.02)] rounded-lg transition-colors">
+                    <span className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center shrink-0">
+                      <ArrowDownRight size={14} className="text-rose-400" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{e.description}</p>
+                      <p className="text-xs text-gray-400 truncate">{e.category} · {new Date(e.date).toLocaleDateString("pt-BR")}</p>
                     </div>
-                    <span className="hidden sm:block text-xs text-gray-400 bg-gray-100 dark:bg-[rgba(255,255,255,0.06)] px-2 py-0.5 rounded-full whitespace-nowrap">{e.category}</span>
-                    <span className="hidden sm:block text-xs text-gray-400 whitespace-nowrap">{new Date(e.date).toLocaleDateString("pt-BR")}</span>
-                    <span className="text-sm font-semibold text-rose-500 text-right whitespace-nowrap">{formatCurrency(e.amount)}</span>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => openEditExp(e)} className="p-1 rounded text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.1)] transition-colors">
-                        <Pencil size={13}/>
+                    <span className="text-sm font-semibold text-rose-400 whitespace-nowrap shrink-0">−{formatCurrency(e.amount)}</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => openEditExp(e)}
+                        className="p-1.5 rounded-lg text-purple-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.15)] transition-colors"
+                        title="Editar"
+                      >
+                        <Pencil size={14}/>
                       </button>
-                      <button onClick={() => handleDeleteExp(e.id)} className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                        <Trash2 size={13}/>
+                      <button
+                        onClick={() => handleDeleteExp(e.id)}
+                        className="p-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
+                        title="Remover"
+                      >
+                        <Trash2 size={14}/>
                       </button>
                     </div>
                   </div>
