@@ -9,7 +9,7 @@ import {
   TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight,
   Plus, Trash2, Pencil, X, Check, Calendar,
 } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatDate } from "@/lib/utils"
 import { PlanGate } from "@/components/plan-gate"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
