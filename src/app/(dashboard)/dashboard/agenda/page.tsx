@@ -113,7 +113,20 @@ export default function AgendaPage() {
   function openNew(day?: Date) {
     const d = day ?? selectedDay ?? today
     const dateStr = toLocalDateStr(d)
-    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour: "09:00", endHour: "10:00", notes: "", meetingLink: "", amountPaid: "" })
+    const isSelectedToday = d.toDateString() === today.toDateString()
+
+    let startHour = "09:00"
+    let endHour   = "10:00"
+
+    if (isSelectedToday) {
+      const now = new Date()
+      const h   = now.getHours()
+      const m   = now.getMinutes()
+      startHour = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+      endHour   = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+    }
+
+    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, notes: "", meetingLink: "", amountPaid: "" })
     setEditingId(null)
     setSelected(null)
     setShowNewClient(false)
