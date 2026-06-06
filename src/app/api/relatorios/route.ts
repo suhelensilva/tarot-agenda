@@ -27,10 +27,19 @@ function getPeriodRange(period: Period, from?: string, to?: string) {
   }
 
   if (period === "today") {
-    const start    = startOfDay(now)
-    const end      = endOfDay(now)
-    const yesterday = subDays(now, 1)
-    return { start, end, prevStart: startOfDay(yesterday), prevEnd: endOfDay(yesterday) }
+    // O servidor roda em UTC. O Brasil é UTC-3, então calculamos o "hoje" local
+    // convertendo now para o fuso brasileiro antes de aplicar startOfDay/endOfDay.
+    const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000 // UTC-3
+    const localNow       = new Date(now.getTime() - BRAZIL_OFFSET_MS)
+    const localStart     = startOfDay(localNow)
+    const localEnd       = endOfDay(localNow)
+    const localYesterday = subDays(localNow, 1)
+    return {
+      start:     new Date(localStart.getTime()              + BRAZIL_OFFSET_MS),
+      end:       new Date(localEnd.getTime()                + BRAZIL_OFFSET_MS),
+      prevStart: new Date(startOfDay(localYesterday).getTime() + BRAZIL_OFFSET_MS),
+      prevEnd:   new Date(endOfDay(localYesterday).getTime()   + BRAZIL_OFFSET_MS),
+    }
   }
 
   if (period === "week") {
