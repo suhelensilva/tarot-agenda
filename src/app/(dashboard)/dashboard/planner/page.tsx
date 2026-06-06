@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { ChevronLeft, ChevronRight, Check, Trash2, Plus, Heart } from "lucide-react"
+import { Dancing_Script } from "next/font/google"
+
+const dancingScript = Dancing_Script({ subsets: ["latin"], weight: ["700"] })
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -132,10 +135,7 @@ export default function PlannerPage() {
 
         <div className="flex items-center gap-2">
           <Heart size={22} className="text-[#e91e8c] dark:text-[#f472b6] fill-[#e91e8c] dark:fill-[#f472b6]" />
-          <h1 className="
-            text-3xl font-bold tracking-tight
-            text-[#c2185b] dark:text-[#f9a8d4]
-          " style={{ fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: "italic" }}>
+          <h1 className={`text-4xl text-[#c2185b] dark:text-[#f9a8d4] ${dancingScript.className}`}>
             Digital Planner
           </h1>
         </div>
@@ -211,7 +211,7 @@ export default function PlannerPage() {
               border-b border-[#fce4ec] dark:border-[rgba(244,114,182,0.15)]">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-5 rounded-full bg-[#e91e8c] dark:bg-[#f472b6]" />
-                <h2 className="font-semibold text-[#880e4f] dark:text-[#f9a8d4] text-sm tracking-wide" style={{ fontFamily: "'Georgia', serif" }}>
+                <h2 className={`font-semibold text-[#880e4f] dark:text-[#f9a8d4] text-lg tracking-wide ${dancingScript.className}`}>
                   Schedule
                 </h2>
               </div>
@@ -314,7 +314,7 @@ export default function PlannerPage() {
                   <div className="w-5 h-5 rounded flex items-center justify-center bg-[#e91e8c] dark:bg-[#9c27b0]">
                     <Check size={11} className="text-white" strokeWidth={3} />
                   </div>
-                  <span className="font-semibold text-sm text-[#880e4f] dark:text-[#f9a8d4]" style={{ fontFamily: "'Georgia', serif" }}>
+                  <span className={`font-semibold text-lg text-[#880e4f] dark:text-[#f9a8d4] ${dancingScript.className}`}>
                     To Do List
                   </span>
                 </div>
@@ -398,7 +398,7 @@ export default function PlannerPage() {
                 bg-[#fce4ec]/60 dark:bg-[rgba(244,114,182,0.08)]">
                 <div className="flex items-center gap-2">
                   <Heart size={14} className="text-[#e91e8c] dark:text-[#f472b6] fill-[#e91e8c] dark:fill-[#f472b6]" />
-                  <span className="font-semibold text-sm text-[#880e4f] dark:text-[#f9a8d4]" style={{ fontFamily: "'Georgia', serif" }}>
+                  <span className={`font-semibold text-lg text-[#880e4f] dark:text-[#f9a8d4] ${dancingScript.className}`}>
                     Notes
                   </span>
                 </div>
