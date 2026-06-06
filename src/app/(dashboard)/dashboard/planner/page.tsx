@@ -79,7 +79,8 @@ export default function PlannerPage() {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     })
     if (res.ok) {
-      setTasks(ts => [...ts, await res.json()])
+      const newTask = await res.json()
+      setTasks(ts => [...ts, newTask])
       type === "todo" ? setNewTodo("") : (setNewSched(""), setSchedTime(""))
     }
   }
