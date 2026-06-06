@@ -25,17 +25,19 @@ export function formatCurrency(value: number) {
 }
 
 export function formatDate(date: Date | string) {
-  // Strings no formato YYYY-MM-DD (vindo de <input type="date">) devem ser
-  // tratadas como data local — sem conversão UTC — para evitar o shift de -1 dia
-  // que ocorre em fusos negativos (Brasil UTC-3).
+  // Strings no formato YYYY-MM-DD (vindo de <input type="date">) — parseia
+  // manualmente para evitar qualquer conversão de fuso.
   if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
     const [year, month, day] = date.split("-")
     return `${day}/${month}/${year}`
   }
+  // Para ISO strings completas (ex: vindo do banco como "2026-06-05T00:00:00.000Z"),
+  // formata em UTC para evitar o shift de -1 dia no Brasil (UTC-3).
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(date))
 }
 

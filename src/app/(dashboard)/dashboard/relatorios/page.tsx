@@ -381,7 +381,7 @@ export default function RelatoriosPage() {
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{e.description}</p>
-                      <p className="text-xs text-gray-400 truncate">{e.category} · {new Date(e.date).toLocaleDateString("pt-BR")}</p>
+                      <p className="text-xs text-gray-400 truncate">{e.category} · {formatDate(e.date)}</p>
                     </div>
                     <span className="text-sm font-semibold text-rose-400 whitespace-nowrap shrink-0">−{formatCurrency(e.amount)}</span>
                     <div className="flex items-center gap-1 shrink-0">
@@ -639,8 +639,7 @@ function MiniStat({ label, value, color }: { label: string; value: string; color
 
 function TxRow({ t, onEdit, onDelete }: { t: Transaction; onEdit?: () => void; onDelete?: () => void }) {
   const isRev  = t.type === "revenue"
-  const date   = new Date(t.date)
-  const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+  const dateStr = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" }).format(new Date(t.date))
 
   return (
     <div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center py-3 border-b border-gray-50 dark:border-[rgba(255,255,255,0.04)] gap-3 px-1 group hover:bg-gray-50/60 dark:hover:bg-[rgba(170,85,249,0.04)] rounded-lg transition-colors">
