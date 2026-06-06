@@ -81,6 +81,17 @@ export default function RelatoriosPage() {
   const [expDate, setExpDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [savingExp, setSavExp] = useState(false)
 
+  const [allExpenses, setAllExpenses] = useState<Expense[]>([])
+  const [loadingAllExp, setLoadingAllExp] = useState(true)
+
+  const loadAllExpenses = useCallback(async () => {
+    setLoadingAllExp(true)
+    try { const r = await fetch("/api/despesas"); setAllExpenses(await r.json()) }
+    finally { setLoadingAllExp(false) }
+  }, [])
+
+  useEffect(() => { loadAllExpenses() }, [loadAllExpenses])
+
   const buildUrl = useCallback(() => {
     let url = `/api/relatorios?period=${period}`
     if (period === "custom" && customFrom && customTo) url += `&from=${customFrom}&to=${customTo}`
@@ -108,11 +119,11 @@ export default function RelatoriosPage() {
     const body = { description: expDesc, category: expCat, amount: parseFloat(expAmt.replace(",",".")), date: expDate }
     if (editingExp) await fetch(`/api/despesas/${editingExp.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
     else await fetch("/api/despesas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-    setSavExp(false); setExpForm(false); load()
+    setSavExp(false); setExpForm(false); load(); loadAllExpenses()
   }
   async function handleDeleteExp(id: string) {
     if (!confirm("Remover despesa?")) return
-    await fetch(`/api/despesas/${id}`, { method: "DELETE" }); load()
+    await fetch(`/api/despesas/${id}`, { method: "DELETE" }); load(); loadAllExpenses()
   }
 
   return (
@@ -331,6 +342,65 @@ export default function RelatoriosPage() {
             </div>
           </>
         ) : null}
+
+        {/* ── Todas as despesas ──────────────────────────────────────── */}
+        <div className="bg-white dark:bg-[#0f0f1a] border border-gray-100 dark:border-[rgba(170,85,249,0.12)] rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-semibold text-gray-900 dark:text-white text-base">Todas as despesas</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Histórico completo de despesas registradas</p>
+            </div>
+            <button onClick={openNewExp}
+              className="flex items-center gap-1.5 text-xs font-medium text-rose-600 border border-rose-200 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-900/20 px-3 py-1.5 rounded-lg transition-colors">
+              <Plus size={13} /> Nova despesa
+            </button>
+          </div>
+
+          {loadingAllExp ? (
+            <div className="flex justify-center py-10">
+              <div className="w-6 h-6 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+            </div>
+          ) : allExpenses.length === 0 ? (
+            <div className="flex flex-col items-center py-12 text-gray-400">
+              <p className="text-sm">Nenhuma despesa registrada ainda</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center text-[11px] text-gray-400 dark:text-gray-500 font-medium pb-2.5 border-b border-gray-100 dark:border-[rgba(170,85,249,0.08)] gap-3 px-1 mb-1">
+                <span>Descrição</span>
+                <span className="hidden sm:block">Categoria</span>
+                <span className="hidden sm:block">Data</span>
+                <span className="text-right">Valor</span>
+                <span/>
+              </div>
+              <div className="divide-y divide-gray-50 dark:divide-[rgba(255,255,255,0.04)]">
+                {allExpenses.map((e) => (
+                  <div key={e.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 px-1 py-2.5 hover:bg-gray-50 dark:hover:bg-[rgba(255,255,255,0.02)] rounded-lg transition-colors">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
+                        <ArrowDownRight size={12} className="text-rose-500" />
+                      </span>
+                      <span className="text-sm text-gray-700 dark:text-gray-200 truncate">{e.description}</span>
+                    </div>
+                    <span className="hidden sm:block text-xs text-gray-400 bg-gray-100 dark:bg-[rgba(255,255,255,0.06)] px-2 py-0.5 rounded-full whitespace-nowrap">{e.category}</span>
+                    <span className="hidden sm:block text-xs text-gray-400 whitespace-nowrap">{new Date(e.date).toLocaleDateString("pt-BR")}</span>
+                    <span className="text-sm font-semibold text-rose-500 text-right whitespace-nowrap">{formatCurrency(e.amount)}</span>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEditExp(e)} className="p-1 rounded text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.1)] transition-colors">
+                        <Pencil size={13}/>
+                      </button>
+                      <button onClick={() => handleDeleteExp(e.id)} className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <Trash2 size={13}/>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 text-right">{allExpenses.length} despesa{allExpenses.length !== 1 ? "s" : ""} · Total: <span className="font-semibold text-rose-400">{formatCurrency(allExpenses.reduce((s, e) => s + e.amount, 0))}</span></p>
+            </>
+          )}
+        </div>
+
       </div>
 
       {/* Modal despesa */}
