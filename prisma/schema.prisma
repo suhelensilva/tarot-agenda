@@ -58,6 +58,8 @@ model User {
   publicButtons    PublicButton[]
   expenses         Expense[]
   paymentLinks     PaymentLink[]
+  plannerTasks     PlannerTask[]
+  plannerNotes     PlannerNote[]
 
   @@map("users")
 }
@@ -384,4 +386,35 @@ model Expense {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("expenses")
+}
+
+model PlannerTask {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  done      Boolean  @default(false)
+  date      String   // YYYY-MM-DD
+  time      String?  // HH:MM (para items de agenda)
+  type      String   @default("todo") // "todo" | "schedule"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("planner_tasks")
+}
+
+model PlannerNote {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String   @default("")
+  date      String   // YYYY-MM-DD
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("planner_notes")
 }
