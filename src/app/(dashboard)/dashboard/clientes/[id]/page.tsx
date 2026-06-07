@@ -102,6 +102,7 @@ export default function ClienteDetailPage() {
   const [selectedLink, setSelectedLink] = useState<PaymentLink | null>(null)
   const [loyaltyCards, setLoyaltyCards] = useState<LoyaltyCard[]>([])
   const [selectedCard, setSelectedCard] = useState<LoyaltyCard | null>(null)
+  const [copiedCard, setCopiedCard] = useState(false)
 
   // ── Fetch client ──────────────────────────────────────────────────────────
 
@@ -205,6 +206,23 @@ export default function ClienteDetailPage() {
       .catch(() => {})
   }
 
+  async function copyCardImage(imageUrl: string) {
+    try {
+      const res  = await fetch(imageUrl)
+      const blob = await res.blob()
+      const item = new ClipboardItem({ [blob.type]: blob })
+      await navigator.clipboard.write([item])
+      setCopiedCard(true)
+      setTimeout(() => setCopiedCard(false), 2500)
+    } catch {
+      // Fallback: se clipboard falhar, baixa o arquivo
+      const a = document.createElement("a")
+      a.href = imageUrl
+      a.download = "cartao-fidelidade.jpg"
+      a.click()
+    }
+  }
+
   function sendWhatsApp() {
     if (!client) return
     const phone = client.phone.replace(/\D/g, "")
@@ -213,14 +231,10 @@ export default function ClienteDetailPage() {
       text = text ? `${text}\n\n${selectedLink.url}` : selectedLink.url
     }
     if (whatsMode === "loyalty" && selectedCard) {
-      // Abre WhatsApp com mensagem; a imagem é baixada separadamente
       const sessionText = `Sessão ${selectedCard.slot} registrada! 🌟`
       text = text ? `${text}\n\n${sessionText}` : sessionText
-      // Dispara o download da imagem do cartão
-      const a = document.createElement("a")
-      a.href = selectedCard.imageUrl
-      a.download = `cartao-fidelidade-sessao-${selectedCard.slot}.jpg`
-      a.click()
+      // Copia a imagem do cartão para o clipboard
+      copyCardImage(selectedCard.imageUrl)
     }
     const url = `https://wa.me/${phone}${text ? `?text=${encodeURIComponent(text)}` : ""}`
     window.open(url, "_blank")
@@ -654,9 +668,20 @@ export default function ClienteDetailPage() {
                     </div>
                   )}
                   {selectedCard && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-                      🎁 A imagem será baixada automaticamente ao clicar em enviar.
-                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 flex-1">
+                        🎁 A imagem será copiada ao clicar em enviar — cole no WhatsApp.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => copyCardImage(selectedCard.imageUrl)}
+                        className="shrink-0 text-xs px-2.5 py-1 rounded-lg font-medium transition
+                          bg-amber-100 hover:bg-amber-200 text-amber-700
+                          dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-400"
+                      >
+                        {copiedCard ? "✓ Copiado!" : "📋 Copiar"}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
