@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
 const schema = z.object({
-  title: z.string().min(1),
+  title: z.string(),
   date:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time:  z.string().optional(),
-  type:  z.enum(["todo", "schedule"]).default("todo"),
+  type:  z.enum(["todo", "schedule", "postit"]).default("todo"),
   done:  z.boolean().optional(),
 })
 
