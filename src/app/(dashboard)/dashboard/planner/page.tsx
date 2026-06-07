@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Check, Trash2, Plus, Heart } from "lucide-react"
+import { ChevronLeft, ChevronRight, Check, Trash2, Plus, Heart, X, StickyNote } from "lucide-react"
 import { Dancing_Script } from "next/font/google"
 
 const dancingScript = Dancing_Script({ subsets: ["latin"], weight: ["700"] })
@@ -13,9 +13,32 @@ type Task = {
   title: string
   done: boolean
   date: string
-  time: string | null
-  type: "todo" | "schedule"
+  time: string | null   // emoji no post-it; hora no schedule (legado)
+  type: string          // "todo" | "postit"
 }
+
+// ── Post-it visual config ─────────────────────────────────────────────────────
+
+const POSTIT_STYLES = [
+  {
+    light: { bg: "#fff9c4", shadow: "2px 4px 12px rgba(249,224,75,0.35)",  text: "#5d4037" },
+    dark:  { bg: "rgba(255,249,196,0.07)", shadow: "2px 4px 12px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(249,224,75,0.18)", text: "#fde68a" },
+  },
+  {
+    light: { bg: "#fce4ec", shadow: "2px 4px 12px rgba(244,143,177,0.35)", text: "#880e4f" },
+    dark:  { bg: "rgba(252,228,236,0.07)", shadow: "2px 4px 12px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(244,143,177,0.18)", text: "#f9a8d4" },
+  },
+  {
+    light: { bg: "#ede7f6", shadow: "2px 4px 12px rgba(186,104,200,0.35)", text: "#4a148c" },
+    dark:  { bg: "rgba(237,231,246,0.07)", shadow: "2px 4px 12px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(186,104,200,0.18)", text: "#d8b4fe" },
+  },
+  {
+    light: { bg: "#e8f5e9", shadow: "2px 4px 12px rgba(129,199,132,0.35)", text: "#1b5e20" },
+    dark:  { bg: "rgba(232,245,233,0.07)", shadow: "2px 4px 12px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(129,199,132,0.18)", text: "#86efac" },
+  },
+]
+
+const ROTATIONS = [-2, 1.5, -1, 2.5, -1.5, 1, -2, 2]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -27,7 +50,7 @@ function todayStr() {
 function addDays(d: string, n: number) {
   const [y, m, day] = d.split("-").map(Number)
   const dt = new Date(y, m - 1, day + n)
-  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`
 }
 
 function displayDate(d: string) {
@@ -35,6 +58,18 @@ function displayDate(d: string) {
   return new Date(y, m - 1, day).toLocaleDateString("pt-BR", {
     weekday: "long", day: "2-digit", month: "long",
   })
+}
+
+function useIsDark() {
+  const [dark, setDark] = useState(false)
+  useEffect(() => {
+    const check = () => setDark(document.documentElement.classList.contains("dark"))
+    check()
+    const obs = new MutationObserver(check)
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
+    return () => obs.disconnect()
+  }, [])
+  return dark
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -45,13 +80,12 @@ export default function PlannerPage() {
   const [note, setNote]       = useState("")
   const [loading, setLoading] = useState(true)
   const [savedNote, setSaved] = useState(false)
+  const [newTodo, setNewTodo] = useState("")
 
-  const [newTodo, setNewTodo]       = useState("")
-  const [newSched, setNewSched]     = useState("")
-  const [schedTime, setSchedTime]   = useState("")
-
-  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const isToday   = date === todayStr()
+  const noteTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const postitTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const isToday      = date === todayStr()
+  const isDark       = useIsDark()
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -70,18 +104,28 @@ export default function PlannerPage() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  async function addTask(type: "todo" | "schedule") {
-    const title = (type === "todo" ? newTodo : newSched).trim()
+  async function addTodo() {
+    const title = newTodo.trim()
     if (!title) return
-    const body: Record<string, unknown> = { title, date, type }
-    if (type === "schedule" && schedTime) body.time = schedTime
     const res = await fetch("/api/planner/tasks", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, date, type: "todo" }),
     })
     if (res.ok) {
       const newTask = await res.json()
       setTasks(ts => [...ts, newTask])
-      type === "todo" ? setNewTodo("") : (setNewSched(""), setSchedTime(""))
+      setNewTodo("")
+    }
+  }
+
+  async function addPostit() {
+    const res = await fetch("/api/planner/tasks", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "", date, type: "postit" }),
+    })
+    if (res.ok) {
+      const newTask = await res.json()
+      setTasks(ts => [...ts, newTask])
     }
   }
 
@@ -96,6 +140,33 @@ export default function PlannerPage() {
   async function deleteTask(id: string) {
     setTasks(ts => ts.filter(x => x.id !== id))
     await fetch(`/api/planner/tasks/${id}`, { method: "DELETE" })
+  }
+
+  function handlePostitContent(id: string, content: string) {
+    setTasks(ts => ts.map(t => t.id === id ? { ...t, title: content } : t))
+    const existing = postitTimers.current.get(id)
+    if (existing) clearTimeout(existing)
+    postitTimers.current.set(id, setTimeout(async () => {
+      await fetch(`/api/planner/tasks/${id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: content }),
+      })
+      postitTimers.current.delete(id)
+    }, 800))
+  }
+
+  function handlePostitIcon(id: string, icon: string) {
+    setTasks(ts => ts.map(t => t.id === id ? { ...t, time: icon } : t))
+    const key = `icon-${id}`
+    const existing = postitTimers.current.get(key)
+    if (existing) clearTimeout(existing)
+    postitTimers.current.set(key, setTimeout(() => {
+      fetch(`/api/planner/tasks/${id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ time: icon }),
+      })
+      postitTimers.current.delete(key)
+    }, 500))
   }
 
   function handleNote(val: string) {
@@ -113,14 +184,9 @@ export default function PlannerPage() {
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
-  const schedule = [...tasks.filter(t => t.type === "schedule")]
-    .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""))
-  const todos = tasks.filter(t => t.type === "todo")
+  const postits   = tasks.filter(t => t.type === "postit")
+  const todos     = tasks.filter(t => t.type === "todo")
   const doneCount = todos.filter(t => t.done).length
-
-  // ── Schedule lines (always show at least 8 slots) ──────────────────────────
-
-  const scheduleSlots = Math.max(8, schedule.length + 2)
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -131,9 +197,8 @@ export default function PlannerPage() {
       transition-colors duration-300
     ">
 
-      {/* ── Title ── */}
+      {/* ── Título ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-
         <div className="flex items-center gap-2">
           <Heart size={22} className="text-[#e91e8c] dark:text-[#f472b6] fill-[#e91e8c] dark:fill-[#f472b6]" />
           <h1 className={`text-4xl text-[#c2185b] dark:text-[#f9a8d4] ${dancingScript.className}`}>
@@ -141,7 +206,7 @@ export default function PlannerPage() {
           </h1>
         </div>
 
-        {/* Date nav */}
+        {/* Navegação de data */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setDate(d => addDays(d, -1))}
@@ -190,7 +255,7 @@ export default function PlannerPage() {
         </div>
       </div>
 
-      {/* ── Divider ── */}
+      {/* ── Divisor ── */}
       <div className="h-px mb-5 bg-gradient-to-r from-[#f48fb1] via-[#ce93d8] to-transparent dark:from-[#f472b6]/30 dark:via-[#a855f7]/20 dark:to-transparent" />
 
       {loading ? (
@@ -198,116 +263,106 @@ export default function PlannerPage() {
           <div className="w-8 h-8 rounded-full border-2 border-[#e91e8c] border-t-transparent animate-spin dark:border-[#f472b6]" />
         </div>
       ) : (
-        /* ── Main grid: Schedule left | ToDo+Notes right ── */
         <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-          {/* ── LEFT: Schedule ───────────────────────────────────────── */}
+          {/* ── ESQUERDA: Mural de Post-its ──────────────────────────── */}
           <div className="
             flex-1 rounded-3xl overflow-hidden shadow-sm
             bg-white dark:bg-[#1e0a30]
             border border-[#f8bbd0] dark:border-[rgba(244,114,182,0.2)]
           ">
-            {/* Schedule header */}
+            {/* Cabeçalho */}
             <div className="flex items-center justify-between px-5 py-3
               border-b border-[#fce4ec] dark:border-[rgba(244,114,182,0.15)]">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-5 rounded-full bg-[#e91e8c] dark:bg-[#f472b6]" />
                 <h2 className={`font-semibold text-[#880e4f] dark:text-[#f9a8d4] text-lg tracking-wide ${dancingScript.className}`}>
-                  Agenda
+                  Mural
                 </h2>
               </div>
-              {/* Add schedule form */}
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="time"
-                  value={schedTime}
-                  onChange={e => setSchedTime(e.target.value)}
-                  className="w-24 rounded-lg px-2 py-1 text-xs focus:outline-none
-                    bg-[#fce4ec] text-[#880e4f] border border-[#f8bbd0]
-                    dark:bg-[rgba(244,114,182,0.1)] dark:text-[#f9a8d4] dark:border-[rgba(244,114,182,0.2)]"
-                  style={{ colorScheme: "light" }}
-                />
-                <input
-                  value={newSched}
-                  onChange={e => setNewSched(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && addTask("schedule")}
-                  placeholder="Adicionar..."
-                  className="w-36 rounded-lg px-2 py-1 text-xs focus:outline-none
-                    bg-[#fce4ec] text-[#880e4f] placeholder-[#f48fb1] border border-[#f8bbd0]
-                    dark:bg-[rgba(244,114,182,0.1)] dark:text-[#f9a8d4] dark:placeholder-[rgba(244,114,182,0.4)] dark:border-[rgba(244,114,182,0.2)]"
-                />
-                <button
-                  onClick={() => addTask("schedule")}
-                  className="w-6 h-6 rounded-lg flex items-center justify-center
-                    bg-[#e91e8c] hover:bg-[#c2185b] text-white transition
-                    dark:bg-[#9c27b0] dark:hover:bg-[#7b1fa2]"
-                >
-                  <Plus size={12} />
-                </button>
-              </div>
+              <button
+                onClick={addPostit}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium transition
+                  bg-[#fce4ec] hover:bg-[#f8bbd0] text-[#c2185b]
+                  dark:bg-[rgba(244,114,182,0.15)] dark:hover:bg-[rgba(244,114,182,0.25)] dark:text-[#f472b6]"
+              >
+                <Plus size={11} />
+                Post-it
+              </button>
             </div>
 
-            {/* Schedule lines */}
-            <div className="px-5 py-2">
-              {schedule.length === 0 && (
-                <p className="text-xs text-center py-2 text-[#f48fb1]/60 dark:text-[rgba(244,114,182,0.3)]">
-                  Nenhum compromisso — clique em Adicionar ✨
-                </p>
+            {/* Post-its */}
+            <div className="p-5">
+              {postits.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 gap-2">
+                  <StickyNote size={30} className="text-[#f48fb1]/30 dark:text-[rgba(244,114,182,0.2)]" />
+                  <p className="text-xs text-[#f48fb1]/50 dark:text-[rgba(244,114,182,0.25)]">
+                    Clique em + Post-it para adicionar ✨
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-5">
+                  {postits.map((p, i) => {
+                    const style    = POSTIT_STYLES[i % POSTIT_STYLES.length]
+                    const rotation = ROTATIONS[i % ROTATIONS.length]
+                    const s        = isDark ? style.dark : style.light
+                    return (
+                      <div
+                        key={p.id}
+                        className="relative rounded-xl p-3.5 group transition-all hover:scale-[1.03] hover:z-10"
+                        style={{
+                          backgroundColor: s.bg,
+                          transform: `rotate(${rotation}deg)`,
+                          boxShadow: s.shadow,
+                        }}
+                      >
+                        {/* Botão remover */}
+                        <button
+                          onClick={() => deleteTask(p.id)}
+                          className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center
+                            opacity-0 group-hover:opacity-100 transition
+                            bg-white/70 dark:bg-black/30 hover:bg-red-100 dark:hover:bg-red-900/30
+                            text-gray-400 hover:text-red-500"
+                        >
+                          <X size={10} />
+                        </button>
+
+                        {/* Input do emoji/ícone */}
+                        <input
+                          value={p.time ?? ""}
+                          onChange={e => handlePostitIcon(p.id, e.target.value)}
+                          placeholder="✨"
+                          className="block w-9 text-2xl bg-transparent focus:outline-none mb-1.5
+                            placeholder-gray-300/40 dark:placeholder-white/10"
+                        />
+
+                        {/* Conteúdo do post-it */}
+                        <textarea
+                          value={p.title}
+                          onChange={e => handlePostitContent(p.id, e.target.value)}
+                          placeholder="Escreva aqui..."
+                          rows={4}
+                          className="w-full bg-transparent resize-none focus:outline-none text-sm leading-relaxed
+                            placeholder-gray-400/50 dark:placeholder-white/15"
+                          style={{ color: s.text }}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
               )}
-              {Array.from({ length: scheduleSlots }).map((_, i) => {
-                const task = schedule[i]
-                return (
-                  <div key={i} className="
-                    flex items-center gap-3 group
-                    border-b border-[#fce4ec] dark:border-[rgba(244,114,182,0.08)]
-                    py-2.5 min-h-[40px]
-                  ">
-                    {task ? (
-                      <>
-                        <button
-                          onClick={() => toggleTask(task)}
-                          className="w-4 h-4 rounded-sm shrink-0 flex items-center justify-center transition border-2"
-                          style={{
-                            background: task.done ? "#e91e8c" : "transparent",
-                            borderColor: task.done ? "#e91e8c" : "#f48fb1",
-                          }}
-                        >
-                          {task.done && <Check size={9} className="text-white" strokeWidth={3} />}
-                        </button>
-                        {task.time && (
-                          <span className="text-[11px] font-mono shrink-0 text-[#e91e8c] dark:text-[#f472b6] w-10">
-                            {task.time}
-                          </span>
-                        )}
-                        <span className={`flex-1 text-sm ${task.done ? "line-through text-[#f48fb1]/50 dark:text-[rgba(244,114,182,0.3)]" : "text-[#4a0020] dark:text-[#f9a8d4]"}`}>
-                          {task.title}
-                        </span>
-                        <button
-                          onClick={() => deleteTask(task.id)}
-                          className="opacity-0 group-hover:opacity-100 transition text-[#f48fb1] hover:text-[#e91e8c] dark:text-[rgba(244,114,182,0.4)] dark:hover:text-[#f472b6]"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </>
-                    ) : (
-                      <span className="w-full" />
-                    )}
-                  </div>
-                )
-              })}
             </div>
           </div>
 
-          {/* ── RIGHT: ToDo + Notes ───────────────────────────────────── */}
+          {/* ── DIREITA: Tarefas + Notas ──────────────────────────────── */}
           <div className="w-full lg:w-72 xl:w-80 flex flex-col gap-4">
 
-            {/* To Do List */}
+            {/* Tarefas */}
             <div className="
               rounded-3xl overflow-hidden shadow-sm
               bg-white dark:bg-[#1e0a30]
               border border-[#f8bbd0] dark:border-[rgba(244,114,182,0.2)]
             ">
-              {/* Header */}
               <div className="flex items-center justify-between px-4 py-3
                 border-b border-[#fce4ec] dark:border-[rgba(244,114,182,0.15)]
                 bg-[#fce4ec]/60 dark:bg-[rgba(244,114,182,0.08)]">
@@ -326,19 +381,18 @@ export default function PlannerPage() {
                 )}
               </div>
 
-              {/* Add todo */}
               <div className="flex gap-1.5 px-4 pt-3 pb-1">
                 <input
                   value={newTodo}
                   onChange={e => setNewTodo(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && addTask("todo")}
+                  onKeyDown={e => e.key === "Enter" && addTodo()}
                   placeholder="Nova tarefa..."
                   className="flex-1 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none
                     bg-[#fce4ec] text-[#880e4f] placeholder-[#f48fb1] border border-[#f8bbd0]
                     dark:bg-[rgba(244,114,182,0.1)] dark:text-[#f9a8d4] dark:placeholder-[rgba(244,114,182,0.4)] dark:border-[rgba(244,114,182,0.2)]"
                 />
                 <button
-                  onClick={() => addTask("todo")}
+                  onClick={addTodo}
                   className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0
                     bg-[#e91e8c] hover:bg-[#c2185b] text-white transition
                     dark:bg-[#9c27b0] dark:hover:bg-[#7b1fa2]"
@@ -347,7 +401,6 @@ export default function PlannerPage() {
                 </button>
               </div>
 
-              {/* Todo items */}
               <div className="px-4 pb-3 pt-1 space-y-0.5">
                 {todos.length === 0 ? (
                   <p className="text-xs text-center py-3 text-[#f48fb1]/60 dark:text-[rgba(244,114,182,0.3)]">
@@ -367,7 +420,9 @@ export default function PlannerPage() {
                       >
                         {t.done && <Check size={9} className="text-white" strokeWidth={3} />}
                       </button>
-                      <span className={`flex-1 text-xs ${t.done ? "line-through text-[#f48fb1]/50 dark:text-[rgba(244,114,182,0.3)]" : "text-[#4a0020] dark:text-[#f9a8d4]"}`}>
+                      <span className={`flex-1 text-xs ${t.done
+                        ? "line-through text-[#f48fb1]/50 dark:text-[rgba(244,114,182,0.3)]"
+                        : "text-[#4a0020] dark:text-[#f9a8d4]"}`}>
                         {t.title}
                       </span>
                       <button
@@ -387,13 +442,12 @@ export default function PlannerPage() {
               </div>
             </div>
 
-            {/* Notes */}
+            {/* Notas */}
             <div className="
               rounded-3xl overflow-hidden shadow-sm
               bg-white dark:bg-[#1e0a30]
               border border-[#f8bbd0] dark:border-[rgba(244,114,182,0.2)]
             ">
-              {/* Header */}
               <div className="flex items-center justify-between px-4 py-3
                 border-b border-[#fce4ec] dark:border-[rgba(244,114,182,0.15)]
                 bg-[#fce4ec]/60 dark:bg-[rgba(244,114,182,0.08)]">
@@ -407,7 +461,6 @@ export default function PlannerPage() {
                   <span className="text-[10px] text-[#e91e8c] dark:text-[#f472b6]">salvo ✓</span>
                 )}
               </div>
-
               <div className="p-4">
                 <textarea
                   value={note}
