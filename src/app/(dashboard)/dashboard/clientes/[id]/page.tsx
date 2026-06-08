@@ -208,14 +208,37 @@ export default function ClienteDetailPage() {
 
   async function copyCardImage(imageUrl: string) {
     try {
+      // 1. Baixa o blob da imagem
       const res  = await fetch(imageUrl)
       const blob = await res.blob()
-      const item = new ClipboardItem({ [blob.type]: blob })
-      await navigator.clipboard.write([item])
+
+      // 2. Chrome só aceita image/png no ClipboardItem.
+      //    Se a imagem for JPEG (ou outro formato), converte pra PNG via canvas.
+      let pngBlob = blob
+      if (blob.type !== "image/png") {
+        const objUrl = URL.createObjectURL(blob)
+        const img    = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image()
+          el.onload  = () => resolve(el)
+          el.onerror = reject
+          el.src     = objUrl
+        })
+        const canvas    = document.createElement("canvas")
+        canvas.width    = img.naturalWidth
+        canvas.height   = img.naturalHeight
+        canvas.getContext("2d")!.drawImage(img, 0, 0)
+        URL.revokeObjectURL(objUrl)
+        pngBlob = await new Promise<Blob>((resolve, reject) =>
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error("toBlob falhou")), "image/png")
+        )
+      }
+
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })])
       setCopiedCard(true)
       setTimeout(() => setCopiedCard(false), 2500)
     } catch {
-      // Fallback: se clipboard falhar, baixa o arquivo
+      // Fallback apenas se o navegador não suportar clipboard de imagem
+      alert("Não foi possível copiar. Baixando a imagem...")
       const a = document.createElement("a")
       a.href = imageUrl
       a.download = "cartao-fidelidade.jpg"
