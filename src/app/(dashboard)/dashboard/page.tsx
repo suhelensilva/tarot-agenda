@@ -3,16 +3,19 @@ import { prisma } from "@/lib/prisma"
 import { formatCurrency } from "@/lib/utils"
 import { CalendarDays, Users, TrendingUp, Clock, Cake } from "lucide-react"
 
+// Datas de nascimento são salvas como UTC midnight (ex: "1988-06-09T00:00:00Z").
+// Usar timeZone:"UTC" preserva o dia original; nunca converter para SP, senão
+// meia-noite UTC vira 21h do dia anterior em São Paulo.
 function getMMDD(date: Date | string): string {
-  // Usa fuso de SP para não errar o dia nos extremos do dia
   const d = new Date(date)
-  const s = d.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) // "YYYY-MM-DD"
+  const s = d.toLocaleDateString("en-CA", { timeZone: "UTC" }) // "YYYY-MM-DD"
   const parts = s.split("-")
   return `${parts[1]}-${parts[2]}` // "MM-DD"
 }
 function formatBirthday(birthDate: Date | string): string {
   const d = new Date(birthDate)
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`
+  // getUTC* preserva o dia original armazenado como UTC midnight
+  return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`
 }
 function whatsappBirthdayLink(phone: string, name: string, isToday: boolean): string {
   const number = phone.replace(/\D/g, "")
@@ -23,11 +26,12 @@ function whatsappBirthdayLink(phone: string, name: string, isToday: boolean): st
   return `https://wa.me/${number}?text=${encodeURIComponent(msg)}`
 }
 function calcAge(birthDate: Date | string): number {
-  const bd = new Date(birthDate)
-  const today = new Date()
-  let age = today.getFullYear() - bd.getFullYear()
-  const m = today.getMonth() - bd.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--
+  const bd    = new Date(birthDate)
+  // nowBR: subtrai 3h do UTC para representar o horário do Brasil como se fosse UTC
+  const nowBR = new Date(Date.now() - 3 * 60 * 60 * 1000)
+  let age = nowBR.getUTCFullYear() - bd.getUTCFullYear()
+  const m = nowBR.getUTCMonth() - bd.getUTCMonth()
+  if (m < 0 || (m === 0 && nowBR.getUTCDate() < bd.getUTCDate())) age--
   return age
 }
 
@@ -69,14 +73,18 @@ export default async function DashboardPage() {
     }),
   ])
 
-  const todayMMDD = getMMDD(now)
+  // nowBR representa o instante atual no fuso do Brasil (UTC-3) usando getUTC*
+  const nowBR = new Date(Date.now() - 3 * 60 * 60 * 1000)
+
+  const todayMMDD = getMMDD(nowBR)
   const next7 = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(now); d.setDate(d.getDate() + i + 1); return getMMDD(d)
+    const d = new Date(nowBR.getTime() + (i + 1) * 24 * 60 * 60 * 1000)
+    return getMMDD(d)
   })
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const daysInMonth = new Date(Date.UTC(nowBR.getUTCFullYear(), nowBR.getUTCMonth() + 1, 0)).getUTCDate()
   const restOfMonth: string[] = []
-  for (let day = now.getDate() + 8; day <= daysInMonth; day++) {
-    restOfMonth.push(`${String(now.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`)
+  for (let day = nowBR.getUTCDate() + 8; day <= daysInMonth; day++) {
+    restOfMonth.push(`${String(nowBR.getUTCMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`)
   }
 
   type BirthdayClient = { id: string; name: string; birthDate: Date | null; phone: string }
