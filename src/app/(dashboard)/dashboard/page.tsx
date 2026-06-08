@@ -58,9 +58,9 @@ export default async function DashboardPage() {
   const [totalClients, appointmentsThisMonth, totalToday, upcomingToday, revenue, clientsWithBirthday] = await Promise.all([
     prisma.client.count({ where: { userId } }),
     prisma.appointment.count({ where: { userId, startTime: { gte: monthStart, lte: monthEnd } } }),
-    // Total de atendimentos hoje (qualquer status exceto cancelado)
+    // Realizados hoje
     prisma.appointment.count({
-      where: { userId, startTime: { gte: todayStart, lte: todayEnd }, status: { not: "CANCELLED" } },
+      where: { userId, startTime: { gte: todayStart, lte: todayEnd }, status: "COMPLETED" },
     }),
     // Pendentes de hoje (para a listinha da agenda)
     prisma.appointment.findMany({
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
     { label: "Clientes",              value: totalClients,                                   icon: Users,        color: "text-blue-500",   bg: "bg-blue-50   dark:bg-blue-500/10",   glow: "rgba(59,130,246,0.5)"   },
     { label: "Atendimentos este mês", value: appointmentsThisMonth,                          icon: CalendarDays, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10", glow: "rgba(170,85,249,0.55)"  },
     { label: "Faturamento do mês",    value: formatCurrency(revenue._sum.amountPaid ?? 0),   icon: TrendingUp,   color: "text-green-500",  bg: "bg-green-50  dark:bg-green-500/10",  glow: "rgba(34,197,94,0.5)"    },
-    { label: "Atendimentos hoje",      value: totalToday,                                     icon: Clock,        color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10", glow: "rgba(249,115,22,0.5)"   },
+    { label: "Realizados hoje",        value: totalToday,                                     icon: Clock,        color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10", glow: "rgba(249,115,22,0.5)"   },
   ]
 
   return (
@@ -142,9 +142,18 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2 relative bg-white dark:bg-[#13131f] rounded-xl border border-gray-200 dark:border-[rgba(170,85,249,0.15)] p-6 overflow-hidden">
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-20 opacity-0 dark:opacity-100 pointer-events-none"
             style={{ background: "radial-gradient(ellipse at bottom, rgba(170,85,249,0.18) 0%, transparent 70%)" }} />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Agenda de hoje</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Agenda de hoje</h2>
+            {upcomingToday.length > 0 && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-[rgba(170,85,249,0.15)] dark:text-[#aa55f9]">
+                {upcomingToday.length} {upcomingToday.length === 1 ? "falta" : "faltam"}
+              </span>
+            )}
+          </div>
           {upcomingToday.length === 0 ? (
-            <p className="text-gray-400 dark:text-gray-500 text-sm">Nenhum atendimento agendado para hoje</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm">
+              {totalToday > 0 ? `Todos os ${totalToday} atendimentos de hoje foram realizados ✅` : "Nenhum atendimento agendado para hoje"}
+            </p>
           ) : (
             <div className="space-y-3">
               {upcomingToday.map((apt: typeof upcomingToday[0]) => (
