@@ -256,8 +256,8 @@ export default function ClienteDetailPage() {
     if (whatsMode === "loyalty" && selectedCard) {
       const sessionText = `Sessão ${selectedCard.slot} registrada! 🌟`
       text = text ? `${text}\n\n${sessionText}` : sessionText
-      // Copia a imagem do cartão para o clipboard
-      copyCardImage(selectedCard.imageUrl)
+      // Não copia aqui — o clipboard precisa de foco na página e window.open() tira o foco.
+      // A usuária deve clicar em "📋 Copiar" antes de clicar em Abrir WhatsApp.
     }
     const url = `https://wa.me/${phone}${text ? `?text=${encodeURIComponent(text)}` : ""}`
     window.open(url, "_blank")
@@ -693,7 +693,7 @@ export default function ClienteDetailPage() {
                   {selectedCard && (
                     <div className="mt-2 flex items-center gap-2">
                       <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 flex-1">
-                        🎁 A imagem será copiada ao clicar em enviar — cole no WhatsApp.
+                        {copiedCard ? "✅ Copiada! Agora clique em Abrir WhatsApp e cole." : "🎁 1º copie a imagem, depois abra o WhatsApp e cole."}
                       </p>
                       <button
                         type="button"
