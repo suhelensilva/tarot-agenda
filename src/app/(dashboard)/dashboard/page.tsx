@@ -55,9 +55,14 @@ export default async function DashboardPage() {
   const monthStart = new Date(Date.UTC(my, mm - 1, 1,  3,  0,  0,   0))
   const monthEnd   = new Date(Date.UTC(my, mm,     1,  2, 59, 59, 999)) // 1º do próximo mês 02:59 UTC
 
-  const [totalClients, appointmentsThisMonth, upcomingToday, revenue, clientsWithBirthday] = await Promise.all([
+  const [totalClients, appointmentsThisMonth, totalToday, upcomingToday, revenue, clientsWithBirthday] = await Promise.all([
     prisma.client.count({ where: { userId } }),
     prisma.appointment.count({ where: { userId, startTime: { gte: monthStart, lte: monthEnd } } }),
+    // Total de atendimentos hoje (qualquer status exceto cancelado)
+    prisma.appointment.count({
+      where: { userId, startTime: { gte: todayStart, lte: todayEnd }, status: { not: "CANCELLED" } },
+    }),
+    // Pendentes de hoje (para a listinha da agenda)
     prisma.appointment.findMany({
       where: { userId, startTime: { gte: todayStart, lte: todayEnd }, status: { in: ["SCHEDULED", "CONFIRMED"] } },
       include: { client: true, service: true },
@@ -97,7 +102,7 @@ export default async function DashboardPage() {
     { label: "Clientes",              value: totalClients,                                   icon: Users,        color: "text-blue-500",   bg: "bg-blue-50   dark:bg-blue-500/10",   glow: "rgba(59,130,246,0.5)"   },
     { label: "Atendimentos este mês", value: appointmentsThisMonth,                          icon: CalendarDays, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10", glow: "rgba(170,85,249,0.55)"  },
     { label: "Faturamento do mês",    value: formatCurrency(revenue._sum.amountPaid ?? 0),   icon: TrendingUp,   color: "text-green-500",  bg: "bg-green-50  dark:bg-green-500/10",  glow: "rgba(34,197,94,0.5)"    },
-    { label: "Agendamentos hoje",     value: upcomingToday.length,                           icon: Clock,        color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10", glow: "rgba(249,115,22,0.5)"   },
+    { label: "Atendimentos hoje",      value: totalToday,                                     icon: Clock,        color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10", glow: "rgba(249,115,22,0.5)"   },
   ]
 
   return (
