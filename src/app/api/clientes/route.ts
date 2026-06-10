@@ -6,7 +6,7 @@ import { z } from "zod"
 
 const schema = z.object({
   name: z.string().min(1),
-  phone: z.string().min(1),
+  phone: z.string().optional().or(z.literal("")),
   email: z.string().email().optional().or(z.literal("")),
   birthDate: z.string().optional().or(z.literal("")),
   notes: z.string().optional(),
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId: session.user.id,
         name: data.name,
-        phone: data.phone,
+        phone: data.phone || "",
         email: data.email || null,
         birthDate: data.birthDate ? new Date(data.birthDate) : null,
         notes: data.notes || null,

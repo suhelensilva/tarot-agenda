@@ -254,8 +254,8 @@ export default function AgendaPage() {
   }
 
   async function handleCreateClient() {
-    if (!newClient.name.trim() || !newClient.phone.trim()) {
-      setNewClientError("Nome e telefone são obrigatórios")
+    if (!newClient.name.trim()) {
+      setNewClientError("Nome é obrigatório")
       return
     }
     setSavingClient(true)
@@ -563,7 +563,7 @@ export default function AgendaPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Telefone *</label>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Telefone <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
                         <input
                           value={newClient.phone}
                           onChange={(e) => setNewClient((p) => ({ ...p, phone: e.target.value }))}

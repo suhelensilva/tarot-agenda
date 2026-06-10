@@ -310,9 +310,8 @@ export default function ClientesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone / WhatsApp *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone / WhatsApp <span className="text-gray-400 dark:text-gray-600 font-normal">(opcional)</span></label>
                 <input
-                  required
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
