@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Check, Trash2, Plus, Heart, X, StickyNote } from "lucide-react"
+import { ChevronLeft, ChevronRight, Check, Trash2, Plus, Heart, X, StickyNote, Pencil } from "lucide-react"
 import { Dancing_Script } from "next/font/google"
 
 const dancingScript = Dancing_Script({ subsets: ["latin"], weight: ["700"] })
@@ -80,7 +80,9 @@ export default function PlannerPage() {
   const [note, setNote]       = useState("")
   const [loading, setLoading] = useState(true)
   const [savedNote, setSaved] = useState(false)
-  const [newTodo, setNewTodo] = useState("")
+  const [newTodo, setNewTodo]           = useState("")
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle]   = useState("")
 
   const noteTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
   const postitTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
@@ -140,6 +142,29 @@ export default function PlannerPage() {
   async function deleteTask(id: string) {
     setTasks(ts => ts.filter(x => x.id !== id))
     await fetch(`/api/planner/tasks/${id}`, { method: "DELETE" })
+  }
+
+  function startEditing(t: Task) {
+    setEditingTodoId(t.id)
+    setEditingTitle(t.title)
+  }
+
+  async function saveEditing(id: string) {
+    const title = editingTitle.trim()
+    if (title && title !== tasks.find(t => t.id === id)?.title) {
+      setTasks(ts => ts.map(t => t.id === id ? { ...t, title } : t))
+      await fetch(`/api/planner/tasks/${id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      })
+    }
+    setEditingTodoId(null)
+    setEditingTitle("")
+  }
+
+  function cancelEditing() {
+    setEditingTodoId(null)
+    setEditingTitle("")
   }
 
   function handlePostitContent(id: string, content: string) {
@@ -410,6 +435,7 @@ export default function PlannerPage() {
                   todos.map(t => (
                     <div key={t.id}
                       className="flex items-center gap-2.5 group py-1.5 border-b border-[#fce4ec]/60 dark:border-[rgba(244,114,182,0.06)]">
+                      {/* Checkbox */}
                       <button
                         onClick={() => toggleTask(t)}
                         className="w-4 h-4 rounded shrink-0 flex items-center justify-center transition border-2"
@@ -420,17 +446,52 @@ export default function PlannerPage() {
                       >
                         {t.done && <Check size={9} className="text-white" strokeWidth={3} />}
                       </button>
-                      <span className={`flex-1 text-xs ${t.done
-                        ? "line-through text-[#f48fb1]/50 dark:text-[rgba(244,114,182,0.3)]"
-                        : "text-[#4a0020] dark:text-[#f9a8d4]"}`}>
-                        {t.title}
-                      </span>
-                      <button
-                        onClick={() => deleteTask(t.id)}
-                        className="opacity-0 group-hover:opacity-100 transition text-[#f48fb1] hover:text-[#e91e8c] dark:hover:text-[#f472b6]"
-                      >
-                        <Trash2 size={11} />
-                      </button>
+
+                      {/* Texto ou input de edição */}
+                      {editingTodoId === t.id ? (
+                        <input
+                          autoFocus
+                          value={editingTitle}
+                          onChange={e => setEditingTitle(e.target.value)}
+                          onBlur={() => saveEditing(t.id)}
+                          onKeyDown={e => {
+                            if (e.key === "Enter")  saveEditing(t.id)
+                            if (e.key === "Escape") cancelEditing()
+                          }}
+                          className="flex-1 text-xs px-1.5 py-0.5 rounded focus:outline-none
+                            bg-[#fce4ec] text-[#880e4f] border border-[#f48fb1]
+                            dark:bg-[rgba(244,114,182,0.15)] dark:text-[#f9a8d4] dark:border-[rgba(244,114,182,0.3)]"
+                        />
+                      ) : (
+                        <span
+                          onDoubleClick={() => !t.done && startEditing(t)}
+                          className={`flex-1 text-xs cursor-default ${t.done
+                            ? "line-through text-[#f48fb1]/50 dark:text-[rgba(244,114,182,0.3)]"
+                            : "text-[#4a0020] dark:text-[#f9a8d4]"}`}
+                        >
+                          {t.title}
+                        </span>
+                      )}
+
+                      {/* Ações: lápis + lixo */}
+                      {editingTodoId !== t.id && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                          {!t.done && (
+                            <button
+                              onClick={() => startEditing(t)}
+                              className="text-[#f48fb1] hover:text-[#e91e8c] dark:hover:text-[#f472b6]"
+                            >
+                              <Pencil size={10} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteTask(t.id)}
+                            className="text-[#f48fb1] hover:text-[#e91e8c] dark:hover:text-[#f472b6]"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
