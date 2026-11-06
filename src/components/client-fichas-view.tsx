@@ -1150,19 +1150,7 @@ function FichaSection({
       {loading ? (
         <div className="text-center text-gray-400 py-8 text-sm">Carregando...</div>
       ) : fichas.length === 0 ? (
-        <div className="py-6 flex flex-col items-center gap-3">
-          <p className="text-sm text-gray-400 italic">{emptyText}</p>
-          <button
-            onClick={onCreateClick}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-              type === "INTERNAL"
-                ? "text-purple-700 dark:text-[#aa55f9] border-purple-300 dark:border-[rgba(170,85,249,0.4)] hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.08)]"
-                : "text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400"
-            }`}
-          >
-            <Plus size={14} /> Criar agora
-          </button>
-        </div>
+        <p className="text-sm text-gray-400 italic py-4">{emptyText}</p>
       ) : (
         <div className="space-y-2">
           {fichas.map((f) => (
