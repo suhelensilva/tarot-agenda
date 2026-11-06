@@ -20,6 +20,7 @@ type Appointment = {
   endTime: string
   status: "SCHEDULED" | "CONFIRMED" | "COMPLETED" | "NO_SHOW" | "CANCELLED"
   notes: string | null
+  motivo: string | null
   amountPaid: number | null
   service: { id: string; name: string; price: number } | null
 }
@@ -31,6 +32,8 @@ type ClientDetail = {
   email: string | null
   birthDate: string | null
   notes: string | null
+  person2Name: string | null
+  person2BirthDate: string | null
   createdAt: string
   appointments: Appointment[]
 }
@@ -41,13 +44,15 @@ type FormData = {
   email: string
   birthDate: string
   notes: string
+  person2Name: string
+  person2BirthDate: string
 }
 
 type TabPerfil = "dados" | "fichas" | "atendimentos"
 type PaymentLink = { id: string; name: string; url: string }
 type LoyaltyCard = { slot: number; imageUrl: string }
 
-const emptyForm: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "" }
+const emptyForm: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "", person2Name: "", person2BirthDate: "" }
 
 // ─── Status badge helper ──────────────────────────────────────────────────────
 
@@ -166,6 +171,8 @@ export default function ClienteDetailPage() {
       email: client.email ?? "",
       birthDate: client.birthDate ? client.birthDate.slice(0, 10) : "",
       notes: client.notes ?? "",
+      person2Name: client.person2Name ?? "",
+      person2BirthDate: client.person2BirthDate ? client.person2BirthDate.slice(0, 10) : "",
     })
     setShowForm(true)
   }
@@ -177,7 +184,11 @@ export default function ClienteDetailPage() {
       await fetch(`/api/clientes/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          person2Name: form.person2Name || undefined,
+          person2BirthDate: form.person2BirthDate || undefined,
+        }),
       })
       setShowForm(false)
       fetchClient()
@@ -412,6 +423,21 @@ export default function ClienteDetailPage() {
               )}
             </div>
 
+            {/* Segunda pessoa */}
+            {client.person2Name && (
+              <div className="bg-indigo-50 dark:bg-[rgba(99,102,241,0.08)] border border-indigo-100 dark:border-[rgba(99,102,241,0.2)] rounded-xl p-4 space-y-1.5">
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-1.5 font-semibold uppercase tracking-wide">Segunda pessoa</p>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="font-medium text-gray-900 dark:text-white">{client.person2Name}</span>
+                  {client.person2BirthDate && (
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">
+                      {formatDate(client.person2BirthDate)} · {calcAge(client.person2BirthDate)} anos
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Notes */}
             {client.notes && (
               <div className="bg-amber-50 dark:bg-[rgba(251,191,36,0.08)] border border-amber-100 dark:border-[rgba(251,191,36,0.2)] rounded-xl p-4">
@@ -467,29 +493,36 @@ export default function ClienteDetailPage() {
                   const end = new Date(a.endTime)
                   const status = STATUS_CONFIG[a.status]
                   return (
-                    <div key={a.id} className="flex items-center gap-4 p-4 border border-gray-200 dark:border-[rgba(170,85,249,0.12)] rounded-xl bg-white dark:bg-[#13131f]">
-                      <div className="shrink-0 text-center min-w-[56px]">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">{start.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">{start.getFullYear()}</p>
+                    <div key={a.id} className="p-4 border border-gray-200 dark:border-[rgba(170,85,249,0.12)] rounded-xl bg-white dark:bg-[#13131f]">
+                      <div className="flex items-center gap-4">
+                        <div className="shrink-0 text-center min-w-[56px]">
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">{start.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">{start.getFullYear()}</p>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-white text-sm truncate">
+                            {a.title ?? a.service?.name ?? "Atendimento"}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            {start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            {" – "}
+                            {end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                        <div className="shrink-0 flex flex-col items-end gap-1">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.cls}`}>
+                            {status.label}
+                          </span>
+                          {a.amountPaid != null && a.amountPaid > 0 && (
+                            <span className="text-xs text-green-600 dark:text-green-400 font-medium">{formatCurrency(a.amountPaid)}</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white text-sm truncate">
-                          {a.title ?? a.service?.name ?? "Atendimento"}
+                      {a.motivo && (
+                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic border-t border-gray-100 dark:border-[rgba(255,255,255,0.05)] pt-2">
+                          {a.motivo}
                         </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                          {start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                          {" – "}
-                          {end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
-                      <div className="shrink-0 flex flex-col items-end gap-1">
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.cls}`}>
-                          {status.label}
-                        </span>
-                        {a.amountPaid != null && a.amountPaid > 0 && (
-                          <span className="text-xs text-green-600 dark:text-green-400 font-medium">{formatCurrency(a.amountPaid)}</span>
-                        )}
-                      </div>
+                      )}
                     </div>
                   )
                 })}
@@ -548,6 +581,31 @@ export default function ClienteDetailPage() {
                   className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                 />
               </div>
+              {/* Segunda pessoa */}
+              <div className="border border-gray-100 dark:border-[rgba(170,85,249,0.1)] rounded-xl p-4 space-y-3">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Segunda pessoa (opcional)</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome</label>
+                    <input
+                      value={form.person2Name}
+                      onChange={(e) => setForm({ ...form, person2Name: e.target.value })}
+                      className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
+                      placeholder="Nome da 2ª pessoa"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nascimento</label>
+                    <input
+                      type="date"
+                      value={form.person2BirthDate}
+                      onChange={(e) => setForm({ ...form, person2BirthDate: e.target.value })}
+                      className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações</label>
                 <textarea

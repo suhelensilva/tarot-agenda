@@ -10,6 +10,8 @@ const schema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   birthDate: z.string().optional().or(z.literal("")),
   notes: z.string().optional(),
+  person2Name: z.string().optional().or(z.literal("")),
+  person2BirthDate: z.string().optional().or(z.literal("")),
 })
 
 export async function GET(req: NextRequest) {
@@ -65,6 +67,8 @@ export async function POST(req: NextRequest) {
         email: data.email || null,
         birthDate: data.birthDate ? new Date(data.birthDate) : null,
         notes: data.notes || null,
+        person2Name: data.person2Name || null,
+        person2BirthDate: data.person2BirthDate ? new Date(data.person2BirthDate) : null,
       },
     })
 

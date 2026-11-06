@@ -100,15 +100,17 @@ model Session {
 }
 
 model Client {
-  id        String    @id @default(cuid())
-  userId    String
-  name      String
-  phone     String
-  email     String?
-  birthDate DateTime?
-  notes     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  userId          String
+  name            String
+  phone           String
+  email           String?
+  birthDate       DateTime?
+  notes           String?
+  person2Name     String?
+  person2BirthDate DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   appointments     Appointment[]
@@ -165,6 +167,7 @@ model Appointment {
   endTime            DateTime
   status             AppointmentStatus @default(SCHEDULED)
   notes              String?
+  motivo             String?
   meetingLink        String?
   cancellationReason String?
   amountPaid         Float?

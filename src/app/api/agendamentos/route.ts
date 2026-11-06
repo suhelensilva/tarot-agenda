@@ -10,6 +10,7 @@ const schema = z.object({
   startTime: z.string(),
   endTime: z.string(),
   notes: z.string().optional().nullable(),
+  motivo: z.string().optional().nullable(),
   meetingLink: z.string().optional().nullable(),
   amountPaid: z.number().optional().nullable(),
 })
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
         startTime: new Date(data.startTime),
         endTime: new Date(data.endTime),
         notes: data.notes || null,
+        motivo: data.motivo || null,
         meetingLink: data.meetingLink || null,
         amountPaid: data.amountPaid ?? null,
       },

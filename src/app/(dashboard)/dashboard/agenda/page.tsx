@@ -14,6 +14,7 @@ type Appointment = {
   endTime: string
   status: "SCHEDULED" | "CONFIRMED" | "COMPLETED" | "NO_SHOW" | "CANCELLED"
   notes: string | null
+  motivo: string | null
   meetingLink: string | null
   amountPaid: number | null
   cancellationReason: string | null
@@ -46,7 +47,8 @@ export default function AgendaPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [cancellationReason, setCancellationReason] = useState("")
   const [showNewClient, setShowNewClient] = useState(false)
-  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "", birthDate: "" })
+  const [showPerson2, setShowPerson2] = useState(false)
+  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "" })
   const [savingClient, setSavingClient] = useState(false)
   const [newClientError, setNewClientError] = useState<string | null>(null)
   const planFetch = usePlanFetch()
@@ -58,6 +60,7 @@ export default function AgendaPage() {
     date: "",
     startHour: "09:00",
     endHour: "10:00",
+    motivo: "",
     notes: "",
     meetingLink: "",
     amountPaid: "",
@@ -126,11 +129,12 @@ export default function AgendaPage() {
       endHour   = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`
     }
 
-    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, notes: "", meetingLink: "", amountPaid: "" })
+    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", notes: "", meetingLink: "", amountPaid: "" })
     setEditingId(null)
     setSelected(null)
     setShowNewClient(false)
-    setNewClient({ name: "", phone: "", email: "", birthDate: "" })
+    setShowPerson2(false)
+    setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "" })
     setNewClientError(null)
     setShowForm(true)
   }
@@ -148,13 +152,15 @@ export default function AgendaPage() {
       date: dateStr,
       startHour,
       endHour,
+      motivo: apt.motivo ?? "",
       notes: apt.notes ?? "",
       meetingLink: apt.meetingLink ?? "",
       amountPaid: apt.amountPaid != null ? String(apt.amountPaid) : "",
     })
     setEditingId(apt.id)
     setShowNewClient(false)
-    setNewClient({ name: "", phone: "", email: "", birthDate: "" })
+    setShowPerson2(false)
+    setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "" })
     setNewClientError(null)
     setShowForm(true)
   }
@@ -197,6 +203,7 @@ export default function AgendaPage() {
       title: form.title,
       startTime: startTime.toISOString(),
       endTime: endTime.toISOString(),
+      motivo: form.motivo || null,
       notes: form.notes || null,
       meetingLink: form.meetingLink || null,
       amountPaid: form.amountPaid !== "" ? parseFloat(form.amountPaid) : null,
@@ -269,6 +276,8 @@ export default function AgendaPage() {
           phone: newClient.phone.trim(),
           email: newClient.email.trim() || undefined,
           birthDate: newClient.birthDate || undefined,
+          person2Name: newClient.person2Name.trim() || undefined,
+          person2BirthDate: newClient.person2BirthDate || undefined,
         }),
       })
       if (!res.ok) {
@@ -448,6 +457,12 @@ export default function AgendaPage() {
                 </a>
               </div>
             )}
+            {selected.motivo && (
+              <div className="bg-purple-50 dark:bg-[rgba(170,85,249,0.08)] border border-purple-100 dark:border-[rgba(170,85,249,0.2)] rounded-lg p-3">
+                <p className="text-xs font-semibold text-purple-600 dark:text-[#aa55f9] mb-1">Motivo</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{selected.motivo}</p>
+              </div>
+            )}
             {selected.notes && (
               <div className="bg-gray-50 dark:bg-[rgba(255,255,255,0.04)] rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300">{selected.notes}</div>
             )}
@@ -551,7 +566,9 @@ export default function AgendaPage() {
 
                 {showNewClient ? (
                   <div className="border border-purple-200 dark:border-[rgba(170,85,249,0.25)] bg-purple-50 dark:bg-[rgba(170,85,249,0.06)] rounded-xl p-4 space-y-3">
-                    <p className="text-xs font-semibold text-purple-700 dark:text-[#aa55f9]">Cadastrar nova cliente</p>
+                    <p className="text-xs font-semibold text-purple-700 dark:text-[#aa55f9]">Pré-ficha da cliente</p>
+
+                    {/* Linha 1: Nome + Nascimento */}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nome *</label>
@@ -563,28 +580,7 @@ export default function AgendaPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Telefone <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
-                        <input
-                          value={newClient.phone}
-                          onChange={(e) => setNewClient((p) => ({ ...p, phone: e.target.value }))}
-                          placeholder="(00) 00000-0000"
-                          className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">E-mail <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
-                        <input
-                          type="email"
-                          value={newClient.email}
-                          onChange={(e) => setNewClient((p) => ({ ...p, email: e.target.value }))}
-                          placeholder="email@exemplo.com"
-                          className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nascimento <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nascimento</label>
                         <input
                           type="date"
                           value={newClient.birthDate}
@@ -593,6 +589,51 @@ export default function AgendaPage() {
                         />
                       </div>
                     </div>
+
+                    {/* Linha 2: Telefone */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Telefone / WhatsApp <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
+                      <input
+                        value={newClient.phone}
+                        onChange={(e) => setNewClient((p) => ({ ...p, phone: e.target.value }))}
+                        placeholder="(00) 00000-0000"
+                        className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
+                      />
+                    </div>
+
+                    {/* Botão adicionar segunda pessoa */}
+                    <button
+                      type="button"
+                      onClick={() => setShowPerson2((v) => !v)}
+                      className="flex items-center gap-1.5 text-xs text-purple-600 dark:text-[#aa55f9] hover:text-purple-500 font-medium"
+                    >
+                      {showPerson2 ? "− Remover segunda pessoa" : "+ Adicionar segunda pessoa"}
+                    </button>
+
+                    {/* Segunda pessoa */}
+                    {showPerson2 && (
+                      <div className="grid grid-cols-2 gap-2 border-t border-purple-100 dark:border-[rgba(170,85,249,0.15)] pt-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nome da 2ª pessoa</label>
+                          <input
+                            value={newClient.person2Name}
+                            onChange={(e) => setNewClient((p) => ({ ...p, person2Name: e.target.value }))}
+                            placeholder="Nome completo"
+                            className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nascimento da 2ª pessoa</label>
+                          <input
+                            type="date"
+                            value={newClient.person2BirthDate}
+                            onChange={(e) => setNewClient((p) => ({ ...p, person2BirthDate: e.target.value }))}
+                            className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {newClientError && (
                       <p className="text-xs text-red-600 dark:text-red-400">{newClientError}</p>
                     )}
@@ -618,6 +659,18 @@ export default function AgendaPage() {
                     ))}
                   </select>
                 )}
+              </div>
+
+              {/* Motivo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Motivo do atendimento</label>
+                <textarea
+                  rows={2}
+                  value={form.motivo}
+                  onChange={(e) => setForm({ ...form, motivo: e.target.value })}
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600 resize-none"
+                  placeholder="Por que a cliente está vindo? O que quer saber?"
+                />
               </div>
 
               <div>

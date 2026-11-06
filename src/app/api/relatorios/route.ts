@@ -42,10 +42,10 @@ function getPeriodRange(period: Period, from?: string, to?: string) {
   }
 
   if (period === "week") {
-    const start = startOfWeek(now, { weekStartsOn: 0 })
-    const end   = endOfWeek(now,   { weekStartsOn: 0 })
-    const ps    = startOfWeek(subWeeks(now, 1), { weekStartsOn: 0 })
-    const pe    = endOfWeek(subWeeks(now, 1),   { weekStartsOn: 0 })
+    const start = startOfWeek(now, { weekStartsOn: 1 })
+    const end   = endOfWeek(now,   { weekStartsOn: 1 })
+    const ps    = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
+    const pe    = endOfWeek(subWeeks(now, 1),   { weekStartsOn: 1 })
     return { start, end, prevStart: ps, prevEnd: pe }
   }
 
@@ -90,18 +90,18 @@ function getChartBuckets(period: Period, start: Date, end: Date) {
     const days = eachDayOfInterval({ start, end })
     return days.map((d) => ({
       label: format(d, "EEE", { locale: ptBR }),
-      start: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0),
-      end:   new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59),
+      start: startOfDay(d),
+      end:   endOfDay(d),
     }))
   }
 
   if (period === "month") {
-    // semanas do mês
-    const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 0 })
+    // semanas do mês (segunda a domingo, padrão brasileiro)
+    const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 })
     return weeks.map((w, i) => ({
       label: `Sem ${i + 1}`,
       start: i === 0 ? start : w,
-      end:   i === weeks.length - 1 ? end : endOfWeek(w, { weekStartsOn: 0 }),
+      end:   i === weeks.length - 1 ? end : endOfWeek(w, { weekStartsOn: 1 }),
     }))
   }
 
@@ -161,7 +161,7 @@ export async function GET(req: NextRequest) {
       _sum: { amount: true },
     }) : Promise.resolve(null),
 
-    // Top clientes do período
+    // Top clientes do período (sem take: busca todos, ordena em JS depois)
     prisma.client.findMany({
       where: { userId, appointments: { some: { startTime: { gte: start, lte: end }, status: "COMPLETED" } } },
       include: {
@@ -170,7 +170,6 @@ export async function GET(req: NextRequest) {
           select: { amountPaid: true },
         },
       },
-      take: 5,
     }),
 
     // Status counts (geral, todos os tempos)
@@ -254,6 +253,7 @@ export async function GET(req: NextRequest) {
       totalRevenue: c.appointments.reduce((s, a) => s + (a.amountPaid ?? 0), 0),
     }))
     .sort((a, b) => b.totalRevenue - a.totalRevenue)
+    .slice(0, 5)
 
   return NextResponse.json({
     summary: { totalRevenue, totalExpenses, profit, profitMargin, revenueDelta, expensesDelta },
