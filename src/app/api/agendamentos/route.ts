@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
     const data = parsed.data
 
-    const [appointment, client] = await Promise.all([
+    const [appointment, client, fichaExistente] = await Promise.all([
       prisma.appointment.create({
         data: {
           userId: session.user.id,
@@ -75,23 +75,58 @@ export async function POST(req: NextRequest) {
         where: { id: data.clientId },
         select: { person2Name: true, person2BirthDate: true },
       }),
+      prisma.ficha.findFirst({
+        where: { clientId: data.clientId, userId: session.user.id, type: "INTERNAL" },
+        orderBy: { createdAt: "desc" },
+      }),
     ])
 
-    // Cria ficha interna automaticamente para cada sessão
-    const involvedPeople = client?.person2Name
-      ? [{ name: client.person2Name, birthDate: client.person2BirthDate?.toISOString().slice(0, 10) ?? "", relation: "" }]
-      : []
+    if (data.motivo) {
+      const startDate = new Date(data.startTime)
+      const dateLabel = startDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Sao_Paulo" })
+      const motivoEntry = `[${dateLabel}] ${data.motivo}`
 
-    await prisma.ficha.create({
-      data: {
-        userId: session.user.id,
-        clientId: data.clientId,
-        serviceId: data.serviceId || null,
-        type: "INTERNAL",
-        mainComplaint: data.motivo || null,
-        involvedPeople,
-      },
-    })
+      if (!fichaExistente) {
+        // Primeira vez: cria a ficha com os dados da cliente
+        const involvedPeople = client?.person2Name
+          ? [{ name: client.person2Name, birthDate: client.person2BirthDate?.toISOString().slice(0, 10) ?? "", relation: "" }]
+          : []
+
+        await prisma.ficha.create({
+          data: {
+            userId: session.user.id,
+            clientId: data.clientId,
+            serviceId: data.serviceId || null,
+            type: "INTERNAL",
+            mainComplaint: motivoEntry,
+            involvedPeople,
+          },
+        })
+      } else {
+        // Já tem ficha: acrescenta o motivo em topicsAddressed
+        const anterior = fichaExistente.topicsAddressed ?? ""
+        const novo = anterior ? `${anterior}\n${motivoEntry}` : motivoEntry
+        await prisma.ficha.update({
+          where: { id: fichaExistente.id },
+          data: { topicsAddressed: novo },
+        })
+      }
+    } else if (!fichaExistente) {
+      // Sem motivo mas sem ficha: cria ficha em branco mesmo assim
+      const involvedPeople = client?.person2Name
+        ? [{ name: client.person2Name, birthDate: client.person2BirthDate?.toISOString().slice(0, 10) ?? "", relation: "" }]
+        : []
+
+      await prisma.ficha.create({
+        data: {
+          userId: session.user.id,
+          clientId: data.clientId,
+          serviceId: data.serviceId || null,
+          type: "INTERNAL",
+          involvedPeople,
+        },
+      })
+    }
 
     return NextResponse.json(appointment, { status: 201 })
   } catch (err) {
