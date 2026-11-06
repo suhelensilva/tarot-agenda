@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft, Phone, Mail, Calendar, Edit2, Trash2, X, MessageCircle, Link2, Send,
 } from "lucide-react"
@@ -81,6 +81,7 @@ export default function ClienteDetailPage() {
   const params = useParams()
   const id = params.id as string
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [client, setClient] = useState<ClientDetail | null>(null)
   const [loadingClient, setLoadingClient] = useState(true)
@@ -92,7 +93,8 @@ export default function ClienteDetailPage() {
     setFichasCounts({ internal: i, reports: r })
   }, [])
 
-  const [tab, setTab] = useState<TabPerfil>("dados")
+  const initialTab = (searchParams.get("tab") as TabPerfil | null) ?? "dados"
+  const [tab, setTab] = useState<TabPerfil>(initialTab)
 
   // Edit modal
   const [showForm, setShowForm] = useState(false)

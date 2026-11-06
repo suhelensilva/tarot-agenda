@@ -540,7 +540,7 @@ export default function AgendaPage() {
 
           {/* Botão Ficha do cliente */}
           <a
-            href={`/dashboard/clientes/${selected.client.id}`}
+            href={`/dashboard/clientes/${selected.client.id}?tab=fichas`}
             className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium border border-indigo-200 dark:border-[rgba(99,102,241,0.3)] text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-[rgba(99,102,241,0.08)] transition-colors"
           >
             <FileText size={14} />
