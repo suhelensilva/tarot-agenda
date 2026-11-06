@@ -288,7 +288,8 @@ export default function AgendaPage() {
       setClients((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
       onClientChange(created.id)
       setShowNewClient(false)
-      setNewClient({ name: "", phone: "", email: "", birthDate: "" })
+      setShowPerson2(false)
+      setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "" })
     } catch {
       setNewClientError("Erro ao criar cliente. Tente novamente.")
     } finally {
