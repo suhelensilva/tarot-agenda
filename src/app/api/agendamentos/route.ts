@@ -55,20 +55,42 @@ export async function POST(req: NextRequest) {
     }
     const data = parsed.data
 
-    const appointment = await prisma.appointment.create({
+    const [appointment, client] = await Promise.all([
+      prisma.appointment.create({
+        data: {
+          userId: session.user.id,
+          clientId: data.clientId,
+          serviceId: data.serviceId || null,
+          title: data.title,
+          startTime: new Date(data.startTime),
+          endTime: new Date(data.endTime),
+          notes: data.notes || null,
+          motivo: data.motivo || null,
+          meetingLink: data.meetingLink || null,
+          amountPaid: data.amountPaid ?? null,
+        },
+        include: { client: true, service: true },
+      }),
+      prisma.client.findUnique({
+        where: { id: data.clientId },
+        select: { person2Name: true, person2BirthDate: true },
+      }),
+    ])
+
+    // Cria ficha interna automaticamente para cada sessão
+    const involvedPeople = client?.person2Name
+      ? [{ name: client.person2Name, birthDate: client.person2BirthDate?.toISOString().slice(0, 10) ?? "", relation: "" }]
+      : []
+
+    await prisma.ficha.create({
       data: {
         userId: session.user.id,
         clientId: data.clientId,
         serviceId: data.serviceId || null,
-        title: data.title,
-        startTime: new Date(data.startTime),
-        endTime: new Date(data.endTime),
-        notes: data.notes || null,
-        motivo: data.motivo || null,
-        meetingLink: data.meetingLink || null,
-        amountPaid: data.amountPaid ?? null,
+        type: "INTERNAL",
+        mainComplaint: data.motivo || null,
+        involvedPeople,
       },
-      include: { client: true, service: true },
     })
 
     return NextResponse.json(appointment, { status: 201 })
