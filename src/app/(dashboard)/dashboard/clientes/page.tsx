@@ -38,8 +38,8 @@ const empty: FormData = { name: "", phone: "", email: "", birthDate: "", notes: 
 const TAGS = ["Compradora", "Paga-pouco", "Cliente R$5"] as const
 const TAG_STYLES: Record<string, string> = {
   "Compradora":  "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400 border-green-200 dark:border-green-500/30",
-  "Paga-pouco":  "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
-  "Cliente R$5": "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400 border-rose-200 dark:border-rose-500/30",
+  "Paga-pouco":  "bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-400 border-pink-200 dark:border-pink-500/30",
+  "Cliente R$5": "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400 border-red-200 dark:border-red-500/30",
 }
 
 type ImportResult = { created: number; skipped: number } | null
