@@ -78,6 +78,9 @@ export default function ServicosPage() {
   const [viewMode, setViewMode] = useState<"card" | "list">("card")
   const planFetch = usePlanFetch()
 
+  // Lightbox
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+
   const fetchAll = useCallback(async () => {
     setLoading(true)
     const [sRes, cRes] = await Promise.all([
@@ -357,13 +360,13 @@ export default function ServicosPage() {
                   viewMode === "card" ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                       {group.services.map((s) => (
-                        <ServiceCard key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} onTogglePublic={() => handleTogglePublic(s.id, s.showOnPublicLink)} />
+                        <ServiceCard key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} onTogglePublic={() => handleTogglePublic(s.id, s.showOnPublicLink)} onImageClick={setLightboxUrl} />
                       ))}
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {group.services.map((s) => (
-                        <ServiceRow key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} onTogglePublic={() => handleTogglePublic(s.id, s.showOnPublicLink)} />
+                        <ServiceRow key={s.id} service={s} onEdit={() => openEdit(s)} onDeactivate={() => handleDeactivate(s.id)} onTogglePublic={() => handleTogglePublic(s.id, s.showOnPublicLink)} onImageClick={setLightboxUrl} />
                       ))}
                     </div>
                   )
@@ -614,23 +617,49 @@ export default function ServicosPage() {
           </div>
         </div>
       )}
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/70 hover:text-white"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X size={28} />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt=""
+            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
 // ── ServiceRow (list view) ─────────────────────────────────────────────────────
 
-function ServiceRow({ service: s, onEdit, onDeactivate, onTogglePublic }: {
+function ServiceRow({ service: s, onEdit, onDeactivate, onTogglePublic, onImageClick }: {
   service: Service
   onEdit: () => void
   onDeactivate: () => void
   onTogglePublic: () => void
+  onImageClick?: (url: string) => void
 }) {
   return (
     <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl flex items-center gap-4 px-4 py-3 hover:border-purple-200 hover:bg-purple-50/30 dark:hover:border-[rgba(170,85,249,0.3)] dark:hover:bg-[rgba(170,85,249,0.04)] transition-colors">
       {/* Thumb */}
       {s.imageUrl ? (
-        <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+        <img
+          src={s.imageUrl} alt={s.name}
+          className="w-10 h-10 rounded-lg object-cover shrink-0 cursor-zoom-in"
+          onClick={(e) => { e.stopPropagation(); onImageClick?.(s.imageUrl!) }}
+        />
       ) : (
         <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-[rgba(170,85,249,0.1)] flex items-center justify-center shrink-0">
           <Package size={18} className="text-purple-300 dark:text-[rgba(170,85,249,0.5)]" />
@@ -687,17 +716,18 @@ function ServiceRow({ service: s, onEdit, onDeactivate, onTogglePublic }: {
 
 // ── ServiceCard ────────────────────────────────────────────────────────────────
 
-function ServiceCard({ service: s, onEdit, onDeactivate, onTogglePublic }: {
+function ServiceCard({ service: s, onEdit, onDeactivate, onTogglePublic, onImageClick }: {
   service: Service
   onEdit: () => void
   onDeactivate: () => void
   onTogglePublic: () => void
+  onImageClick?: (url: string) => void
 }) {
   return (
     <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl overflow-hidden">
       {s.imageUrl && (
-        <div className="w-full aspect-square overflow-hidden">
-          <img src={s.imageUrl} alt={s.name} className="w-full h-full object-cover" />
+        <div className="w-full aspect-square overflow-hidden cursor-zoom-in" onClick={() => onImageClick?.(s.imageUrl!)}>
+          <img src={s.imageUrl} alt={s.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" />
         </div>
       )}
       <div className="p-5">

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import {
-  ArrowLeft, Phone, Mail, Calendar, Edit2, Trash2, X, MessageCircle, Link2, Send,
+  ArrowLeft, Phone, Mail, Calendar, Edit2, Trash2, X, MessageCircle, Link2, Send, BookOpen, Package,
 } from "lucide-react"
 import { formatPhone, formatDate, formatCurrency } from "@/lib/utils"
 import { type FichaProfile } from "@/components/ficha-preview"
@@ -12,6 +12,7 @@ import ClientFichasView from "@/components/client-fichas-view"
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Service = { id: string; name: string; price: number; active: boolean }
+type ServiceFull = { id: string; name: string; description: string | null; price: number; duration: number; imageUrl: string | null }
 
 type Appointment = {
   id: string
@@ -100,6 +101,25 @@ export default function ClienteDetailPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<FormData>(emptyForm)
   const [saving, setSaving] = useState(false)
+
+  // Drawer leituras
+  const [showLeituras, setShowLeituras] = useState(false)
+  const [leituras, setLeituras] = useState<ServiceFull[]>([])
+  const [leiturasLoading, setLeiturasLoading] = useState(false)
+  const [leiturasLightbox, setLeiturasLightbox] = useState<string | null>(null)
+
+  async function openLeituras() {
+    setShowLeituras(true)
+    if (leituras.length > 0) return
+    setLeiturasLoading(true)
+    try {
+      const res = await fetch("/api/servicos")
+      const data = await res.json()
+      setLeituras(data.filter((s: ServiceFull & { active: boolean }) => s.active))
+    } finally {
+      setLeiturasLoading(false)
+    }
+  }
 
   // WhatsApp modal
   const [showWhatsModal, setShowWhatsModal] = useState(false)
@@ -353,6 +373,12 @@ export default function ClienteDetailPage() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={openLeituras}
+              className="flex items-center gap-1.5 text-sm text-purple-600 dark:text-[#aa55f9] hover:text-purple-700 border border-purple-200 dark:border-[rgba(170,85,249,0.3)] hover:border-purple-400 dark:hover:border-[rgba(170,85,249,0.5)] rounded-lg px-3 py-2 transition-colors"
+            >
+              <BookOpen size={14} /> Leituras
+            </button>
             <button
               onClick={openEdit}
               className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-[#aa55f9] border border-gray-200 dark:border-[rgba(255,255,255,0.08)] hover:border-purple-300 dark:hover:border-[rgba(170,85,249,0.3)] rounded-lg px-3 py-2 transition-colors"
@@ -803,6 +829,69 @@ export default function ClienteDetailPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Drawer Leituras ── */}
+      {showLeituras && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowLeituras(false)} />
+          <div className="relative bg-white dark:bg-[#13131f] border-l border-gray-200 dark:border-[rgba(170,85,249,0.15)] w-80 max-w-full h-full flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)] shrink-0">
+              <div className="flex items-center gap-2">
+                <BookOpen size={16} className="text-purple-600 dark:text-[#aa55f9]" />
+                <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Leituras disponíveis</h2>
+              </div>
+              <button onClick={() => setShowLeituras(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4 space-y-3">
+              {leiturasLoading ? (
+                <p className="text-sm text-gray-400 text-center py-8">Carregando...</p>
+              ) : leituras.length === 0 ? (
+                <p className="text-sm text-gray-400 italic text-center py-8">Nenhum serviço cadastrado</p>
+              ) : (
+                leituras.map((s) => (
+                  <div key={s.id} className="border border-gray-100 dark:border-[rgba(170,85,249,0.12)] rounded-xl overflow-hidden">
+                    {s.imageUrl ? (
+                      <div
+                        className="w-full aspect-video overflow-hidden cursor-zoom-in"
+                        onClick={() => setLeiturasLightbox(s.imageUrl!)}
+                      >
+                        <img src={s.imageUrl} alt={s.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" />
+                      </div>
+                    ) : (
+                      <div className="w-full aspect-video bg-purple-50 dark:bg-[rgba(170,85,249,0.07)] flex items-center justify-center">
+                        <Package size={28} className="text-purple-200 dark:text-[rgba(170,85,249,0.3)]" />
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <p className="font-medium text-sm text-gray-900 dark:text-white">{s.name}</p>
+                      {s.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-3">{s.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox leituras */}
+      {leiturasLightbox && (
+        <div className="fixed inset-0 z-[60] bg-black/85 flex items-center justify-center p-4" onClick={() => setLeiturasLightbox(null)}>
+          <button className="absolute top-4 right-4 text-white/70 hover:text-white" onClick={() => setLeiturasLightbox(null)}>
+            <X size={28} />
+          </button>
+          <img
+            src={leiturasLightbox}
+            alt=""
+            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
 
