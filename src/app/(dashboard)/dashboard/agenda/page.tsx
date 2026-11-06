@@ -585,6 +585,31 @@ export default function AgendaPage() {
                   <div className="border border-purple-200 dark:border-[rgba(170,85,249,0.25)] bg-purple-50 dark:bg-[rgba(170,85,249,0.06)] rounded-xl p-4 space-y-3">
                     <p className="text-xs font-semibold text-purple-700 dark:text-[#aa55f9]">Pré-ficha da cliente</p>
 
+                    {/* Etiqueta (topo) */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {(["Compradora", "Paga-pouco", "Cliente R$5"] as const).map((t) => {
+                        const activeStyle = t === "Compradora"
+                          ? "bg-green-100 text-green-700 border-green-400 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/50"
+                          : t === "Paga-pouco"
+                          ? "bg-pink-100 text-pink-700 border-pink-400 dark:bg-pink-500/20 dark:text-pink-400 dark:border-pink-500/50"
+                          : "bg-red-100 text-red-700 border-red-400 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/50"
+                        return (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setNewClient((p) => ({ ...p, tag: p.tag === t ? "" : t }))}
+                            className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                              newClient.tag === t
+                                ? activeStyle
+                                : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-gray-400"
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        )
+                      })}
+                    </div>
+
                     {/* Linha 1: Nome + Nascimento */}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -607,46 +632,7 @@ export default function AgendaPage() {
                       </div>
                     </div>
 
-                    {/* Linha 2: Telefone */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Telefone / WhatsApp <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
-                      <input
-                        value={newClient.phone}
-                        onChange={(e) => setNewClient((p) => ({ ...p, phone: e.target.value }))}
-                        placeholder="(00) 00000-0000"
-                        className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
-                      />
-                    </div>
-
-                    {/* Etiqueta */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Etiqueta <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(["Compradora", "Paga-pouco", "Cliente R$5"] as const).map((t) => {
-                          const activeStyle = t === "Compradora"
-                            ? "bg-green-100 text-green-700 border-green-400 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/50"
-                            : t === "Paga-pouco"
-                            ? "bg-pink-100 text-pink-700 border-pink-400 dark:bg-pink-500/20 dark:text-pink-400 dark:border-pink-500/50"
-                            : "bg-red-100 text-red-700 border-red-400 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/50"
-                          return (
-                            <button
-                              key={t}
-                              type="button"
-                              onClick={() => setNewClient((p) => ({ ...p, tag: p.tag === t ? "" : t }))}
-                              className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                                newClient.tag === t
-                                  ? activeStyle
-                                  : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-gray-400"
-                              }`}
-                            >
-                              {t}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Botão adicionar segunda pessoa */}
+                    {/* Linha 2: Botão segunda pessoa */}
                     <button
                       type="button"
                       onClick={() => setShowPerson2((v) => !v)}
@@ -678,6 +664,17 @@ export default function AgendaPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Linha 3: Telefone */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Telefone / WhatsApp <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
+                      <input
+                        value={newClient.phone}
+                        onChange={(e) => setNewClient((p) => ({ ...p, phone: e.target.value }))}
+                        placeholder="(00) 00000-0000"
+                        className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
+                      />
+                    </div>
 
                     {newClientError && (
                       <p className="text-xs text-red-600 dark:text-red-400">{newClientError}</p>
