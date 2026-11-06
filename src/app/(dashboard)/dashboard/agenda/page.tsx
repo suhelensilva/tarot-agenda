@@ -349,19 +349,25 @@ export default function AgendaPage() {
                 <button
                   key={day.toISOString()}
                   onClick={() => setSelectedDay(day)}
-                  className={`h-16 border-b border-r border-gray-50 dark:border-[rgba(255,255,255,0.03)] p-1.5 text-left transition-colors hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.06)] ${isSelected ? "bg-purple-50 dark:bg-[rgba(170,85,249,0.08)]" : ""}`}
+                  className={`relative h-16 border-b border-r border-gray-50 dark:border-[rgba(255,255,255,0.03)] p-1.5 text-left transition-colors hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.06)] ${isSelected ? "bg-purple-50 dark:bg-[rgba(170,85,249,0.08)]" : ""}`}
                 >
                   <span className={`text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full ${
                     isToday ? "bg-purple-600 text-white" : isSelected ? "text-purple-700 dark:text-[#aa55f9]" : "text-gray-700 dark:text-gray-300"
                   }`}>
                     {day.getDate()}
                   </span>
-                  <div className="flex flex-wrap gap-0.5 mt-0.5">
-                    {apts.slice(0, 3).map((a) => (
-                      <div key={a.id} className={`w-1.5 h-1.5 rounded-full ${statusConfig[a.status].dot}`} />
-                    ))}
-                    {apts.length > 3 && <span className="text-xs text-gray-400 dark:text-gray-500">+{apts.length - 3}</span>}
-                  </div>
+                  {apts.length > 0 && (
+                    <div className="flex flex-wrap gap-0.5 mt-0.5">
+                      {apts.slice(0, 12).map((a) => (
+                        <div key={a.id} className={`w-1.5 h-1.5 rounded-full ${statusConfig[a.status].dot}`} />
+                      ))}
+                    </div>
+                  )}
+                  {apts.length > 0 && (
+                    <span className="absolute bottom-0.5 right-1 text-[9px] font-medium text-gray-400 dark:text-gray-500 leading-none">
+                      {apts.length}
+                    </span>
+                  )}
                 </button>
               )
             })}
