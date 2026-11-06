@@ -172,10 +172,10 @@ export async function GET(req: NextRequest) {
       },
     }),
 
-    // Status counts (geral, todos os tempos)
+    // Status counts — filtrado pelo período selecionado
     prisma.appointment.groupBy({
       by: ["status"],
-      where: { userId },
+      where: { userId, startTime: { gte: start, lte: end } },
       _count: true,
     }),
   ])
