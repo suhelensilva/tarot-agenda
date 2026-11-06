@@ -41,6 +41,8 @@ model User {
   loyaltyCards     Json      @default("[]") // Até 10 imagens do cartão fidelidade [{slot, imageUrl}]
   thankYouUrl      String?             // Link da página de obrigado pela compra
 
+  apiToken         String?   @unique    // Token da extensão CRM (WhatsApp Web)
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -60,6 +62,7 @@ model User {
   paymentLinks     PaymentLink[]
   plannerTasks     PlannerTask[]
   plannerNotes     PlannerNote[]
+  purchases        Purchase[]
 
   @@map("users")
 }
@@ -111,6 +114,7 @@ model Client {
   appointments     Appointment[]
   anamnesisRecords AnamnesisRecord[]
   fichas           Ficha[]
+  purchases        Purchase[]
 
   @@map("clients")
 }
@@ -417,4 +421,30 @@ model PlannerNote {
 
   @@unique([userId, date])
   @@map("planner_notes")
+}
+
+/// Compra registrada pela extensão CRM (WhatsApp Web).
+/// Base do histórico de recorrência e dos eventos de conversão pro Meta (fase 2).
+model Purchase {
+  id          String   @id @default(cuid())
+  userId      String
+  clientId    String
+  amount      Float
+  productName String?
+  purchasedAt DateTime @default(now())
+  source      String   @default("whatsapp") // "whatsapp" | "manual" | "ad"
+
+  // Campos reservados pra conversão Meta (CAPI) — preenchidos na fase 2
+  ctwaClid      String?  // click id do anúncio clique-pra-WhatsApp
+  metaEventSent Boolean  @default(false)
+  metaEventId   String?  // id do evento enviado (deduplicação)
+
+  createdAt   DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([userId, clientId])
+  @@index([clientId, purchasedAt])
+  @@map("purchases")
 }

@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useEffect, useState, useRef } from "react"
-import { Smartphone, Calendar, Save, CheckCircle, ImageIcon, User, Crown, Lock, Link2, Plus, Trash2, Gift, ExternalLink } from "lucide-react"
+import { Smartphone, Calendar, Save, CheckCircle, ImageIcon, User, Crown, Lock, Link2, Plus, Trash2, Gift, ExternalLink, Puzzle, Copy, RefreshCw } from "lucide-react"
 import { FONT_OPTIONS } from "@/lib/fonts"
 import { useSession } from "next-auth/react"
 import { getPlanLimits } from "@/lib/plan"
@@ -63,9 +63,17 @@ export default function ConfiguracoesPage() {
   const [savingLink, setSavingLink] = useState(false)
   const [linkError, setLinkError] = useState<string | null>(null)
 
+  // Extensão CRM (WhatsApp Web)
+  const [crmToken, setCrmToken] = useState<string | null>(null)
+  const [crmLoading, setCrmLoading] = useState(false)
+  const [crmCopied, setCrmCopied] = useState(false)
+  const [apiUrl, setApiUrl] = useState("")
+
   useEffect(() => {
     fetch("/api/links-pagamento").then((r) => r.json()).then((d) => setPaymentLinks(Array.isArray(d) ? d : []))
     fetch("/api/configuracoes/disponibilidade").then((r) => r.json()).then(setAvailability)
+    fetch("/api/crm/token").then((r) => r.json()).then((d) => setCrmToken(d.token ?? null)).catch(() => {})
+    if (typeof window !== "undefined") setApiUrl(window.location.origin)
     fetch("/api/perfil").then((r) => r.json()).then((d) => setProfile({
       name: d.name ?? "",
       logoUrl: d.logoUrl,
@@ -186,6 +194,24 @@ export default function ConfiguracoesPage() {
   async function deletePaymentLink(id: string) {
     await fetch(`/api/links-pagamento/${id}`, { method: "DELETE" })
     setPaymentLinks((prev) => prev.filter((l) => l.id !== id))
+  }
+
+  async function generateCrmToken() {
+    setCrmLoading(true)
+    try {
+      const res = await fetch("/api/crm/token", { method: "POST" })
+      const d = await res.json()
+      setCrmToken(d.token ?? null)
+    } finally {
+      setCrmLoading(false)
+    }
+  }
+
+  function copyCrmToken() {
+    if (!crmToken) return
+    navigator.clipboard.writeText(crmToken)
+    setCrmCopied(true)
+    setTimeout(() => setCrmCopied(false), 2000)
   }
 
   async function connectWhatsapp() {
@@ -652,6 +678,65 @@ export default function ConfiguracoesPage() {
             {savingLink ? "Salvando..." : "Adicionar link"}
           </button>
         </div>
+      </div>
+
+      {/* ── Extensão CRM (WhatsApp Web) ── */}
+      <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6 space-y-4">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 w-9 h-9 rounded-lg flex items-center justify-center">
+            <Puzzle size={18} />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Extensão CRM (WhatsApp Web)</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Conecte a extensão do Chrome para registrar compras direto da conversa</p>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL do sistema</label>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={apiUrl}
+              className="flex-1 border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 rounded-lg px-3 py-2 text-sm font-mono"
+            />
+          </div>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Cole este endereço no campo &quot;URL do sistema&quot; da extensão.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Token de acesso</label>
+          {crmToken ? (
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                value={crmToken}
+                className="flex-1 border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 rounded-lg px-3 py-2 text-sm font-mono"
+              />
+              <button
+                onClick={copyCrmToken}
+                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors shrink-0"
+              >
+                <Copy size={14} />
+                {crmCopied ? "Copiado!" : "Copiar"}
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 dark:text-gray-500 italic">Nenhum token gerado ainda.</p>
+          )}
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+            ⚠ Guarde em segredo. Quem tiver este token acessa seus dados de clientes.
+          </p>
+        </div>
+
+        <button
+          onClick={generateCrmToken}
+          disabled={crmLoading}
+          className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          <RefreshCw size={14} />
+          {crmLoading ? "Gerando..." : crmToken ? "Gerar novo token" : "Gerar token"}
+        </button>
       </div>
     </div>
   )
