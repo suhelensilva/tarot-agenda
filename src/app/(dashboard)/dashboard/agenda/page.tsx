@@ -364,7 +364,7 @@ export default function AgendaPage() {
                     </div>
                   )}
                   {apts.length > 0 && (
-                    <span className="absolute bottom-0.5 right-1 text-[9px] font-medium text-gray-400 dark:text-gray-500 leading-none">
+                    <span className="absolute top-1 right-1 text-xs font-medium text-gray-400 dark:text-gray-500 leading-none">
                       {apts.length}
                     </span>
                   )}
