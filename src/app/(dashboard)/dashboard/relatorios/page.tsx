@@ -21,7 +21,7 @@ type ExpenseCat = { category: string; amount: number }
 type Transaction = { id: string; type: "revenue" | "expense"; description: string; category: string; amount: number; date: string }
 type ClientStat  = { id: string; name: string; sessions: number; totalRevenue: number }
 type Expense     = { id: string; description: string; category: string; amount: number; date: string }
-type ReportData  = { summary: Summary; chartData: ChartPoint[]; expenseBreakdown: ExpenseCat[]; transactions: Transaction[]; clientStats: ClientStat[] }
+type ReportData  = { summary: Summary & { totalSessions: number }; chartData: ChartPoint[]; expenseBreakdown: ExpenseCat[]; transactions: Transaction[]; clientStats: ClientStat[] }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -174,7 +174,7 @@ export default function RelatoriosPage() {
             {/* ── 4 Cards gradiente ──────────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <GradCard label="Receita total"      value={formatCurrency(data.summary.totalRevenue)}  delta={data.summary.revenueDelta}  gradient="from-teal-400 via-cyan-400 to-sky-500"        icon={<DollarSign size={18}/>} />
-              <GradCard label="Entradas"           value={`${data.transactions.filter(t=>t.type==="revenue").length} sessões`} subValue={formatCurrency(data.summary.totalRevenue)} gradient="from-violet-400 via-purple-500 to-indigo-500" icon={<ArrowUpRight size={18}/>} />
+              <GradCard label="Entradas"           value={`${data.summary.totalSessions} sessões`} subValue={formatCurrency(data.summary.totalRevenue)} gradient="from-violet-400 via-purple-500 to-indigo-500" icon={<ArrowUpRight size={18}/>} />
               <GradCard label="Saídas"             value={formatCurrency(data.summary.totalExpenses)} delta={data.summary.expensesDelta} deltaInvert gradient="from-rose-400 via-pink-500 to-fuchsia-500"   icon={<ArrowDownRight size={18}/>} />
               <GradCard label="Lucro líquido"      value={formatCurrency(data.summary.profit)}        subValue={`Margem ${data.summary.profitMargin.toFixed(1)}%`} gradient="from-amber-400 via-orange-400 to-rose-400" icon={<TrendingUp size={18}/>} />
             </div>

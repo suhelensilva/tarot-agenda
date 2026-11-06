@@ -256,7 +256,7 @@ export async function GET(req: NextRequest) {
     .slice(0, 5)
 
   return NextResponse.json({
-    summary: { totalRevenue, totalExpenses, profit, profitMargin, revenueDelta, expensesDelta },
+    summary: { totalRevenue, totalExpenses, profit, profitMargin, revenueDelta, expensesDelta, totalSessions: appointments.length },
     chartData,
     expenseBreakdown,
     transactions: transactions.slice(0, 30),
