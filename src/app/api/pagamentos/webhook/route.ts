@@ -3,9 +3,6 @@ import { prisma } from "@/lib/prisma"
 import { stripe } from "@/lib/stripe"
 import Stripe from "stripe"
 
-// Stripe exige o body bruto para validar a assinatura do webhook
-export const config = { api: { bodyParser: false } }
-
 async function getRawBody(req: NextRequest): Promise<Buffer> {
   const chunks: Uint8Array[] = []
   const reader = req.body?.getReader()
