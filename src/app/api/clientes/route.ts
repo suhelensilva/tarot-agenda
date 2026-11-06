@@ -12,6 +12,7 @@ const schema = z.object({
   notes: z.string().optional(),
   person2Name: z.string().optional().or(z.literal("")),
   person2BirthDate: z.string().optional().or(z.literal("")),
+  tag: z.string().optional().or(z.literal("")),
 })
 
 export async function GET(req: NextRequest) {
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
         notes: data.notes || null,
         person2Name: data.person2Name || null,
         person2BirthDate: data.person2BirthDate ? new Date(data.person2BirthDate) : null,
+        tag: data.tag || null,
       },
     })
 

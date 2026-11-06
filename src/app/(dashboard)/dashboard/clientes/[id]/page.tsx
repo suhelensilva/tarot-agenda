@@ -35,6 +35,7 @@ type ClientDetail = {
   notes: string | null
   person2Name: string | null
   person2BirthDate: string | null
+  tag: string | null
   createdAt: string
   appointments: Appointment[]
 }
@@ -47,13 +48,21 @@ type FormData = {
   notes: string
   person2Name: string
   person2BirthDate: string
+  tag: string
 }
 
 type TabPerfil = "dados" | "fichas" | "atendimentos"
 type PaymentLink = { id: string; name: string; url: string }
 type LoyaltyCard = { slot: number; imageUrl: string }
 
-const emptyForm: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "", person2Name: "", person2BirthDate: "" }
+const TAGS = ["Compradora", "Paga-pouco", "Cliente R$5"] as const
+const TAG_STYLES: Record<string, string> = {
+  "Compradora":   "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400 border-green-200 dark:border-green-500/30",
+  "Paga-pouco":   "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
+  "Cliente R$5":  "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400 border-rose-200 dark:border-rose-500/30",
+}
+
+const emptyForm: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "", person2Name: "", person2BirthDate: "", tag: "" }
 
 // ─── Status badge helper ──────────────────────────────────────────────────────
 
@@ -195,6 +204,7 @@ export default function ClienteDetailPage() {
       notes: client.notes ?? "",
       person2Name: client.person2Name ?? "",
       person2BirthDate: client.person2BirthDate ? client.person2BirthDate.slice(0, 10) : "",
+      tag: client.tag ?? "",
     })
     setShowForm(true)
   }
@@ -210,6 +220,7 @@ export default function ClienteDetailPage() {
           ...form,
           person2Name: form.person2Name || undefined,
           person2BirthDate: form.person2BirthDate || undefined,
+          tag: form.tag || undefined,
         }),
       })
       setShowForm(false)
@@ -360,7 +371,14 @@ export default function ClienteDetailPage() {
               {client.name[0].toUpperCase()}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{client.name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{client.name}</h1>
+                {client.tag && (
+                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${TAG_STYLES[client.tag] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                    {client.tag}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                 {client.birthDate && (
                   <span>{calcAge(client.birthDate)} anos · {formatDate(client.birthDate)} · </span>
@@ -644,6 +662,28 @@ export default function ClienteDetailPage() {
                   placeholder="Anotações sobre a cliente..."
                 />
               </div>
+
+              {/* Etiqueta */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Etiqueta <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TAGS.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, tag: p.tag === t ? "" : t }))}
+                      className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                        form.tag === t
+                          ? TAG_STYLES[t] ?? "bg-purple-600 text-white border-purple-600"
+                          : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-purple-400"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"

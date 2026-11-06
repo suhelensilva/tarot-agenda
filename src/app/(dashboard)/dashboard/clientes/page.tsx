@@ -19,6 +19,7 @@ type Client = {
   email: string | null
   birthDate: string | null
   notes: string | null
+  tag: string | null
   createdAt: string
   _count: { appointments: number }
 }
@@ -29,9 +30,17 @@ type FormData = {
   email: string
   birthDate: string
   notes: string
+  tag: string
 }
 
-const empty: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "" }
+const empty: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "", tag: "" }
+
+const TAGS = ["Compradora", "Paga-pouco", "Cliente R$5"] as const
+const TAG_STYLES: Record<string, string> = {
+  "Compradora":  "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400 border-green-200 dark:border-green-500/30",
+  "Paga-pouco":  "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
+  "Cliente R$5": "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400 border-rose-200 dark:border-rose-500/30",
+}
 
 type ImportResult = { created: number; skipped: number } | null
 
@@ -87,6 +96,7 @@ export default function ClientesPage() {
       email: c.email ?? "",
       birthDate: c.birthDate ? c.birthDate.slice(0, 10) : "",
       notes: c.notes ?? "",
+      tag: c.tag ?? "",
     })
     setShowForm(true)
   }
@@ -258,7 +268,14 @@ export default function ClientesPage() {
                   {c.name[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 dark:text-white">{c.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-900 dark:text-white">{c.name}</p>
+                    {c.tag && (
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${TAG_STYLES[c.tag] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                        {c.tag}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{formatPhone(c.phone)}</p>
                 </div>
                 <div className="text-right shrink-0 text-xs text-gray-400 dark:text-gray-500">
@@ -347,6 +364,28 @@ export default function ClientesPage() {
                   placeholder="Anotações sobre a cliente..."
                 />
               </div>
+
+              {/* Etiqueta */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Etiqueta <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TAGS.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, tag: p.tag === t ? "" : t }))}
+                      className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                        form.tag === t
+                          ? TAG_STYLES[t] ?? "bg-purple-600 text-white border-purple-600"
+                          : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-purple-400"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"

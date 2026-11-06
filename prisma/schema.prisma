@@ -109,6 +109,7 @@ model Client {
   notes           String?
   person2Name     String?
   person2BirthDate DateTime?
+  tag             String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

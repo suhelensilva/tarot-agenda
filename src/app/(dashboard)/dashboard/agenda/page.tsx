@@ -48,7 +48,7 @@ export default function AgendaPage() {
   const [cancellationReason, setCancellationReason] = useState("")
   const [showNewClient, setShowNewClient] = useState(false)
   const [showPerson2, setShowPerson2] = useState(false)
-  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "" })
+  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
   const [savingClient, setSavingClient] = useState(false)
   const [newClientError, setNewClientError] = useState<string | null>(null)
   const planFetch = usePlanFetch()
@@ -134,7 +134,7 @@ export default function AgendaPage() {
     setSelected(null)
     setShowNewClient(false)
     setShowPerson2(false)
-    setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "" })
+    setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
     setShowForm(true)
   }
@@ -160,7 +160,7 @@ export default function AgendaPage() {
     setEditingId(apt.id)
     setShowNewClient(false)
     setShowPerson2(false)
-    setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "" })
+    setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
     setShowForm(true)
   }
@@ -278,6 +278,7 @@ export default function AgendaPage() {
           birthDate: newClient.birthDate || undefined,
           person2Name: newClient.person2Name.trim() || undefined,
           person2BirthDate: newClient.person2BirthDate || undefined,
+          tag: newClient.tag || undefined,
         }),
       })
       if (!res.ok) {
@@ -289,7 +290,7 @@ export default function AgendaPage() {
       onClientChange(created.id)
       setShowNewClient(false)
       setShowPerson2(false)
-      setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "" })
+      setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     } catch {
       setNewClientError("Erro ao criar cliente. Tente novamente.")
     } finally {
@@ -615,6 +616,27 @@ export default function AgendaPage() {
                         placeholder="(00) 00000-0000"
                         className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
                       />
+                    </div>
+
+                    {/* Etiqueta */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Etiqueta <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {["Compradora", "Paga-pouco", "Cliente R$5"].map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setNewClient((p) => ({ ...p, tag: p.tag === t ? "" : t }))}
+                            className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                              newClient.tag === t
+                                ? "bg-purple-600 text-white border-purple-600"
+                                : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-purple-400 hover:text-purple-600 dark:hover:text-[#aa55f9]"
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Botão adicionar segunda pessoa */}
