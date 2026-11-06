@@ -74,44 +74,44 @@ export function FichaInternaPreview({
       <div style={{ position: "relative", zIndex: 1, padding: 48 }}>
 
         {/* Cabeçalho */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-          <div style={{ width: 72, height: 72, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
+          <div style={{ width: 80, height: 80, flexShrink: 0 }}>
             {profile.logoUrl
               ? <img src={profile.logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
               : <div style={{ width: "100%", height: "100%", border: "1.5px dashed #d1d5db", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 8, color: "#9ca3af", textAlign: "center" }}>Sem logo</span>
+                  <span style={{ fontSize: 10, color: "#9ca3af", textAlign: "center" }}>Sem logo</span>
                 </div>
             }
           </div>
           <div style={{ textAlign: "right" }}>
-            <p style={{ fontSize: 20, fontWeight: 800, color: "#6d28d9", letterSpacing: 0.5, margin: 0, textTransform: "uppercase" }}>Ficha Interna</p>
-            <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 0" }}>Data: {today}</p>
+            <p style={{ fontSize: 24, fontWeight: 800, color: "#6d28d9", letterSpacing: 0.5, margin: 0, textTransform: "uppercase" }}>Ficha Interna</p>
+            <p style={{ fontSize: 14, color: "#9ca3af", margin: "6px 0 0" }}>Data: {today}</p>
           </div>
         </div>
 
-        <div style={{ borderTop: "2px solid #7c3aed", marginBottom: 20, opacity: 0.25 }} />
+        <div style={{ borderTop: "2px solid #7c3aed", marginBottom: 24, opacity: 0.25 }} />
 
         {/* Cliente */}
-        <p style={{ fontSize: 30, fontWeight: 800, color: "#111827", margin: "0 0 4px", lineHeight: 1.2 }}>
+        <p style={{ fontSize: 40, fontWeight: 800, color: "#111827", margin: "0 0 6px", lineHeight: 1.15 }}>
           {client?.name || <span style={{ color: "#d1d5db" }}>Nome da cliente</span>}
         </p>
         {client?.birthDate && (
-          <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 16px" }}>Data de Nascimento: {formatDate(client.birthDate)}</p>
+          <p style={{ fontSize: 16, color: "#6b7280", margin: "0 0 20px" }}>Data de Nascimento: {formatDate(client.birthDate)}</p>
         )}
 
         {/* Pacote / valor */}
         {(service || data.productName) && (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f5f3ff", borderRadius: 8, padding: "10px 14px", marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f5f3ff", borderRadius: 8, padding: "12px 16px", marginBottom: 14 }}>
             <div>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1 }}>Pacote recomendado</span>
-              <p style={{ fontSize: 14, fontWeight: 600, color: "#5b21b6", margin: "2px 0 0" }}>{service?.name || data.productName}</p>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1 }}>Pacote recomendado</span>
+              <p style={{ fontSize: 17, fontWeight: 600, color: "#5b21b6", margin: "3px 0 0" }}>{service?.name || data.productName}</p>
             </div>
           </div>
         )}
 
         {/* Retorno */}
         {data.returnSchedule && (
-          <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+          <p style={{ fontSize: 16, color: "#6b7280", marginBottom: 18 }}>
             <span style={{ fontWeight: 600, color: "#374151" }}>Horários disponíveis para retorno: </span>
             {data.returnSchedule}
           </p>
@@ -119,7 +119,7 @@ export function FichaInternaPreview({
 
         {/* Foco */}
         {data.mainSubject && (
-          <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+          <p style={{ fontSize: 16, color: "#6b7280", marginBottom: 18 }}>
             <span style={{ fontWeight: 600, color: "#374151" }}>Foco da sessão: </span>
             {data.mainSubject}
           </p>
@@ -127,21 +127,21 @@ export function FichaInternaPreview({
 
         {/* Pessoas envolvidas */}
         {(data.involvedPeople ?? []).filter((p) => p.name).length > 0 && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 14px" }} />
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>👥 Pessoas envolvidas:</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#374151", margin: "0 0 12px" }}>👥 Pessoas envolvidas:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {(data.involvedPeople ?? []).filter((p) => p.name).map((p, i) => (
-                <div key={i} style={{ background: "#f5f3ff", borderRadius: 6, padding: "8px 12px" }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#111827", margin: "0 0 2px" }}>
+                <div key={i} style={{ background: "#f5f3ff", borderRadius: 6, padding: "10px 14px" }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 3px" }}>
                     {p.name}
                     {p.relation && <span style={{ fontWeight: 400, color: "#6b7280" }}> · {p.relation}</span>}
                   </p>
                   {p.birthDate && (
-                    <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 2px" }}>Nascimento: {formatDate(p.birthDate)}</p>
+                    <p style={{ fontSize: 14, color: "#6b7280", margin: "0 0 3px" }}>Nascimento: {formatDate(p.birthDate)}</p>
                   )}
                   {p.notes && (
-                    <p style={{ fontSize: 12, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.6 }}>{p.notes}</p>
+                    <p style={{ fontSize: 14, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.6 }}>{p.notes}</p>
                   )}
                 </div>
               ))}
@@ -151,13 +151,13 @@ export function FichaInternaPreview({
 
         {/* Cartas */}
         {cards.length > 0 && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 14px" }} />
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>🃏 Cartas da sessão:</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#374151", margin: "0 0 12px" }}>🃏 Cartas da sessão:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {cards.map((c, i) => (
                 <div key={i}>
-                  <p style={{ fontSize: 13, margin: 0 }}>
+                  <p style={{ fontSize: 15, margin: 0 }}>
                     <span style={{ fontWeight: 700, color: "#111827" }}>{c.card}</span>
                     {c.interpretation && <span style={{ color: "#4b5563" }}> → {c.interpretation}</span>}
                   </p>
@@ -169,43 +169,43 @@ export function FichaInternaPreview({
 
         {/* Temas */}
         {data.topicsAddressed && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 14px" }} />
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 8px" }}>🔮 Temas principais abordados:</p>
-            <p style={{ fontSize: 13, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.7 }}>{data.topicsAddressed}</p>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>🔮 Temas principais abordados:</p>
+            <p style={{ fontSize: 15, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.8 }}>{data.topicsAddressed}</p>
           </div>
         )}
 
         {/* Energético */}
         {data.energeticObservations && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 14px" }} />
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 8px" }}>💓 Observações energéticas:</p>
-            <p style={{ fontSize: 13, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.7 }}>{data.energeticObservations}</p>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>💓 Observações energéticas:</p>
+            <p style={{ fontSize: 15, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.8 }}>{data.energeticObservations}</p>
           </div>
         )}
 
         {/* Sugestão */}
         {data.therapeuticSuggestions && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 14px" }} />
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 8px" }}>✨ Sugestão terapêutica para alinhamento:</p>
-            <p style={{ fontSize: 13, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.7 }}>{data.therapeuticSuggestions}</p>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>✨ Sugestão terapêutica para alinhamento:</p>
+            <p style={{ fontSize: 15, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.8 }}>{data.therapeuticSuggestions}</p>
           </div>
         )}
 
         {/* Links */}
         {(data.links ?? []).filter((l) => l.url).length > 0 && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 14px" }} />
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>🔗 Links úteis:</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#374151", margin: "0 0 12px" }}>🔗 Links úteis:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {(data.links ?? []).filter((l) => l.url).map((l, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#7c3aed", flexShrink: 0, display: "inline-block" }} />
-                  <span style={{ fontSize: 13, color: "#374151", fontWeight: 600, minWidth: 80 }}>{l.label || "Link"}</span>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#7c3aed", flexShrink: 0, display: "inline-block" }} />
+                  <span style={{ fontSize: 15, color: "#374151", fontWeight: 600, minWidth: 90 }}>{l.label || "Link"}</span>
                   <a href={l.url} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: 12, color: "#7c3aed", textDecoration: "underline", wordBreak: "break-all" }}>
+                    style={{ fontSize: 14, color: "#7c3aed", textDecoration: "underline", wordBreak: "break-all" }}>
                     {l.url}
                   </a>
                 </div>
