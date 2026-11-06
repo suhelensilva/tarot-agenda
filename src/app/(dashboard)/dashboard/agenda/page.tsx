@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil, FileText } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { usePlanFetch } from "@/components/upgrade-provider"
 
@@ -537,6 +537,15 @@ export default function AgendaPage() {
             <Pencil size={14} />
             Editar agendamento
           </button>
+
+          {/* Botão Ficha do cliente */}
+          <a
+            href={`/dashboard/clientes/${selected.client.id}`}
+            className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium border border-indigo-200 dark:border-[rgba(99,102,241,0.3)] text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-[rgba(99,102,241,0.08)] transition-colors"
+          >
+            <FileText size={14} />
+            Abrir ficha do cliente
+          </a>
 
           <button
             onClick={() => handleDelete(selected.id)}
