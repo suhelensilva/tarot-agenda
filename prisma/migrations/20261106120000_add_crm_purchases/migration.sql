@@ -1,8 +1,8 @@
--- AlterTable
-ALTER TABLE "users" ADD COLUMN "apiToken" TEXT;
+-- AlterTable: coluna do token da extensão CRM
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "apiToken" TEXT;
 
--- CreateTable
-CREATE TABLE "purchases" (
+-- CreateTable: compras
+CREATE TABLE IF NOT EXISTS "purchases" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "clientId" TEXT NOT NULL,
@@ -19,16 +19,15 @@ CREATE TABLE "purchases" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_apiToken_key" ON "users"("apiToken");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_apiToken_key" ON "users"("apiToken");
+CREATE INDEX IF NOT EXISTS "purchases_userId_clientId_idx" ON "purchases"("userId", "clientId");
+CREATE INDEX IF NOT EXISTS "purchases_clientId_purchasedAt_idx" ON "purchases"("clientId", "purchasedAt");
 
--- CreateIndex
-CREATE INDEX "purchases_userId_clientId_idx" ON "purchases"("userId", "clientId");
+-- AddForeignKey (ignora se já existir)
+DO $$ BEGIN
+  ALTER TABLE "purchases" ADD CONSTRAINT "purchases_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- CreateIndex
-CREATE INDEX "purchases_clientId_purchasedAt_idx" ON "purchases"("clientId", "purchasedAt");
-
--- AddForeignKey
-ALTER TABLE "purchases" ADD CONSTRAINT "purchases_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "purchases" ADD CONSTRAINT "purchases_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "clients"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "purchases" ADD CONSTRAINT "purchases_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "clients"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
