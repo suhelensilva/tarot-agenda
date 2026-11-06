@@ -306,7 +306,7 @@ export default function RelatoriosPage() {
               {/* Top clientes — 1/3 */}
               <div className="bg-white dark:bg-[#0f0f1a] border border-gray-100 dark:border-[rgba(170,85,249,0.12)] rounded-2xl p-6 shadow-sm">
                 <h2 className="font-semibold text-gray-900 dark:text-white text-base mb-1">Top clientes</h2>
-                <p className="text-xs text-gray-400 mb-4">No período selecionado</p>
+                <p className="text-xs text-gray-400 mb-4">Quem mais investiu · {PERIOD_LABELS[period].toLowerCase()}</p>
 
                 {data.clientStats.length === 0 ? (
                   <div className="flex flex-col items-center py-10 text-gray-400">

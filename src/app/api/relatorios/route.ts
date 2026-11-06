@@ -161,12 +161,12 @@ export async function GET(req: NextRequest) {
       _sum: { amount: true },
     }) : Promise.resolve(null),
 
-    // Top clientes do período (sem take: busca todos, ordena em JS depois)
+    // Top clientes do período — inclui qualquer agendamento com valor pago
     prisma.client.findMany({
-      where: { userId, appointments: { some: { startTime: { gte: start, lte: end }, status: "COMPLETED" } } },
+      where: { userId, appointments: { some: { startTime: { gte: start, lte: end }, amountPaid: { gt: 0 } } } },
       include: {
         appointments: {
-          where: { startTime: { gte: start, lte: end }, status: "COMPLETED" },
+          where: { startTime: { gte: start, lte: end }, amountPaid: { gt: 0 } },
           select: { amountPaid: true },
         },
       },
