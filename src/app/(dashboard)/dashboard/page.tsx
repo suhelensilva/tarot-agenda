@@ -55,16 +55,12 @@ export default async function DashboardPage() {
   const monthStart = new Date(Date.UTC(my, mm - 1, 1,  3,  0,  0,   0))
   const monthEnd   = new Date(Date.UTC(my, mm,     1,  2, 59, 59, 999)) // 1º do próximo mês 02:59 UTC
 
-  const [totalClients, appointmentsThisMonth, totalToday, upcomingToday, revenue, clientsWithBirthday] = await Promise.all([
+  const [totalClients, appointmentsThisMonth, allToday, revenue, revenueToday, clientsWithBirthday] = await Promise.all([
     prisma.client.count({ where: { userId } }),
     prisma.appointment.count({ where: { userId, startTime: { gte: monthStart, lte: monthEnd } } }),
-    // Realizados hoje
-    prisma.appointment.count({
-      where: { userId, startTime: { gte: todayStart, lte: todayEnd }, status: "COMPLETED" },
-    }),
-    // Pendentes de hoje (para a listinha da agenda)
+    // Todos os agendamentos de hoje (qualquer status), ordenados por horário
     prisma.appointment.findMany({
-      where: { userId, startTime: { gte: todayStart, lte: todayEnd }, status: { in: ["SCHEDULED", "CONFIRMED"] } },
+      where: { userId, startTime: { gte: todayStart, lte: todayEnd } },
       include: { client: true, service: true },
       orderBy: { startTime: "asc" },
     }),
@@ -72,11 +68,19 @@ export default async function DashboardPage() {
       where: { userId, startTime: { gte: monthStart, lte: monthEnd }, status: "COMPLETED" },
       _sum: { amountPaid: true },
     }),
+    // Faturamento de hoje
+    prisma.appointment.aggregate({
+      where: { userId, startTime: { gte: todayStart, lte: todayEnd }, status: "COMPLETED" },
+      _sum: { amountPaid: true },
+    }),
     prisma.client.findMany({
       where: { userId, birthDate: { not: null } },
       select: { id: true, name: true, birthDate: true, phone: true },
     }),
   ])
+
+  const totalToday    = allToday.filter((a) => a.status === "COMPLETED").length
+  const upcomingToday = allToday.filter((a) => a.status === "SCHEDULED" || a.status === "CONFIRMED")
 
   // nowBR representa o instante atual no fuso do Brasil (UTC-3) usando getUTC*
   const nowBR = new Date(Date.now() - 3 * 60 * 60 * 1000)
@@ -142,35 +146,47 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2 relative bg-white dark:bg-[#13131f] rounded-xl border border-gray-200 dark:border-[rgba(170,85,249,0.15)] p-6 overflow-hidden">
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-20 opacity-0 dark:opacity-100 pointer-events-none"
             style={{ background: "radial-gradient(ellipse at bottom, rgba(170,85,249,0.18) 0%, transparent 70%)" }} />
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Agenda de hoje</h2>
-            {upcomingToday.length > 0 && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-[rgba(170,85,249,0.15)] dark:text-[#aa55f9]">
-                {upcomingToday.length} {upcomingToday.length === 1 ? "falta" : "faltam"}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Agenda de hoje</h2>
+              {upcomingToday.length > 0 && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-[rgba(170,85,249,0.15)] dark:text-[#aa55f9]">
+                  {upcomingToday.length} {upcomingToday.length === 1 ? "falta" : "faltam"}
+                </span>
+              )}
+            </div>
+            {(revenueToday._sum.amountPaid ?? 0) > 0 && (
+              <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                {formatCurrency(revenueToday._sum.amountPaid ?? 0)} hoje
               </span>
             )}
           </div>
-          {upcomingToday.length === 0 ? (
-            <p className="text-gray-400 dark:text-gray-500 text-sm">
-              {totalToday > 0 ? `Todos os ${totalToday} atendimentos de hoje foram realizados ✅` : "Nenhum atendimento agendado para hoje"}
-            </p>
+          {allToday.length === 0 ? (
+            <p className="text-gray-400 dark:text-gray-500 text-sm">Nenhum atendimento agendado para hoje</p>
           ) : (
-            <div className="space-y-3">
-              {upcomingToday.map((apt: typeof upcomingToday[0]) => (
-                <div key={apt.id} className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 dark:bg-[rgba(170,85,249,0.06)] dark:border dark:border-[rgba(170,85,249,0.1)]">
-                  <div className="text-sm font-mono text-purple-600 dark:text-[#aa55f9] font-bold w-12">
+            <div className="space-y-2">
+              {allToday.map((apt) => (
+                <div key={apt.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-[rgba(170,85,249,0.06)] dark:border dark:border-[rgba(170,85,249,0.1)]">
+                  <div className="text-sm font-mono text-purple-600 dark:text-[#aa55f9] font-bold w-11 shrink-0">
                     {new Date(apt.startTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white text-sm">{apt.client.name}</p>
-                    {apt.service && <p className="text-xs text-gray-500 dark:text-gray-400">{apt.service.name}</p>}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{apt.client.name}</p>
+                    {apt.service && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{apt.service.name}</p>}
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    apt.status === "CONFIRMED"
+                  {apt.amountPaid != null && apt.amountPaid > 0 && (
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400 shrink-0">
+                      {formatCurrency(apt.amountPaid)}
+                    </span>
+                  )}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                    apt.status === "COMPLETED"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
+                      : apt.status === "CONFIRMED"
                       ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400"
                       : "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400"
                   }`}>
-                    {apt.status === "CONFIRMED" ? "Confirmado" : "Agendado"}
+                    {apt.status === "COMPLETED" ? "Realizado" : apt.status === "CONFIRMED" ? "Confirmado" : "Agendado"}
                   </span>
                 </div>
               ))}
