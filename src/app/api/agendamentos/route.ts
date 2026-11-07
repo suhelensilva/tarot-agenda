@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.client.findUnique({
         where: { id: data.clientId },
-        select: { person2Name: true, person2BirthDate: true },
+        select: { birthDate: true, person2Name: true, person2BirthDate: true },
       }),
       prisma.ficha.findFirst({
         where: { clientId: data.clientId, userId: session.user.id, type: "INTERNAL" },
@@ -88,19 +88,19 @@ export async function POST(req: NextRequest) {
       : []
 
     if (!fichaExistente) {
-      // Não tem ficha: cria, com ou sem motivo
+      // Não tem ficha: cria, populando dados da cliente
       await prisma.ficha.create({
         data: {
           userId: session.user.id,
           clientId: data.clientId,
           serviceId: data.serviceId || null,
           type: "INTERNAL",
-          mainComplaint: data.motivo ? `[${dateLabel}] ${data.motivo}` : null,
+          topicsAddressed: data.motivo ? `[${dateLabel}] ${data.motivo}` : null,
           involvedPeople,
         },
       })
     } else if (data.motivo) {
-      // Tem ficha: acrescenta o novo motivo com data em topicsAddressed
+      // Tem ficha: acrescenta o novo motivo em topicsAddressed
       const anterior = fichaExistente.topicsAddressed ?? ""
       const motivoEntry = `[${dateLabel}] ${data.motivo}`
       await prisma.ficha.update({
