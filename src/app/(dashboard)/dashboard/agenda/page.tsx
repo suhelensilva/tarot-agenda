@@ -183,8 +183,6 @@ export default function AgendaPage() {
 
   async function handleClientTagChange(newTag: string) {
     if (!form.clientId) return
-    const tag = newTag === clientTag ? "" : newTag
-    setClientTag(tag)
     setSavingTag(true)
     try {
       const c = clients.find((x) => x.id === form.clientId)
@@ -192,9 +190,10 @@ export default function AgendaPage() {
       await fetch(`/api/clientes/${form.clientId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: c.name, phone: c.phone, tag: tag || undefined }),
+        body: JSON.stringify({ name: c.name, phone: c.phone, tag: newTag || undefined }),
       })
-      setClients((prev) => prev.map((x) => x.id === form.clientId ? { ...x, tag: tag || null } : x))
+      setClientTag(newTag)
+      setClients((prev) => prev.map((x) => x.id === form.clientId ? { ...x, tag: newTag || null } : x))
     } finally {
       setSavingTag(false)
     }
@@ -735,22 +734,51 @@ export default function AgendaPage() {
 
                     {/* Etiqueta da cliente selecionada */}
                     {form.clientId && (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                        {(["Compradora", "Paga-pouco", "Cliente R$5"] as const).map((t) => (
-                          <button
-                            key={t}
-                            type="button"
-                            disabled={savingTag}
-                            onClick={() => handleClientTagChange(t)}
-                            className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors disabled:opacity-60 ${
-                              clientTag === t
-                                ? TAG_COLORS[t]
-                                : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-gray-400"
-                            }`}
-                          >
-                            {t}
-                          </button>
-                        ))}
+                      <div className="pt-0.5">
+                        {clientTag ? (
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2.5 py-1 rounded-full border font-semibold ${TAG_COLORS[clientTag] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                              {clientTag}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={savingTag}
+                              onClick={() => setClientTag("__choosing__")}
+                              className="text-xs text-gray-400 hover:text-purple-600 dark:hover:text-[#aa55f9] transition-colors disabled:opacity-50"
+                            >
+                              Trocar
+                            </button>
+                          </div>
+                        ) : clientTag === "__choosing__" ? null : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {(["Compradora", "Paga-pouco", "Cliente R$5"] as const).map((t) => (
+                              <button
+                                key={t}
+                                type="button"
+                                disabled={savingTag}
+                                onClick={() => handleClientTagChange(t)}
+                                className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors disabled:opacity-60 border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-gray-400`}
+                              >
+                                {t}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {clientTag === "__choosing__" && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {(["Compradora", "Paga-pouco", "Cliente R$5"] as const).map((t) => (
+                              <button
+                                key={t}
+                                type="button"
+                                disabled={savingTag}
+                                onClick={() => handleClientTagChange(t)}
+                                className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors disabled:opacity-60 border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-gray-400`}
+                              >
+                                {t}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
