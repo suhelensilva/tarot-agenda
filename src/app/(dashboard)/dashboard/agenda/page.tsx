@@ -88,7 +88,7 @@ export default function AgendaPage() {
     fetch("/api/clientes").then((r) => r.json()).then(setClients)
     fetch("/api/servicos").then((r) => r.json()).then((d) => setServices(
       d.filter((s: Service & { active: boolean }) => s.active)
-        .sort((a: Service, b: Service) => a.name.localeCompare(b.name, "pt-BR"))
+        .sort((a: Service, b: Service) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }))
     ))
   }, [])
 
