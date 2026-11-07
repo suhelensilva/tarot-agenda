@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCi
 import { formatCurrency } from "@/lib/utils"
 import { usePlanFetch } from "@/components/upgrade-provider"
 
-type Client = { id: string; name: string; phone: string }
+type Client = { id: string; name: string; phone: string; tag: string | null }
 type Service = { id: string; name: string; price: number; duration: number }
 type Appointment = {
   id: string
@@ -18,7 +18,7 @@ type Appointment = {
   meetingLink: string | null
   amountPaid: number | null
   cancellationReason: string | null
-  client: Client
+  client: Client & { tag: string | null }
   service: Service | null
 }
 
@@ -51,7 +51,15 @@ export default function AgendaPage() {
   const [newClient, setNewClient] = useState({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
   const [savingClient, setSavingClient] = useState(false)
   const [newClientError, setNewClientError] = useState<string | null>(null)
+  const [clientTag, setClientTag] = useState<string>("")
+  const [savingTag, setSavingTag] = useState(false)
   const planFetch = usePlanFetch()
+
+  const TAG_COLORS: Record<string, string> = {
+    "Compradora":  "bg-green-100 text-green-700 border-green-400 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/50",
+    "Paga-pouco":  "bg-pink-100 text-pink-700 border-pink-400 dark:bg-pink-500/20 dark:text-pink-400 dark:border-pink-500/50",
+    "Cliente R$5": "bg-red-100 text-red-700 border-red-400 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/50",
+  }
 
   const [form, setForm] = useState({
     clientId: "",
@@ -136,6 +144,7 @@ export default function AgendaPage() {
     setShowPerson2(false)
     setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
+    setClientTag("")
     setShowForm(true)
   }
 
@@ -162,11 +171,33 @@ export default function AgendaPage() {
     setShowPerson2(false)
     setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
+    setClientTag(apt.client.tag ?? "")
     setShowForm(true)
   }
 
   function onClientChange(clientId: string) {
     setForm((f) => ({ ...f, clientId }))
+    const c = clients.find((x) => x.id === clientId)
+    setClientTag(c?.tag ?? "")
+  }
+
+  async function handleClientTagChange(newTag: string) {
+    if (!form.clientId) return
+    const tag = newTag === clientTag ? "" : newTag
+    setClientTag(tag)
+    setSavingTag(true)
+    try {
+      const c = clients.find((x) => x.id === form.clientId)
+      if (!c) return
+      await fetch(`/api/clientes/${form.clientId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: c.name, phone: c.phone, tag: tag || undefined }),
+      })
+      setClients((prev) => prev.map((x) => x.id === form.clientId ? { ...x, tag: tag || null } : x))
+    } finally {
+      setSavingTag(false)
+    }
   }
 
   function calcEndHour(startHour: string, duration: number): string {
@@ -689,17 +720,40 @@ export default function AgendaPage() {
                     </button>
                   </div>
                 ) : (
-                  <select
-                    required
-                    value={form.clientId}
-                    onChange={(e) => onClientChange(e.target.value)}
-                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[#1a1a2e] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
-                  >
-                    <option value="">Selecione a cliente</option>
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
+                  <div className="space-y-2">
+                    <select
+                      required
+                      value={form.clientId}
+                      onChange={(e) => onClientChange(e.target.value)}
+                      className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[#1a1a2e] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
+                    >
+                      <option value="">Selecione a cliente</option>
+                      {clients.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+
+                    {/* Etiqueta da cliente selecionada */}
+                    {form.clientId && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        {(["Compradora", "Paga-pouco", "Cliente R$5"] as const).map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            disabled={savingTag}
+                            onClick={() => handleClientTagChange(t)}
+                            className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors disabled:opacity-60 ${
+                              clientTag === t
+                                ? TAG_COLORS[t]
+                                : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-gray-400"
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
