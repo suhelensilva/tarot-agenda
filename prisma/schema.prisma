@@ -63,6 +63,7 @@ model User {
   plannerTasks     PlannerTask[]
   plannerNotes     PlannerNote[]
   purchases        Purchase[]
+  crmLists         CrmList[]
 
   @@map("users")
 }
@@ -118,6 +119,7 @@ model Client {
   anamnesisRecords AnamnesisRecord[]
   fichas           Ficha[]
   purchases        Purchase[]
+  listMemberships  CrmListMember[]
 
   @@map("clients")
 }
@@ -451,4 +453,37 @@ model Purchase {
   @@index([userId, clientId])
   @@index([clientId, purchasedAt])
   @@map("purchases")
+}
+
+/// Etiqueta/Lista colorida do CRM (ex.: Compradoras, Paga pouco, Mapa Energético).
+/// Também servem como colunas do funil kanban.
+model CrmList {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String   @default("#8b5cf6")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members CrmListMember[]
+
+  @@index([userId])
+  @@map("crm_lists")
+}
+
+/// Vínculo entre uma cliente e uma lista/etiqueta (uma cliente pode estar em várias).
+model CrmListMember {
+  id        String   @id @default(cuid())
+  listId    String
+  clientId  String
+  createdAt DateTime @default(now())
+
+  list   CrmList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  client Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, clientId])
+  @@index([clientId])
+  @@map("crm_list_members")
 }

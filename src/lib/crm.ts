@@ -9,11 +9,18 @@ export type CrmPurchase = {
   source: string
 }
 
+export type CrmListTag = {
+  id: string
+  name: string
+  color: string
+}
+
 export type CrmContact = {
   found: boolean
   clientId: string | null
   name: string | null
   phone: string | null
+  lists: CrmListTag[]
   stats: {
     count: number
     totalSpent: number
@@ -77,6 +84,17 @@ export async function buildContact(userId: string, clientId: string): Promise<Cr
     orderBy: { purchasedAt: "desc" },
   })
 
+  const memberships = await prisma.crmListMember.findMany({
+    where: { clientId, list: { userId } },
+    include: { list: true },
+    orderBy: { list: { order: "asc" } },
+  })
+  const lists: CrmListTag[] = memberships.map((m) => ({
+    id: m.list.id,
+    name: m.list.name,
+    color: m.list.color,
+  }))
+
   const count = purchases.length
   const totalSpent = purchases.reduce((s, p) => s + p.amount, 0)
   const sortedAsc = [...purchases].sort(
@@ -101,6 +119,7 @@ export async function buildContact(userId: string, clientId: string): Promise<Cr
     clientId: client.id,
     name: client.name,
     phone: client.phone,
+    lists,
     stats: {
       count,
       totalSpent,
@@ -128,6 +147,7 @@ export function emptyContact(name: string | null = null, phone: string | null = 
     clientId: null,
     name,
     phone,
+    lists: [],
     stats: {
       count: 0,
       totalSpent: 0,
