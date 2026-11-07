@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
 const schema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).optional(),
   phone: z.string().optional().or(z.literal("")),
   email: z.string().email().optional().or(z.literal("")),
   birthDate: z.string().optional().or(z.literal("")),
@@ -48,18 +48,21 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const body = await req.json()
     const data = schema.parse(body)
 
+    // Só atualiza os campos que vieram explicitamente no body
+    // (evita apagar dados como birthDate quando só a tag é alterada)
+    const updateData: Record<string, unknown> = {}
+    if ("name"           in body) updateData.name           = data.name
+    if ("phone"          in body) updateData.phone          = data.phone || null
+    if ("email"          in body) updateData.email          = data.email || null
+    if ("birthDate"      in body) updateData.birthDate      = data.birthDate ? new Date(data.birthDate) : null
+    if ("notes"          in body) updateData.notes          = data.notes || null
+    if ("person2Name"    in body) updateData.person2Name    = data.person2Name || null
+    if ("person2BirthDate" in body) updateData.person2BirthDate = data.person2BirthDate ? new Date(data.person2BirthDate) : null
+    if ("tag"            in body) updateData.tag            = data.tag || null
+
     const client = await prisma.client.updateMany({
       where: { id, userId: session.user.id },
-      data: {
-        name: data.name,
-        phone: data.phone,
-        email: data.email || null,
-        birthDate: data.birthDate ? new Date(data.birthDate) : null,
-        notes: data.notes || null,
-        person2Name: data.person2Name || null,
-        person2BirthDate: data.person2BirthDate ? new Date(data.person2BirthDate) : null,
-        tag: data.tag || null,
-      },
+      data: updateData,
     })
 
     return NextResponse.json(client)
