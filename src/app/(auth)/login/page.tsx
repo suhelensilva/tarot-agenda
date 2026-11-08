@@ -4,6 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Eye, EyeOff } from "lucide-react"
 
 export default function LoginPage() {
@@ -35,12 +36,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-950 via-purple-900 to-indigo-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative flex items-center justify-center p-4">
+      <Image
+        src="/login-bg.webp"
+        alt=""
+        fill
+        className="object-cover object-center"
+        priority
+      />
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🔮</div>
-          <h1 className="text-3xl font-bold text-white">Mística Agenda</h1>
-          <p className="text-purple-300 mt-1">Gerencie seus atendimentos</p>
+          <Image
+            src="/logo-small.png"
+            alt="Mística Agenda"
+            width={320}
+            height={214}
+            className="mx-auto"
+          />
+          <p className="text-purple-200 mt-2">Gerencie seus atendimentos</p>
         </div>
 
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-white/20">
