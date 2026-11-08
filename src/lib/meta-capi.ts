@@ -16,7 +16,7 @@ function normalizePhone(phone: string): string {
 // Separa primeiro e último nome
 function splitName(fullName: string) {
   const parts = fullName.trim().split(/\s+/)
-  return { fn: parts[0] ?? "", ln: parts.slice(1).join(" ") || parts[0] ?? "" }
+  return { fn: parts[0] ?? "", ln: parts.slice(1).join(" ") || parts[0] || "" }
 }
 
 export interface CAPIEventPayload {
