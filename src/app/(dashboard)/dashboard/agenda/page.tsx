@@ -57,6 +57,7 @@ export default function AgendaPage() {
   const [paymentStatusInput, setPaymentStatusInput] = useState<string>("")
   const [savingPayment, setSavingPayment] = useState(false)
   const [showCustomPayment, setShowCustomPayment] = useState(false)
+  const [clientLabels, setClientLabels] = useState<{ id: string; name: string; color: string }[]>([])
   const planFetch = usePlanFetch()
 
   const PAYMENT_PRESETS = ["Pago", "Pendente", "A combinar"]
@@ -103,6 +104,14 @@ export default function AgendaPage() {
         .sort((a: Service, b: Service) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }))
     ))
   }, [])
+
+  useEffect(() => {
+    if (!selected) { setClientLabels([]); return }
+    fetch(`/api/clientes/${selected.client.id}/etiquetas`)
+      .then((r) => r.json())
+      .then((d) => setClientLabels(Array.isArray(d) ? d.filter((l: { name: string }) => l.name !== "__blacklist__") : []))
+      .catch(() => setClientLabels([]))
+  }, [selected?.client.id])
 
   // Calendário
   const year = currentDate.getFullYear()
@@ -505,6 +514,19 @@ export default function AgendaPage() {
                 {selected.paymentStatus}
               </span>
             )}
+            {clientLabels.map((label) => (
+              <span
+                key={label.id}
+                className="text-xs px-2.5 py-1 rounded-full font-medium border"
+                style={{
+                  background: label.color + "22",
+                  color: label.color,
+                  borderColor: label.color + "55",
+                }}
+              >
+                {label.name}
+              </span>
+            ))}
           </div>
 
           {/* Seletor de status de pagamento */}
