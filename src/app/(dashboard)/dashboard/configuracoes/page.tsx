@@ -79,6 +79,7 @@ export default function ConfiguracoesPage() {
   const [showAccessToken, setShowAccessToken] = useState(false)
   const [pixelError, setPixelError] = useState<string | null>(null)
   const [metaOpen, setMetaOpen] = useState(false)
+  const [showAddPixel, setShowAddPixel] = useState(false)
   const [editingPixelId, setEditingPixelId] = useState<string | null>(null)
   const [editPixelData, setEditPixelData] = useState({ name: "", testEventCode: "" })
 
@@ -241,6 +242,7 @@ export default function ConfiguracoesPage() {
       const created = await res.json()
       setPixels((prev) => [...prev, created])
       setNewPixel({ name: "", pixelId: "", accessToken: "", testEventCode: "" })
+      setShowAddPixel(false)
     } catch (e) {
       setPixelError(e instanceof Error ? e.message : "Erro ao salvar pixel")
     } finally {
@@ -836,56 +838,71 @@ export default function ConfiguracoesPage() {
                 </div>
               ))}
 
-              {/* Formulário novo pixel */}
-              <div className="border border-dashed border-gray-300 dark:border-[rgba(170,85,249,0.2)] rounded-xl p-4 space-y-3">
-                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Adicionar pixel</p>
-                <input
-                  value={newPixel.name}
-                  onChange={(e) => setNewPixel((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Nome (ex: Pixel Principal)"
-                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <input
-                  value={newPixel.pixelId}
-                  onChange={(e) => setNewPixel((p) => ({ ...p, pixelId: e.target.value }))}
-                  placeholder="Pixel ID (ex: 1234567890)"
-                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-600 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <div className="relative">
-                  <input
-                    value={newPixel.accessToken}
-                    onChange={(e) => setNewPixel((p) => ({ ...p, accessToken: e.target.value }))}
-                    type={showAccessToken ? "text" : "password"}
-                    placeholder="Access Token"
-                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-600 rounded-lg px-3 py-2 pr-10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowAccessToken((v) => !v)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    {showAccessToken ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-                <input
-                  value={newPixel.testEventCode}
-                  onChange={(e) => setNewPixel((p) => ({ ...p, testEventCode: e.target.value }))}
-                  placeholder="Código de teste (opcional, ex: TEST12345)"
-                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  O código de teste permite testar eventos no Gerenciador de Eventos da Meta sem afetar dados reais.
-                </p>
-                {pixelError && <p className="text-xs text-red-500">{pixelError}</p>}
+              {/* Botão / Formulário novo pixel */}
+              {!showAddPixel ? (
                 <button
-                  onClick={addPixel}
-                  disabled={addingPixel || !newPixel.name.trim() || !newPixel.pixelId.trim() || !newPixel.accessToken.trim()}
-                  className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  onClick={() => setShowAddPixel(true)}
+                  className="flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   <Plus size={14} />
-                  {addingPixel ? "Salvando..." : "Adicionar pixel"}
+                  Adicionar pixel
                 </button>
-              </div>
+              ) : (
+                <div className="border border-dashed border-gray-300 dark:border-[rgba(170,85,249,0.2)] rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Novo pixel</p>
+                  <input
+                    value={newPixel.name}
+                    onChange={(e) => setNewPixel((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="Nome (ex: Pixel Principal)"
+                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <input
+                    value={newPixel.pixelId}
+                    onChange={(e) => setNewPixel((p) => ({ ...p, pixelId: e.target.value }))}
+                    placeholder="Pixel ID (ex: 1234567890)"
+                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-600 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <div className="relative">
+                    <input
+                      value={newPixel.accessToken}
+                      onChange={(e) => setNewPixel((p) => ({ ...p, accessToken: e.target.value }))}
+                      type={showAccessToken ? "text" : "password"}
+                      placeholder="Access Token"
+                      className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-600 rounded-lg px-3 py-2 pr-10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAccessToken((v) => !v)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showAccessToken ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                  <input
+                    value={newPixel.testEventCode}
+                    onChange={(e) => setNewPixel((p) => ({ ...p, testEventCode: e.target.value }))}
+                    placeholder="Código de teste (opcional, ex: TEST12345)"
+                    className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 dark:placeholder-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  {pixelError && <p className="text-xs text-red-500">{pixelError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={addPixel}
+                      disabled={addingPixel || !newPixel.name.trim() || !newPixel.pixelId.trim() || !newPixel.accessToken.trim()}
+                      className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                    >
+                      <Plus size={14} />
+                      {addingPixel ? "Salvando..." : "Salvar pixel"}
+                    </button>
+                    <button
+                      onClick={() => { setShowAddPixel(false); setNewPixel({ name: "", pixelId: "", accessToken: "", testEventCode: "" }); setPixelError(null) }}
+                      className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-3 py-2 rounded-lg transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Vincular pixel a etiquetas */}
