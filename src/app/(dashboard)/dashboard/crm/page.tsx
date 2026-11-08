@@ -270,17 +270,17 @@ export default function CrmPage() {
       const res = await fetch("/api/crm/kanban")
       const data = await res.json()
 
-      const cols: Column[] = data.lists.map((l: Column) => ({ ...l, isUntagged: false }))
-      cols.push({
+      const untaggedCol: Column = {
         id: "__untagged__",
         name: "Sem etiqueta",
         color: "#6b7280",
-        order: 9999,
+        order: -1,
         clients: data.untagged,
         totalRevenue: data.untaggedRevenue,
         isUntagged: true,
-      })
-      setColumns(cols)
+      }
+      const userCols: Column[] = data.lists.map((l: Column) => ({ ...l, isUntagged: false }))
+      setColumns([untaggedCol, ...userCols])
     } finally {
       setLoading(false)
     }
@@ -349,7 +349,7 @@ export default function CrmPage() {
   }
 
   const totalClients = columns.reduce((s, c) => s + c.clients.length, 0)
-  const userCols = columns.filter((c) => !c.isUntagged)
+  const labelCount = columns.filter((c) => !c.isUntagged).length
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -358,7 +358,7 @@ export default function CrmPage() {
         <div>
           <h1 className="text-lg font-semibold text-white">CRM</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            {totalClients} clientes · {userCols.length} etiquetas
+            {totalClients} clientes · {labelCount} {labelCount === 1 ? "etiqueta" : "etiquetas"}
           </p>
         </div>
       </div>
