@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft, Phone, Mail, Calendar, Edit2, Trash2, X, MessageCircle, Link2, Send, BookOpen, Package,
@@ -13,6 +13,7 @@ import ClientFichasView from "@/components/client-fichas-view"
 
 type Service = { id: string; name: string; price: number; active: boolean }
 type ServiceFull = { id: string; name: string; description: string | null; price: number; duration: number; imageUrl: string | null }
+type Label = { id: string; name: string; color: string; _count?: { members: number } }
 
 type Appointment = {
   id: string
@@ -35,7 +36,6 @@ type ClientDetail = {
   notes: string | null
   person2Name: string | null
   person2BirthDate: string | null
-  tag: string | null
   createdAt: string
   appointments: Appointment[]
 }
@@ -48,21 +48,18 @@ type FormData = {
   notes: string
   person2Name: string
   person2BirthDate: string
-  tag: string
 }
 
 type TabPerfil = "dados" | "fichas" | "atendimentos"
 type PaymentLink = { id: string; name: string; url: string }
 type LoyaltyCard = { slot: number; imageUrl: string }
 
-const TAGS = ["Compradora", "Paga-pouco", "Cliente R$5"] as const
-const TAG_STYLES: Record<string, string> = {
-  "Compradora":  "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400 border-green-200 dark:border-green-500/30",
-  "Paga-pouco":  "bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-400 border-pink-200 dark:border-pink-500/30",
-  "Cliente R$5": "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400 border-red-200 dark:border-red-500/30",
-}
+const LABEL_PALETTE = [
+  "#8b5cf6","#ec4899","#ef4444","#f97316",
+  "#eab308","#22c55e","#3b82f6","#06b6d4",
+]
 
-const emptyForm: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "", person2Name: "", person2BirthDate: "", tag: "" }
+const emptyForm: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "", person2Name: "", person2BirthDate: "" }
 
 // ─── Status badge helper ──────────────────────────────────────────────────────
 
@@ -95,6 +92,25 @@ export default function ClienteDetailPage() {
 
   const [client, setClient] = useState<ClientDetail | null>(null)
   const [loadingClient, setLoadingClient] = useState(true)
+
+  // Etiquetas
+  const [clientLabels, setClientLabels]   = useState<Label[]>([])
+  const [allLabels, setAllLabels]         = useState<Label[]>([])
+  const [showLabelPicker, setShowLabelPicker] = useState(false)
+  const [newLabelName, setNewLabelName]   = useState("")
+  const [newLabelColor, setNewLabelColor] = useState(LABEL_PALETTE[0])
+  const [savingLabel, setSavingLabel]     = useState(false)
+  const labelPickerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (labelPickerRef.current && !labelPickerRef.current.contains(e.target as Node)) {
+        setShowLabelPicker(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const [services, setServices] = useState<Service[]>([])
   const [profile, setProfile] = useState<FichaProfile>({ logoUrl: null, reportBg: null, signature: null, slogan: null, reportTitleFont: null, reportTitleColor: null, reportSignatureFont: null, reportSignatureColor: null, reportFont: null, reportTextColor: null, reportAccentColor: null })
@@ -155,7 +171,59 @@ export default function ClienteDetailPage() {
     }
   }, [id])
 
+  const fetchLabels = useCallback(async () => {
+    const [clientRes, allRes] = await Promise.all([
+      fetch(`/api/clientes/${id}/etiquetas`),
+      fetch("/api/etiquetas"),
+    ])
+    setClientLabels(await clientRes.json())
+    setAllLabels(await allRes.json())
+  }, [id])
+
   useEffect(() => { fetchClient() }, [fetchClient])
+  useEffect(() => { fetchLabels() }, [fetchLabels])
+
+  async function addLabel(listId: string) {
+    await fetch(`/api/clientes/${id}/etiquetas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listId }),
+    })
+    fetchLabels()
+  }
+
+  async function removeLabel(listId: string) {
+    await fetch(`/api/clientes/${id}/etiquetas`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listId }),
+    })
+    fetchLabels()
+  }
+
+  async function createAndAddLabel() {
+    if (!newLabelName.trim()) return
+    setSavingLabel(true)
+    try {
+      const res = await fetch("/api/etiquetas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newLabelName.trim(), color: newLabelColor }),
+      })
+      const label = await res.json()
+      await fetch(`/api/clientes/${id}/etiquetas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listId: label.id }),
+      })
+      setNewLabelName("")
+      setNewLabelColor(LABEL_PALETTE[0])
+      setShowLabelPicker(false)
+      fetchLabels()
+    } finally {
+      setSavingLabel(false)
+    }
+  }
 
   // ── Fetch services + profile ──────────────────────────────────────────────
 
@@ -204,7 +272,6 @@ export default function ClienteDetailPage() {
       notes: client.notes ?? "",
       person2Name: client.person2Name ?? "",
       person2BirthDate: client.person2BirthDate ? client.person2BirthDate.slice(0, 10) : "",
-      tag: client.tag ?? "",
     })
     setShowForm(true)
   }
@@ -220,7 +287,6 @@ export default function ClienteDetailPage() {
           ...form,
           person2Name: form.person2Name || undefined,
           person2BirthDate: form.person2BirthDate || undefined,
-          tag: form.tag || undefined,
         }),
       })
       setShowForm(false)
@@ -371,13 +437,17 @@ export default function ClienteDetailPage() {
               {client.name[0].toUpperCase()}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{client.name}</h1>
-                {client.tag && (
-                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${TAG_STYLES[client.tag] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                    {client.tag}
+                {clientLabels.map((lbl) => (
+                  <span
+                    key={lbl.id}
+                    className="text-xs font-semibold px-2.5 py-0.5 rounded-full border"
+                    style={{ background: lbl.color + "22", color: lbl.color, borderColor: lbl.color + "55" }}
+                  >
+                    {lbl.name}
                   </span>
-                )}
+                ))}
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                 {client.birthDate && (
@@ -491,6 +561,99 @@ export default function ClienteDetailPage() {
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{client.notes}</p>
               </div>
             )}
+
+            {/* Etiquetas */}
+            <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-4">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Etiquetas</p>
+              <div className="flex flex-wrap gap-2">
+                {clientLabels.map((lbl) => (
+                  <span
+                    key={lbl.id}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border"
+                    style={{ background: lbl.color + "22", color: lbl.color, borderColor: lbl.color + "55" }}
+                  >
+                    {lbl.name}
+                    <button
+                      type="button"
+                      onClick={() => removeLabel(lbl.id)}
+                      className="opacity-60 hover:opacity-100 transition-opacity ml-0.5"
+                      title="Remover etiqueta"
+                    >
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+                <div className="relative" ref={labelPickerRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowLabelPicker((v) => !v)}
+                    className="text-xs px-2.5 py-1 rounded-full border border-dashed border-gray-300 dark:border-[rgba(170,85,249,0.3)] text-gray-400 dark:text-gray-500 hover:border-purple-400 dark:hover:border-[rgba(170,85,249,0.6)] hover:text-purple-500 dark:hover:text-[#aa55f9] transition-colors"
+                  >
+                    + Adicionar
+                  </button>
+                  {showLabelPicker && (
+                    <div className="absolute left-0 top-8 z-20 bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-[rgba(170,85,249,0.2)] rounded-xl shadow-xl p-3 w-56">
+                      {/* Etiquetas existentes */}
+                      {allLabels.filter((l) => !clientLabels.find((cl) => cl.id === l.id)).length > 0 && (
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-2">Suas etiquetas</p>
+                          <div className="space-y-1">
+                            {allLabels
+                              .filter((l) => !clientLabels.find((cl) => cl.id === l.id))
+                              .map((lbl) => (
+                                <button
+                                  key={lbl.id}
+                                  type="button"
+                                  onClick={() => { addLabel(lbl.id); setShowLabelPicker(false) }}
+                                  className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                                >
+                                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: lbl.color }} />
+                                  <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{lbl.name}</span>
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                      {/* Criar nova */}
+                      <div className="border-t border-gray-100 dark:border-white/5 pt-3">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-2">Criar nova etiqueta</p>
+                        <input
+                          value={newLabelName}
+                          onChange={(e) => setNewLabelName(e.target.value)}
+                          placeholder="Nome da etiqueta"
+                          className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-white/5 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-400 mb-2"
+                          onKeyDown={(e) => e.key === "Enter" && createAndAddLabel()}
+                        />
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {LABEL_PALETTE.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setNewLabelColor(c)}
+                              className="w-5 h-5 rounded-full border-2 transition-all"
+                              style={{
+                                background: c,
+                                borderColor: newLabelColor === c ? "#fff" : "transparent",
+                                boxShadow: newLabelColor === c ? `0 0 0 2px ${c}` : "none",
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={createAndAddLabel}
+                          disabled={!newLabelName.trim() || savingLabel}
+                          className="w-full text-xs font-medium py-1.5 rounded-lg disabled:opacity-40 text-white transition-colors"
+                          style={{ background: newLabelColor }}
+                        >
+                          {savingLabel ? "Criando..." : "Criar e adicionar"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
@@ -661,27 +824,6 @@ export default function ClienteDetailPage() {
                   className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] resize-none"
                   placeholder="Anotações sobre a cliente..."
                 />
-              </div>
-
-              {/* Etiqueta */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Etiqueta <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
-                <div className="flex flex-wrap gap-1.5">
-                  {TAGS.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setForm((p) => ({ ...p, tag: p.tag === t ? "" : t }))}
-                      className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                        form.tag === t
-                          ? TAG_STYLES[t] ?? "bg-purple-600 text-white border-purple-600"
-                          : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-400 hover:border-purple-400"
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
