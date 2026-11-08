@@ -61,7 +61,7 @@ export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok
     event_name: "Purchase",
     event_time: Math.floor(Date.now() / 1000),
     event_id: `purchase_${appointmentId}`,  // deduplicação — único por agendamento
-    action_source: "phone_call",             // sessão agendada via WhatsApp/telefone
+    action_source: "website",
     user_data: userData,
     custom_data: {
       currency: "BRL",
