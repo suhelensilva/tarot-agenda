@@ -4,6 +4,10 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, X, Check, Crown, Pencil, Ban } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from "recharts"
 
 const TOP_THRESHOLD_KEY = "crm_top_threshold"
 
@@ -505,6 +509,8 @@ export default function CrmPage() {
   const [loading, setLoading] = useState(true)
   const dragRef = useRef<{ clientId: string; fromColId: string } | null>(null)
   const dashboardRef = useRef<HTMLDivElement>(null)
+  const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number; count: number }[]>([])
+  const [monthlyClients, setMonthlyClients] = useState<{ month: string; count: number }[]>([])
   const [topThreshold, setTopThreshold] = useState<number>(500)
 
   useEffect(() => {
@@ -535,6 +541,12 @@ export default function CrmPage() {
       const userCols: Column[] = data.lists.map((l: Column) => ({ ...l, isUntagged: false }))
       setColumns([untaggedCol, ...userCols])
       setBlacklist(data.blacklist ?? { id: "", clients: [] })
+
+      // Stats mensais (paralelo)
+      fetch("/api/crm/stats").then(r => r.json()).then(s => {
+        setMonthlyRevenue(s.monthlyRevenue ?? [])
+        setMonthlyClients(s.monthlyClients ?? [])
+      }).catch(() => {})
     } finally {
       setLoading(false)
     }
@@ -650,7 +662,7 @@ export default function CrmPage() {
   const recorrentes = allRegularClients.filter((c) => c.completedCount > 1).length
   const topClientes = allRegularClients.filter((c) => c.totalSpent >= topThreshold).length
   const devendo = allRegularClients.filter((c) => c.lastPaymentStatus === "Pendente").length
-  const totalReceita = allRegularClients.reduce((s, c) => s + c.totalSpent, 0)
+  const totalReceita = [...allRegularClients, ...blacklist.clients].reduce((s, c) => s + c.totalSpent, 0)
 
   const stats = [
     { label: "Total de clientes", value: totalClients, color: "#8b5cf6", bg: "rgba(139,92,246,0.1)", border: "rgba(139,92,246,0.25)" },
@@ -711,61 +723,170 @@ export default function CrmPage() {
       </div>
 
       {/* Dashboard */}
-      <div ref={dashboardRef} className="border-t border-white/5 px-6 py-8 flex-shrink-0">
-        <div className="mb-6">
-          <h2 className="text-base font-semibold text-white">Dashboard</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Visao geral das suas clientes</p>
+      <div ref={dashboardRef} className="border-t border-white/5 px-6 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-white">Dashboard</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Visao geral das suas clientes</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+        {/* KPIs */}
+        <div className="grid grid-cols-3 gap-3 mb-6 xl:grid-cols-6">
           {stats.map((s) => (
-            <div
-              key={s.label}
-              className="rounded-2xl p-4 flex flex-col gap-2"
-              style={{ background: s.bg, border: `1px solid ${s.border}` }}
-            >
+            <div key={s.label} className="rounded-2xl p-4 flex flex-col gap-1.5"
+              style={{ background: s.bg, border: `1px solid ${s.border}` }}>
               <span className="text-[10px] text-gray-500 leading-tight">{s.label}</span>
-              <span className="text-2xl font-bold leading-none" style={{ color: s.color }}>
-                {s.value}
-              </span>
+              <span className="text-2xl font-bold leading-none" style={{ color: s.color }}>{s.value}</span>
             </div>
           ))}
         </div>
 
-        {/* Barra de proporcao */}
-        <div className="mt-6 rounded-2xl p-5 border border-white/5 bg-[#0f0f1a]">
-          <p className="text-xs text-gray-500 mb-4">Distribuicao de clientes</p>
-          <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
-            {totalClients > 0 && [
-              { pct: (recorrentes / totalClients) * 100, color: "#8b5cf6", label: "Recorrentes" },
-              { pct: (blacklist.clients.length / totalClients) * 100, color: "#ef4444", label: "Blacklist" },
-              { pct: (devendo / totalClients) * 100, color: "#f97316", label: "Pendente" },
-              { pct: ((totalClients - recorrentes - blacklist.clients.length - devendo) / totalClients) * 100, color: "#1e1b4b", label: "Outros" },
-            ].map((seg) => (
-              seg.pct > 0 && (
-                <div
-                  key={seg.label}
-                  className="h-full rounded-sm"
-                  style={{ width: `${seg.pct}%`, background: seg.color }}
-                  title={`${seg.label}: ${Math.round(seg.pct)}%`}
+        {/* Linha 1: Faturamento mensal + Novas clientes */}
+        <div className="grid grid-cols-1 gap-4 mb-4 xl:grid-cols-2">
+          {/* Faturamento mensal */}
+          <div className="rounded-2xl p-5 bg-[#0f0f1a] border border-white/5">
+            <p className="text-xs font-medium text-gray-400 mb-4">Faturamento mensal</p>
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={monthlyRevenue} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="month" tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false}
+                  tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 12, fontSize: 12 }}
+                  labelStyle={{ color: "#a78bfa" }}
+                  formatter={(v) => [formatCurrency(Number(v)), "Faturamento"]}
                 />
-              )
-            ))}
+                <Area type="monotone" dataKey="revenue" stroke="#8b5cf6" strokeWidth={2} fill="url(#gradRevenue)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
-          <div className="flex flex-wrap gap-4 mt-3">
-            {[
-              { color: "#8b5cf6", label: "Recorrentes", n: recorrentes },
-              { color: "#f59e0b", label: "Top clientes", n: topClientes },
-              { color: "#ef4444", label: "Blacklist", n: blacklist.clients.length },
-              { color: "#f97316", label: "Pendente", n: devendo },
-            ].map((leg) => (
-              <div key={leg.label} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: leg.color }} />
-                <span className="text-[10px] text-gray-500">{leg.label} <span className="text-gray-400">{leg.n}</span></span>
-              </div>
-            ))}
+
+          {/* Novas clientes por mes */}
+          <div className="rounded-2xl p-5 bg-[#0f0f1a] border border-white/5">
+            <p className="text-xs font-medium text-gray-400 mb-4">Novas clientes por mes</p>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={monthlyClients} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="month" tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 12, fontSize: 12 }}
+                  labelStyle={{ color: "#a78bfa" }}
+                  formatter={(v) => [Number(v), "Novas clientes"]}
+                />
+                <Bar dataKey="count" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Linha 2: Faixas de gasto + Top 5 + Pizza */}
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          {/* Faixas de gasto */}
+          <div className="rounded-2xl p-5 bg-[#0f0f1a] border border-white/5">
+            <p className="text-xs font-medium text-gray-400 mb-4">Clientes por faixa de gasto</p>
+            {(() => {
+              const ranges = [
+                { label: "R$0–200", min: 0, max: 200, color: "#6d28d9" },
+                { label: "R$200–500", min: 200, max: 500, color: "#7c3aed" },
+                { label: "R$500–1k", min: 500, max: 1000, color: "#8b5cf6" },
+                { label: "R$1k–2k", min: 1000, max: 2000, color: "#a78bfa" },
+                { label: "R$2k+", min: 2000, max: Infinity, color: "#c4b5fd" },
+              ].map((r) => ({
+                ...r,
+                count: allRegularClients.filter((c) => c.totalSpent >= r.min && c.totalSpent < r.max).length,
+              }))
+              return (
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={ranges} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                    <XAxis type="number" tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <YAxis type="category" dataKey="label" tick={{ fill: "#9ca3af", fontSize: 10 }} axisLine={false} tickLine={false} width={60} />
+                    <Tooltip
+                      contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 12, fontSize: 12 }}
+                      formatter={(v) => [Number(v), "Clientes"]}
+                    />
+                    <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+                      {ranges.map((r, i) => <Cell key={i} fill={r.color} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )
+            })()}
+          </div>
+
+          {/* Top 5 clientes */}
+          <div className="rounded-2xl p-5 bg-[#0f0f1a] border border-white/5">
+            <p className="text-xs font-medium text-gray-400 mb-4">Top 5 por faturamento</p>
+            {(() => {
+              const top5 = [...allRegularClients]
+                .sort((a, b) => b.totalSpent - a.totalSpent)
+                .slice(0, 5)
+                .map((c) => ({ name: c.name.split(" ")[0], value: c.totalSpent }))
+              return (
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={top5} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                    <XAxis type="number" tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false}
+                      tickFormatter={(v) => `R$${(v / 1000).toFixed(1)}k`} />
+                    <YAxis type="category" dataKey="name" tick={{ fill: "#9ca3af", fontSize: 10 }} axisLine={false} tickLine={false} width={55} />
+                    <Tooltip
+                      contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 12, fontSize: 12 }}
+                      formatter={(v) => [formatCurrency(Number(v)), "Gasto total"]}
+                    />
+                    <Bar dataKey="value" fill="#f59e0b" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )
+            })()}
+          </div>
+
+          {/* Pizza — distribuicao de categorias */}
+          <div className="rounded-2xl p-5 bg-[#0f0f1a] border border-white/5">
+            <p className="text-xs font-medium text-gray-400 mb-4">Categorias de clientes</p>
+            {(() => {
+              const unicas = totalClients - recorrentes - blacklist.clients.length
+              const pieData = [
+                { name: "Recorrentes", value: recorrentes, color: "#8b5cf6" },
+                { name: "Unicas", value: unicas > 0 ? unicas : 0, color: "#4c1d95" },
+                { name: "Top clientes", value: topClientes, color: "#f59e0b" },
+                { name: "Blacklist", value: blacklist.clients.length, color: "#ef4444" },
+              ].filter((d) => d.value > 0)
+              return (
+                <div className="flex items-center gap-4">
+                  <ResponsiveContainer width={140} height={140}>
+                    <PieChart>
+                      <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={2}>
+                        {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 12, fontSize: 12 }}
+                        formatter={(v, name) => [Number(v), String(name)]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-col gap-2">
+                    {pieData.map((d) => (
+                      <div key={d.name} className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: d.color }} />
+                        <span className="text-[10px] text-gray-500">{d.name}</span>
+                        <span className="text-[10px] font-medium text-gray-300 ml-auto">{d.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+
+        <div className="h-8" />
       </div>
 
       {/* Modal de motivo ao arrastar para blacklist */}
