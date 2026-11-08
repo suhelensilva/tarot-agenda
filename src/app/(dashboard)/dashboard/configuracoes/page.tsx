@@ -854,11 +854,11 @@ export default function ConfiguracoesPage() {
                       <select
                         value={list.metaPixelId ?? ""}
                         onChange={(e) => assignPixelToList(list.id, e.target.value || null)}
-                        className="border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 max-w-[180px]"
+                        className="border border-gray-200 dark:border-[rgba(170,85,249,0.2)] bg-white dark:bg-[#1a1a2e] text-gray-800 dark:text-gray-100 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 max-w-[180px]"
                       >
-                        <option value="">Sem pixel</option>
+                        <option value="" className="bg-white dark:bg-[#1a1a2e] text-gray-800 dark:text-gray-100">Sem pixel</option>
                         {pixels.map((px) => (
-                          <option key={px.id} value={px.id}>{px.name}</option>
+                          <option key={px.id} value={px.id} className="bg-white dark:bg-[#1a1a2e] text-gray-800 dark:text-gray-100">{px.name}</option>
                         ))}
                       </select>
                     </div>
