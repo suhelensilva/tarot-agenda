@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useEffect, useState, useRef } from "react"
-import { Smartphone, Calendar, Save, CheckCircle, ImageIcon, User, Crown, Lock, Link2, Plus, Trash2, Gift, ExternalLink, Puzzle, Copy, RefreshCw, Zap, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react"
+import { Smartphone, Calendar, Save, CheckCircle, ImageIcon, User, Crown, Lock, Link2, Plus, Trash2, Gift, ExternalLink, Puzzle, Copy, RefreshCw, Zap, Eye, EyeOff, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { FONT_OPTIONS } from "@/lib/fonts"
 import { useSession } from "next-auth/react"
 import { getPlanLimits } from "@/lib/plan"
@@ -79,6 +79,8 @@ export default function ConfiguracoesPage() {
   const [showAccessToken, setShowAccessToken] = useState(false)
   const [pixelError, setPixelError] = useState<string | null>(null)
   const [metaOpen, setMetaOpen] = useState(false)
+  const [editingPixelId, setEditingPixelId] = useState<string | null>(null)
+  const [editPixelData, setEditPixelData] = useState({ name: "", testEventCode: "" })
 
   useEffect(() => {
     fetch("/api/links-pagamento").then((r) => r.json()).then((d) => setPaymentLinks(Array.isArray(d) ? d : []))
@@ -243,6 +245,19 @@ export default function ConfiguracoesPage() {
       setPixelError(e instanceof Error ? e.message : "Erro ao salvar pixel")
     } finally {
       setAddingPixel(false)
+    }
+  }
+
+  async function updatePixel(id: string) {
+    const res = await fetch(`/api/meta-pixels/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editPixelData.name, testEventCode: editPixelData.testEventCode || null }),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      setPixels((prev) => prev.map((p) => p.id === id ? { ...p, name: updated.name, testEventCode: updated.testEventCode } : p))
+      setEditingPixelId(null)
     }
   }
 
@@ -764,21 +779,60 @@ export default function ConfiguracoesPage() {
               )}
 
               {pixels.map((px) => (
-                <div key={px.id} className="flex items-center gap-3 border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl px-4 py-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{px.name}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">ID: {px.pixelId}</p>
-                    {px.testEventCode && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Modo teste: {px.testEventCode}</p>
-                    )}
+                <div key={px.id} className="border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl px-4 py-3 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{px.name}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">ID: {px.pixelId}</p>
+                      {px.testEventCode && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Modo teste: {px.testEventCode}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => { setEditingPixelId(px.id); setEditPixelData({ name: px.name, testEventCode: px.testEventCode ?? "" }) }}
+                      className="text-gray-400 hover:text-blue-500 transition-colors shrink-0"
+                      title="Editar pixel"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => deletePixel(px.id)}
+                      className="text-red-400 hover:text-red-600 transition-colors shrink-0"
+                      title="Remover pixel"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => deletePixel(px.id)}
-                    className="text-red-400 hover:text-red-600 transition-colors shrink-0"
-                    title="Remover pixel"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {editingPixelId === px.id && (
+                    <div className="space-y-2 pt-1 border-t border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
+                      <input
+                        value={editPixelData.name}
+                        onChange={(e) => setEditPixelData((d) => ({ ...d, name: e.target.value }))}
+                        placeholder="Nome"
+                        className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                      <input
+                        value={editPixelData.testEventCode}
+                        onChange={(e) => setEditPixelData((d) => ({ ...d, testEventCode: e.target.value }))}
+                        placeholder="Código de teste (deixe vazio para remover)"
+                        className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] dark:text-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updatePixel(px.id)}
+                          className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg transition-colors"
+                        >
+                          Salvar
+                        </button>
+                        <button
+                          onClick={() => setEditingPixelId(null)}
+                          className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-3 py-1 rounded-lg transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
 
