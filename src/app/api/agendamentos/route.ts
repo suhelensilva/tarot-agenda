@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { fireCAPIEvent } from "@/lib/meta-capi"
 
 const schema = z.object({
   clientId: z.string().min(1),
@@ -109,6 +110,11 @@ export async function POST(req: NextRequest) {
         where: { id: fichaExistente.id },
         data: { topicsAddressed: anterior ? `${anterior}\n${motivoEntry}` : motivoEntry },
       })
+    }
+
+    // Dispara CAPI se já criou com paymentStatus "Pago"
+    if (data.paymentStatus === "Pago") {
+      void fireCAPIEvent(appointment.id, data.clientId, data.amountPaid ?? 0, session.user.id)
     }
 
     return NextResponse.json(appointment, { status: 201 })

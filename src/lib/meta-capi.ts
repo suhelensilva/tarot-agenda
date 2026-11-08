@@ -1,4 +1,5 @@
 import { createHash } from "crypto"
+import { prisma } from "@/lib/prisma"
 
 // SHA256 com lowercase + trim
 function h(value: string | null | undefined): string | undefined {
@@ -108,5 +109,73 @@ export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok
     const msg = err instanceof Error ? err.message : "Erro de rede"
     console.error("[meta-capi] Falha de rede:", msg)
     return { ok: false, error: msg }
+  }
+}
+
+export async function fireCAPIEvent(
+  appointmentId: string,
+  clientId: string | null,
+  amountPaid: number,
+  userId: string,
+): Promise<unknown> {
+  if (!clientId) return { skipped: "sem clientId" }
+
+  try {
+    const [client, completedCount] = await Promise.all([
+      prisma.client.findUnique({
+        where: { id: clientId },
+        select: { id: true, name: true, phone: true, email: true },
+      }),
+      prisma.appointment.count({
+        where: { clientId, userId, status: "COMPLETED", paymentStatus: "Pago" },
+      }),
+    ])
+    if (!client) return { skipped: "cliente nao encontrado" }
+
+    const memberships = await prisma.crmListMember.findMany({
+      where: { clientId, list: { userId } },
+      include: {
+        list: {
+          include: {
+            metaPixel: { select: { pixelId: true, accessToken: true, testEventCode: true } },
+          },
+        },
+      },
+    })
+
+    const pixels = memberships
+      .map((m) => m.list.metaPixel)
+      .filter((p): p is NonNullable<typeof p> => p !== null)
+
+    if (pixels.length === 0) {
+      return {
+        skipped: "sem pixels",
+        listas: memberships.map((m) => ({ nome: m.list.name, pixelId: m.list.metaPixel?.pixelId ?? null })),
+      }
+    }
+
+    const isFirstPurchase = completedCount === 0
+
+    const results = await Promise.all(
+      pixels.map((pixel) =>
+        sendPurchaseEvent({
+          appointmentId,
+          clientId: client.id,
+          clientName: client.name,
+          clientPhone: client.phone,
+          clientEmail: client.email,
+          amountPaid,
+          isFirstPurchase,
+          pixelId: pixel.pixelId,
+          accessToken: pixel.accessToken,
+          testEventCode: pixel.testEventCode,
+        })
+      )
+    )
+    return { fired: true, results }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error("[fireCAPIEvent] erro:", msg)
+    return { error: msg }
   }
 }
