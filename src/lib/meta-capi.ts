@@ -32,7 +32,7 @@ export interface CAPIEventPayload {
   testEventCode?: string | null
 }
 
-export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok: boolean; error?: string }> {
+export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok: boolean; error?: string; code?: number; raw?: string; events_received?: number; fbtrace_id?: string }> {
   const {
     appointmentId, clientId, clientName, clientPhone, clientEmail,
     amountPaid, isFirstPurchase, pixelId, accessToken, testEventCode,
@@ -79,25 +79,31 @@ export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok
     body.test_event_code = testEventCode
   }
 
+  const bodyStr = JSON.stringify(body)
+  console.log("[meta-capi] PAYLOAD ENVIADO:", bodyStr)
+
   try {
     const res = await fetch(
       `https://graph.facebook.com/v21.0/${pixelId}/events`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: bodyStr,
       }
     )
 
-    const json = await res.json() as { events_received?: number; error?: { message: string } }
+    const rawText = await res.text()
+    console.log(`[meta-capi] STATUS HTTP: ${res.status}`)
+    console.log("[meta-capi] RESPOSTA META:", rawText)
+
+    let json: { events_received?: number; fbtrace_id?: string; error?: { message: string; code?: number } }
+    try { json = JSON.parse(rawText) } catch { json = {} }
 
     if (!res.ok || json.error) {
-      console.error("[meta-capi] Erro:", json.error?.message)
-      return { ok: false, error: json.error?.message ?? "Erro desconhecido" }
+      return { ok: false, error: json.error?.message ?? "Erro desconhecido", code: json.error?.code, raw: rawText }
     }
 
-    console.log(`[meta-capi] Purchase enviado — pixel ${pixelId}, appt ${appointmentId}, valor R$${amountPaid}, tipo ${isFirstPurchase ? "new_client" : "returning_client"}`)
-    return { ok: true }
+    return { ok: true, events_received: json.events_received, fbtrace_id: json.fbtrace_id }
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro de rede"
     console.error("[meta-capi] Falha de rede:", msg)
