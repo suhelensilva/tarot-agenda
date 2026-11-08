@@ -309,8 +309,7 @@ function TopClientesColumn({
   )
 }
 
-// ----- Blacklist -----
-// ----- Blacklist Card (visual agressivo) -----
+// ----- Blacklist Card -----
 function BlacklistCard({
   client,
   listId,
@@ -328,6 +327,10 @@ function BlacklistCard({
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  useEffect(() => {
+    setLocalReason(client.blacklistReason ?? "")
+  }, [client.blacklistReason])
+
   function handleEnter() {
     if (leaveTimer.current) clearTimeout(leaveTimer.current)
     setHovered(true)
@@ -337,7 +340,7 @@ function BlacklistCard({
   function handleLeave() {
     leaveTimer.current = setTimeout(() => {
       setHovered(false)
-      saveReason()
+      void saveReason()
     }, 150)
   }
 
@@ -357,18 +360,35 @@ function BlacklistCard({
     }
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      setHovered(false)
+      void saveReason()
+    }
+    if (e.key === "Escape") {
+      setHovered(false)
+      void saveReason()
+    }
+  }
+
+  const BG = "#0a0000"
+  const RED = "#ff4444"
+  const RED_DIM = "#cc3333"
+
   return (
     <div
       draggable={!hovered}
       onDragStart={(e) => { if (!hovered) onDragStart(e, client.id) }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
-      className="relative rounded-xl cursor-grab active:cursor-grabbing select-none overflow-hidden"
+      className="relative rounded-xl cursor-grab active:cursor-grabbing select-none"
       style={{
-        background: "#0a0000",
-        border: "1px solid rgba(255,30,30,0.2)",
-        borderLeftWidth: "3px",
-        borderLeftColor: "#ff2222",
+        background: BG,
+        borderTop: "1px solid rgba(255,30,30,0.2)",
+        borderRight: "1px solid rgba(255,30,30,0.2)",
+        borderBottom: "1px solid rgba(255,30,30,0.2)",
+        borderLeft: `3px solid ${RED}`,
       }}
     >
       {/* Overlay de edição do motivo ao hover */}
@@ -379,7 +399,7 @@ function BlacklistCard({
           onMouseEnter={() => { if (leaveTimer.current) clearTimeout(leaveTimer.current) }}
           onMouseLeave={handleLeave}
         >
-          <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,60,60,0.5)" }}>
+          <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,80,80,0.55)" }}>
             Motivo da blacklist
           </p>
           <textarea
@@ -387,39 +407,52 @@ function BlacklistCard({
             value={localReason}
             onChange={(e) => setLocalReason(e.target.value)}
             onMouseDown={(e) => e.stopPropagation()}
-            onKeyDown={(e) => { if (e.key === "Escape") { setHovered(false); saveReason() } }}
-            placeholder="Por que está na blacklist?"
+            onKeyDown={handleKeyDown}
+            placeholder="Por que está na blacklist? (Enter para salvar)"
             rows={3}
-            className="w-full text-[11px] text-red-100 bg-transparent rounded-lg px-2 py-1.5 resize-none focus:outline-none placeholder-red-900/50"
-            style={{ border: "1px solid rgba(200,0,0,0.3)" }}
+            className="w-full text-[12px] rounded-lg px-2 py-1.5 resize-none focus:outline-none"
+            style={{
+              color: "#ffcccc",
+              background: "rgba(60,0,0,0.5)",
+              border: "1px solid rgba(200,0,0,0.4)",
+            }}
           />
-          {saving && <p className="text-[9px]" style={{ color: "rgba(255,60,60,0.4)" }}>Salvando...</p>}
+          <p className="text-[9px]" style={{ color: "rgba(255,80,80,0.4)" }}>
+            {saving ? "Salvando..." : "Enter para salvar · Esc para fechar"}
+          </p>
         </div>
       )}
 
       <div className="p-3">
+        {/* Nome */}
         <div className="flex items-center gap-2 mb-2">
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-            style={{ background: "rgba(220,0,0,0.3)", color: "#ff4444" }}
+            style={{ background: "rgba(220,0,0,0.25)", color: RED }}
           >
             {initials(client.name)}
           </div>
-          <span className="text-sm font-medium text-red-100 flex-1 truncate">
+          <span className="text-sm font-medium flex-1 truncate" style={{ color: "#ffcccc" }}>
             {client.name}
           </span>
         </div>
+
+        {/* Motivo (quando salvo) */}
         {client.blacklistReason && (
-          <p className="text-[10px] italic mb-1.5 leading-snug text-red-300/70">
+          <p className="text-[10px] italic mb-1.5 leading-snug" style={{ color: "rgba(255,150,150,0.75)" }}>
             {client.blacklistReason}
           </p>
         )}
+
+        {/* Atendimentos e valor — igual ao KanbanCard */}
         <div className="flex items-center justify-between text-[11px]">
-          <span className="text-red-400/70">{client.completedCount} atend.</span>
-          <span className="font-semibold text-red-400">{formatCurrency(client.totalSpent)}</span>
+          <span style={{ color: "rgba(255,100,100,0.65)" }}>{client.completedCount} atend.</span>
+          <span className="font-semibold" style={{ color: RED_DIM }}>{formatCurrency(client.totalSpent)}</span>
         </div>
+
+        {/* Última sessão */}
         {client.lastAppointmentDate && (
-          <div className="text-[10px] text-red-900 mt-1">
+          <div className="text-[10px] mt-1" style={{ color: "rgba(200,80,80,0.55)" }}>
             Último: {formatDate(client.lastAppointmentDate)}
           </div>
         )}
