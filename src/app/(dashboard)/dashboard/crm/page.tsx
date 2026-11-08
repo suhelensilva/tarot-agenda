@@ -376,55 +376,24 @@ function BlacklistCard({
   const RED = "#ff4444"
   const RED_DIM = "#cc3333"
 
+  const cardStyle = {
+    borderTop: "1px solid rgba(255,30,30,0.2)",
+    borderRight: "1px solid rgba(255,30,30,0.2)",
+    borderBottom: "1px solid rgba(255,30,30,0.2)",
+    borderLeft: `3px solid ${RED}`,
+  }
+
   return (
     <div
       draggable={!hovered}
       onDragStart={(e) => { if (!hovered) onDragStart(e, client.id) }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
-      className="relative rounded-xl cursor-grab active:cursor-grabbing select-none"
-      style={{
-        background: BG,
-        borderTop: "1px solid rgba(255,30,30,0.2)",
-        borderRight: "1px solid rgba(255,30,30,0.2)",
-        borderBottom: "1px solid rgba(255,30,30,0.2)",
-        borderLeft: `3px solid ${RED}`,
-      }}
+      className="rounded-xl cursor-grab active:cursor-grabbing select-none"
+      style={{ background: BG, ...cardStyle }}
     >
-      {/* Overlay de edição do motivo ao hover */}
-      {hovered && (
-        <div
-          className="absolute inset-0 z-50 rounded-xl p-3 flex flex-col gap-1.5"
-          style={{ background: "rgba(8,0,0,0.97)" }}
-          onMouseEnter={() => { if (leaveTimer.current) clearTimeout(leaveTimer.current) }}
-          onMouseLeave={handleLeave}
-        >
-          <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,80,80,0.55)" }}>
-            Motivo da blacklist
-          </p>
-          <textarea
-            ref={textareaRef}
-            value={localReason}
-            onChange={(e) => setLocalReason(e.target.value)}
-            onMouseDown={(e) => e.stopPropagation()}
-            onKeyDown={handleKeyDown}
-            placeholder="Por que está na blacklist? (Enter para salvar)"
-            rows={3}
-            className="w-full text-[12px] rounded-lg px-2 py-1.5 resize-none focus:outline-none"
-            style={{
-              color: "#ffcccc",
-              background: "rgba(60,0,0,0.5)",
-              border: "1px solid rgba(200,0,0,0.4)",
-            }}
-          />
-          <p className="text-[9px]" style={{ color: "rgba(255,80,80,0.4)" }}>
-            {saving ? "Salvando..." : "Enter para salvar · Esc para fechar"}
-          </p>
-        </div>
-      )}
-
       <div className="p-3">
-        {/* Nome */}
+        {/* Linha do nome — sempre visível */}
         <div className="flex items-center gap-2 mb-2">
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
@@ -437,24 +406,53 @@ function BlacklistCard({
           </span>
         </div>
 
-        {/* Motivo (quando salvo) */}
-        {client.blacklistReason && (
-          <p className="text-[10px] italic mb-1.5 leading-snug" style={{ color: "rgba(255,150,150,0.75)" }}>
-            {client.blacklistReason}
-          </p>
-        )}
-
-        {/* Atendimentos e valor — igual ao KanbanCard */}
-        <div className="flex items-center justify-between text-[11px]">
-          <span style={{ color: "rgba(255,100,100,0.65)" }}>{client.completedCount} atend.</span>
-          <span className="font-semibold" style={{ color: RED_DIM }}>{formatCurrency(client.totalSpent)}</span>
-        </div>
-
-        {/* Última sessão */}
-        {client.lastAppointmentDate && (
-          <div className="text-[10px] mt-1" style={{ color: "rgba(200,80,80,0.55)" }}>
-            Último: {formatDate(client.lastAppointmentDate)}
+        {hovered ? (
+          /* Modo edição — substitui o conteúdo abaixo do nome */
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,80,80,0.55)" }}>
+              Motivo da blacklist
+            </p>
+            <textarea
+              ref={textareaRef}
+              value={localReason}
+              onChange={(e) => setLocalReason(e.target.value)}
+              onMouseDown={(e) => e.stopPropagation()}
+              onKeyDown={handleKeyDown}
+              placeholder="Por que está na blacklist?"
+              rows={3}
+              className="w-full text-[12px] rounded-lg px-2 py-1.5 resize-none focus:outline-none"
+              style={{
+                color: "#ffcccc",
+                background: "rgba(60,0,0,0.5)",
+                border: "1px solid rgba(200,0,0,0.4)",
+              }}
+            />
+            <p className="text-[9px]" style={{ color: "rgba(255,80,80,0.4)" }}>
+              {saving ? "Salvando..." : "Enter para salvar · Esc para fechar"}
+            </p>
           </div>
+        ) : (
+          /* Modo exibição */
+          <>
+            {client.blacklistReason && (
+              <p className="text-[10px] italic mb-1.5 leading-snug" style={{ color: "rgba(255,150,150,0.75)" }}>
+                {client.blacklistReason}
+              </p>
+            )}
+            {(client.completedCount > 0 || client.totalSpent > 0) && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span style={{ color: "rgba(255,100,100,0.65)" }}>{client.completedCount} atend.</span>
+                <span className="font-semibold" style={{ color: RED_DIM }}>
+                  {client.totalSpent > 0 ? formatCurrency(client.totalSpent) : ""}
+                </span>
+              </div>
+            )}
+            {client.lastAppointmentDate && (
+              <div className="text-[10px] mt-1" style={{ color: "rgba(200,80,80,0.55)" }}>
+                Último: {formatDate(client.lastAppointmentDate)}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
