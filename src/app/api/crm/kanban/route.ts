@@ -19,9 +19,8 @@ export async function GET() {
             include: {
               _count: { select: { appointments: true } },
               appointments: {
-                where: { status: "COMPLETED" },
-                orderBy: { startTime: "desc" },
-                select: { startTime: true, amountPaid: true },
+                orderBy: { startTime: "asc" },
+                select: { startTime: true, amountPaid: true, status: true, title: true, service: { select: { name: true } } },
               },
             },
           },
@@ -45,9 +44,8 @@ export async function GET() {
     include: {
       _count: { select: { appointments: true } },
       appointments: {
-        where: { status: "COMPLETED" },
-        orderBy: { startTime: "desc" },
-        select: { startTime: true, amountPaid: true },
+        orderBy: { startTime: "asc" },
+        select: { startTime: true, amountPaid: true, status: true, title: true, service: { select: { name: true } } },
       },
     },
     orderBy: { name: "asc" },
@@ -57,19 +55,23 @@ export async function GET() {
     id: string
     name: string
     phone: string
-    appointments: { startTime: Date; amountPaid: number | null }[]
+    appointments: { startTime: Date; amountPaid: number | null; status: string; title: string; service: { name: string } | null }[]
     _count: { appointments: number }
   }) {
-    const totalSpent = client.appointments.reduce((s, a) => s + (a.amountPaid ?? 0), 0)
-    const lastAppt = client.appointments[0]?.startTime ?? null
+    const completed = client.appointments.filter((a) => a.status === "COMPLETED")
+    const totalSpent = completed.reduce((s, a) => s + (a.amountPaid ?? 0), 0)
+    const lastAppt = completed.length > 0 ? completed[completed.length - 1].startTime : null
+    const first = client.appointments[0]
+    const firstServiceName = first?.service?.name ?? first?.title ?? null
     return {
       id:          client.id,
       name:        client.name,
       phone:       client.phone,
       sessionCount: client._count.appointments,
-      completedCount: client.appointments.length,
+      completedCount: completed.length,
       lastAppointmentDate: lastAppt,
       totalSpent,
+      firstServiceName,
     }
   }
 

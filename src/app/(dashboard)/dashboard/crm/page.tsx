@@ -13,6 +13,7 @@ type ClientCard = {
   completedCount: number
   lastAppointmentDate: string | null
   totalSpent: number
+  firstServiceName: string | null
 }
 
 type Column = {
@@ -54,11 +55,15 @@ function KanbanCard({
   color: string
   onDragStart: (e: React.DragEvent, clientId: string) => void
 }) {
+  const [hovered, setHovered] = useState(false)
+
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, client.id)}
-      className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0f0f1a] hover:bg-[#14142a] transition-colors cursor-grab active:cursor-grabbing select-none"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0f0f1a] hover:bg-[#14142a] transition-colors cursor-grab active:cursor-grabbing select-none"
       style={{ borderLeftWidth: 3, borderLeftColor: color, borderLeftStyle: "solid" }}
     >
       <div className="p-3">
@@ -83,6 +88,14 @@ function KanbanCard({
           </div>
         )}
       </div>
+
+      {/* Tooltip ao passar o mouse */}
+      {hovered && client.firstServiceName && (
+        <div className="absolute left-full top-0 ml-2 z-50 w-48 rounded-lg bg-[#1e1b4b] border border-violet-500/30 px-3 py-2 shadow-xl pointer-events-none">
+          <p className="text-[10px] text-violet-400 font-medium mb-0.5">1º atendimento</p>
+          <p className="text-xs text-white">{client.firstServiceName}</p>
+        </div>
+      )}
     </div>
   )
 }
