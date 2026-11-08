@@ -335,13 +335,13 @@ function BlacklistCard({
           </span>
         </div>
         {client.blacklistReason ? (
-          <p className="text-[10px] italic mb-1.5 leading-snug" style={{ color: "rgba(255,80,80,0.6)" }}>
+          <p className="text-[10px] italic mb-1.5 leading-snug" style={{ color: "rgba(255,120,120,0.8)" }}>
             {client.blacklistReason}
           </p>
         ) : (
-          <p className="text-[10px] italic mb-1.5" style={{ color: "rgba(255,80,80,0.25)" }}>sem motivo registrado</p>
+          <p className="text-[10px] italic mb-1.5" style={{ color: "rgba(255,80,80,0.45)" }}>sem motivo registrado</p>
         )}
-        <div className="text-[10px]" style={{ color: "rgba(255,60,60,0.35)" }}>
+        <div className="text-[10px]" style={{ color: "rgba(255,100,100,0.6)" }}>
           {client.completedCount} atend. · {formatCurrency(client.totalSpent)}
         </div>
       </div>
