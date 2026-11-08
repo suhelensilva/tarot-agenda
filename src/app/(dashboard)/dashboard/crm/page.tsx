@@ -59,34 +59,40 @@ function KanbanCard({
   isTop?: boolean
   onDragStart: (e: React.DragEvent, clientId: string) => void
 }) {
-  const [hovered, setHovered] = useState(false)
+  const [nameHovered, setNameHovered] = useState(false)
 
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, client.id)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0f0f1a] hover:bg-[#14142a] transition-colors cursor-grab active:cursor-grabbing select-none"
       style={{ borderLeftWidth: 3, borderLeftColor: color, borderLeftStyle: "solid" }}
     >
-      {/* Tooltip flutuante acima do card */}
-      {hovered && client.firstServiceName && (
-        <div className="absolute bottom-full left-0 right-0 mb-1.5 z-50 rounded-lg bg-[#1e1b4b] border border-violet-500/30 px-3 py-2 shadow-xl pointer-events-none">
-          <p className="text-[9px] text-violet-400 font-medium mb-0.5">1º atendimento</p>
-          <p className="text-[11px] text-white">{client.firstServiceName}</p>
+      {/* Overlay dentro do card ao passar no nome */}
+      {nameHovered && (
+        <div className="absolute inset-0 z-50 rounded-xl bg-[#0f0f1a]/96 p-3 flex flex-col justify-center pointer-events-none">
+          <p className="text-[13px] font-semibold text-white leading-snug mb-2">{client.name}</p>
+          {client.firstServiceName && (
+            <p className="text-[9px] text-violet-300/50 leading-snug">{client.firstServiceName}</p>
+          )}
         </div>
       )}
 
       <div className="p-3">
-        <div className="flex items-start gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2">
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0 mt-0.5"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0"
             style={{ background: color + "22", color }}
           >
             {initials(client.name)}
           </div>
-          <span className="text-sm font-medium text-white flex-1 leading-snug">{client.name}</span>
+          <span
+            className="text-sm font-medium text-white flex-1 truncate cursor-default"
+            onMouseEnter={() => setNameHovered(true)}
+            onMouseLeave={() => setNameHovered(false)}
+          >
+            {client.name}
+          </span>
           {isTop && (
             <div className="flex items-center gap-0.5 bg-amber-500/20 border border-amber-500/40 rounded-full px-1.5 py-0.5 flex-shrink-0 mt-0.5">
               <Crown size={9} className="text-amber-400" />
