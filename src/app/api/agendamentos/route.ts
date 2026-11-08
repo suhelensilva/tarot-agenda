@@ -13,6 +13,7 @@ const schema = z.object({
   motivo: z.string().optional().nullable(),
   meetingLink: z.string().optional().nullable(),
   amountPaid: z.number().optional().nullable(),
+  paymentStatus: z.string().optional().nullable(),
 })
 
 export async function GET(req: NextRequest) {
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
           motivo: data.motivo || null,
           meetingLink: data.meetingLink || null,
           amountPaid: data.amountPaid ?? null,
+          paymentStatus: data.paymentStatus ?? null,
         },
         include: { client: true, service: true },
       }),

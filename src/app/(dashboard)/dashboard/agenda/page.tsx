@@ -83,6 +83,7 @@ export default function AgendaPage() {
     notes: "",
     meetingLink: "",
     amountPaid: "",
+    paymentStatus: "",
   })
 
   const fetchAppointments = useCallback(async () => {
@@ -151,7 +152,7 @@ export default function AgendaPage() {
       endHour   = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`
     }
 
-    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", notes: "", meetingLink: "", amountPaid: "" })
+    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", notes: "", meetingLink: "", amountPaid: "", paymentStatus: "" })
     setEditingId(null)
     setSelected(null)
     setShowNewClient(false)
@@ -179,6 +180,7 @@ export default function AgendaPage() {
       notes: apt.notes ?? "",
       meetingLink: apt.meetingLink ?? "",
       amountPaid: apt.amountPaid != null ? String(apt.amountPaid) : "",
+      paymentStatus: "",
     })
     setEditingId(apt.id)
     setShowNewClient(false)
@@ -251,6 +253,7 @@ export default function AgendaPage() {
       notes: form.notes || null,
       meetingLink: form.meetingLink || null,
       amountPaid: form.amountPaid !== "" ? parseFloat(form.amountPaid) : null,
+      ...(!editingId && form.paymentStatus ? { paymentStatus: form.paymentStatus } : {}),
     }
 
     console.log("[agenda] handleSave payload:", JSON.stringify(payload))
@@ -964,6 +967,37 @@ export default function AgendaPage() {
                   placeholder="0,00"
                 />
               </div>
+
+              {!editingId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pagamento</label>
+                  <div className="flex flex-wrap gap-2">
+                    {PAYMENT_PRESETS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, paymentStatus: f.paymentStatus === opt ? "" : opt }))}
+                        className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
+                          form.paymentStatus === opt
+                            ? opt === "Pago"
+                              ? "bg-green-100 text-green-700 border-green-400 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/50"
+                              : opt === "Pendente"
+                              ? "bg-amber-100 text-amber-700 border-amber-400 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/50"
+                              : "bg-slate-100 text-slate-600 border-slate-400 dark:bg-white/10 dark:text-gray-300 dark:border-white/20"
+                            : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-500 hover:border-gray-300"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  {form.paymentStatus && !PAYMENT_PRESETS.includes(form.paymentStatus) && (
+                    <span className="mt-1.5 inline-block text-xs px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400">
+                      {form.paymentStatus}
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link da chamada</label>
