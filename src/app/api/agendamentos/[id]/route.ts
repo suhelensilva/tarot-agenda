@@ -24,10 +24,10 @@ const editSchema = z.object({
 })
 
 async function fireCAPIEvent(appointmentId: string, clientId: string | null, amountPaid: number, userId: string) {
-  if (!clientId) return
+  console.log(`[fireCAPIEvent] inicio — appt=${appointmentId} client=${clientId} valor=${amountPaid}`)
+  if (!clientId) { console.log("[fireCAPIEvent] sem clientId, abortando"); return }
 
   try {
-    // Busca cliente e quantos atendimentos concluidos ela tinha antes deste
     const [client, completedCount] = await Promise.all([
       prisma.client.findUnique({
         where: { id: clientId },
@@ -37,9 +37,9 @@ async function fireCAPIEvent(appointmentId: string, clientId: string | null, amo
         where: { clientId, userId, status: "COMPLETED", paymentStatus: "Pago" },
       }),
     ])
+    console.log(`[fireCAPIEvent] cliente=${client?.name ?? "nao encontrado"} completedCount=${completedCount}`)
     if (!client) return
 
-    // Busca etiquetas da cliente e os pixels associados
     const memberships = await prisma.crmListMember.findMany({
       where: { clientId, list: { userId } },
       include: {
@@ -50,12 +50,14 @@ async function fireCAPIEvent(appointmentId: string, clientId: string | null, amo
         },
       },
     })
+    console.log(`[fireCAPIEvent] memberships=${memberships.length} listas=${memberships.map(m => m.list.name + "(pixel=" + (m.list.metaPixel?.pixelId ?? "null") + ")").join(", ")}`)
 
     const pixels = memberships
       .map((m) => m.list.metaPixel)
       .filter((p): p is NonNullable<typeof p> => p !== null)
 
-    if (pixels.length === 0) return // cliente sem etiqueta com pixel — ignora
+    console.log(`[fireCAPIEvent] pixels encontrados=${pixels.length}`)
+    if (pixels.length === 0) return
 
     const isFirstPurchase = completedCount === 0
 
