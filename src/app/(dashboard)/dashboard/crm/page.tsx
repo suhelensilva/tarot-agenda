@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Settings2, GripVertical } from "lucide-react"
+import { Plus, X, Check } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 
 type ClientCard = {
@@ -24,6 +24,11 @@ type Column = {
   totalRevenue: number
   isUntagged?: boolean
 }
+
+const PALETTE = [
+  "#6366f1", "#f97316", "#eab308", "#22c55e",
+  "#ec4899", "#ef4444", "#3b82f6", "#06b6d4",
+]
 
 function initials(name: string) {
   return name
@@ -67,9 +72,7 @@ function KanbanCard({
           <span className="text-sm font-medium text-white truncate">{client.name}</span>
         </div>
         <div className="flex items-center justify-between text-[11px]">
-          <span className="text-gray-500">
-            {client.completedCount} atend.
-          </span>
+          <span className="text-gray-500">{client.completedCount} atend.</span>
           <span className="font-semibold" style={{ color }}>
             {formatCurrency(client.totalSpent)}
           </span>
@@ -101,7 +104,6 @@ function KanbanColumn({
 
   return (
     <div className="flex-shrink-0 w-[210px] flex flex-col gap-2">
-      {/* Header */}
       <div className="rounded-xl overflow-hidden">
         <div className="px-4 py-3" style={{ background: color }}>
           <span className="text-sm font-medium text-white/95">{col.name}</span>
@@ -128,7 +130,6 @@ function KanbanColumn({
         </div>
       </div>
 
-      {/* Cards area */}
       <div
         className={`flex flex-col gap-2 min-h-[80px] rounded-xl transition-colors p-1 ${
           over ? "bg-white/5" : ""
@@ -162,9 +163,103 @@ function KanbanColumn({
   )
 }
 
+// ----- Nova Coluna -----
+function NewColumnCard({ onCreated }: { onCreated: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [color, setColor] = useState(PALETTE[0])
+  const [saving, setSaving] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function handleOpen() {
+    setOpen(true)
+    setName("")
+    setColor(PALETTE[0])
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
+
+  async function handleCreate() {
+    if (!name.trim()) return
+    setSaving(true)
+    try {
+      await fetch("/api/etiquetas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), color }),
+      })
+      setOpen(false)
+      onCreated()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={handleOpen}
+        className="flex-shrink-0 w-[210px] flex flex-col items-center justify-center gap-2 border border-dashed border-white/10 rounded-xl text-gray-600 hover:text-gray-400 hover:border-white/20 transition-colors min-h-[120px]"
+      >
+        <Plus size={18} />
+        <span className="text-xs">Nova etiqueta</span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex-shrink-0 w-[210px] rounded-xl border border-white/10 bg-[#0f0f1a] p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-gray-300">Nova etiqueta</span>
+        <button onClick={() => setOpen(false)} className="text-gray-600 hover:text-gray-400">
+          <X size={14} />
+        </button>
+      </div>
+
+      <input
+        ref={inputRef}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+        placeholder="Nome da etiqueta"
+        className="w-full bg-[#1a1a2e] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-white/25"
+      />
+
+      {/* Paleta de cores */}
+      <div className="flex flex-wrap gap-2">
+        {PALETTE.map((c) => (
+          <button
+            key={c}
+            onClick={() => setColor(c)}
+            className="w-6 h-6 rounded-full transition-transform hover:scale-110 flex items-center justify-center"
+            style={{ background: c }}
+          >
+            {color === c && <Check size={12} className="text-white" />}
+          </button>
+        ))}
+      </div>
+
+      {/* Preview */}
+      <div className="rounded-lg overflow-hidden">
+        <div className="px-3 py-2 text-xs font-medium text-white/90" style={{ background: color }}>
+          {name || "Prévia"}
+        </div>
+        <div className="bg-[#12121e] px-3 py-2 text-xs text-gray-600">0 clientes</div>
+      </div>
+
+      <button
+        onClick={handleCreate}
+        disabled={!name.trim() || saving}
+        className="w-full py-2 rounded-lg text-xs font-medium text-white transition-opacity disabled:opacity-40"
+        style={{ background: color }}
+      >
+        {saving ? "Criando..." : "Criar etiqueta"}
+      </button>
+    </div>
+  )
+}
+
 // ----- Main Page -----
 export default function CrmPage() {
-  const router = useRouter()
   const [columns, setColumns] = useState<Column[]>([])
   const [loading, setLoading] = useState(true)
   const dragRef = useRef<{ clientId: string; fromColId: string } | null>(null)
@@ -213,7 +308,6 @@ export default function CrmPage() {
 
     const { clientId, fromColId } = drag
 
-    // Optimistic update
     setColumns((prev) => {
       const next = prev.map((col) => ({ ...col, clients: [...col.clients] }))
       const src = next.find((c) => c.id === fromColId)
@@ -226,7 +320,6 @@ export default function CrmPage() {
       return next
     })
 
-    // Persist: remove from old list, add to new list
     try {
       if (fromColId !== "__untagged__") {
         await fetch(`/api/clientes/${clientId}/etiquetas`, {
@@ -243,7 +336,6 @@ export default function CrmPage() {
         })
       }
     } catch {
-      // Revert on error
       fetchData()
     }
   }
@@ -257,6 +349,7 @@ export default function CrmPage() {
   }
 
   const totalClients = columns.reduce((s, c) => s + c.clients.length, 0)
+  const userCols = columns.filter((c) => !c.isUntagged)
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -265,17 +358,8 @@ export default function CrmPage() {
         <div>
           <h1 className="text-lg font-semibold text-white">CRM</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            {totalClients} clientes em {columns.length} colunas
+            {totalClients} clientes · {userCols.length} etiquetas
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.push("/dashboard/configuracoes")}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20"
-          >
-            <Settings2 size={13} />
-            Etiquetas
-          </button>
         </div>
       </div>
 
@@ -291,18 +375,7 @@ export default function CrmPage() {
               onDragOver={handleDragOver}
             />
           ))}
-          {columns.filter((c) => !c.isUntagged).length === 0 && (
-            <div className="flex flex-col items-center justify-center w-64 border border-dashed border-white/10 rounded-xl text-gray-600 text-sm gap-2">
-              <Plus size={20} />
-              <span>Crie etiquetas para começar</span>
-              <button
-                onClick={() => router.push("/dashboard/configuracoes")}
-                className="text-xs text-violet-400 hover:text-violet-300"
-              >
-                Ir para Configurações
-              </button>
-            </div>
-          )}
+          <NewColumnCard onCreated={fetchData} />
         </div>
       </div>
     </div>
