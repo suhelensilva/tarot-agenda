@@ -31,10 +31,15 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
 
-  const pixel = await prisma.metaPixel.create({
-    data: { ...parsed.data, userId: session.user.id },
-    select: { id: true, name: true, pixelId: true, testEventCode: true },
-  })
-
-  return NextResponse.json(pixel, { status: 201 })
+  try {
+    const pixel = await prisma.metaPixel.create({
+      data: { ...parsed.data, userId: session.user.id },
+      select: { id: true, name: true, pixelId: true, testEventCode: true },
+    })
+    return NextResponse.json(pixel, { status: 201 })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error("[meta-pixels POST]", msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 }
