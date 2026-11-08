@@ -69,7 +69,7 @@ function KanbanCard({
           >
             {initials(client.name)}
           </div>
-          <span className="text-sm font-medium text-white truncate">{client.name}</span>
+          <span className="text-sm font-medium text-white">{client.name}</span>
         </div>
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-gray-500">{client.completedCount} atend.</span>
