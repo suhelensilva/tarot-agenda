@@ -334,16 +334,20 @@ function BlacklistCard({
             {client.name}
           </span>
         </div>
-        {client.blacklistReason ? (
-          <p className="text-[10px] italic mb-1.5 leading-snug" style={{ color: "rgba(255,120,120,0.8)" }}>
+        {client.blacklistReason && (
+          <p className="text-[10px] italic mb-1.5 leading-snug text-red-300/70">
             {client.blacklistReason}
           </p>
-        ) : (
-          <p className="text-[10px] italic mb-1.5" style={{ color: "rgba(255,80,80,0.45)" }}>sem motivo registrado</p>
         )}
-        <div className="text-[10px]" style={{ color: "rgba(255,100,100,0.6)" }}>
-          {client.completedCount} atend. · {formatCurrency(client.totalSpent)}
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="text-red-400/70">{client.completedCount} atend.</span>
+          <span className="font-semibold text-red-400">{formatCurrency(client.totalSpent)}</span>
         </div>
+        {client.lastAppointmentDate && (
+          <div className="text-[10px] text-red-900 mt-1">
+            Último: {formatDate(client.lastAppointmentDate)}
+          </div>
+        )}
       </div>
     </div>
   )
