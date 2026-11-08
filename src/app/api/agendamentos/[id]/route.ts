@@ -109,13 +109,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     })
 
     // Dispara CAPI somente quando paymentStatus muda para "Pago"
-    console.log(`[PATCH agendamentos] id=${id} paymentStatus novo="${parsed.data.paymentStatus}" antes="${before?.paymentStatus}"`)
-    if (parsed.data.paymentStatus === "Pago" && before?.paymentStatus !== "Pago") {
-      console.log("[PATCH agendamentos] disparando fireCAPIEvent")
+    const capiTriggered = parsed.data.paymentStatus === "Pago" && before?.paymentStatus !== "Pago"
+    if (capiTriggered) {
       void fireCAPIEvent(id, before?.clientId ?? null, parsed.data.amountPaid ?? before?.amountPaid ?? 0, session.user.id)
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({
+      ok: true,
+      _debug: {
+        paymentStatusNovo: parsed.data.paymentStatus,
+        paymentStatusAntes: before?.paymentStatus,
+        clientId: before?.clientId,
+        capiTriggered,
+      },
+    })
   } catch (err) {
     console.error("[agendamentos PATCH]", err)
     const msg = err instanceof Error ? err.message : "Erro interno"
