@@ -197,13 +197,35 @@ export default function AgendaPage() {
     setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
     setClientTag(apt.client.tag ?? "")
+    if (!apt.client.tag) {
+      fetch(`/api/clientes/${apt.client.id}/etiquetas`)
+        .then((r) => r.json())
+        .then((labels) => {
+          const first = Array.isArray(labels) ? labels.find((l: { name: string }) => l.name !== "__blacklist__") : null
+          if (first) setClientTag(first.name)
+        })
+        .catch(() => {})
+    }
     setShowForm(true)
   }
 
-  function onClientChange(clientId: string) {
+  async function onClientChange(clientId: string) {
     setForm((f) => ({ ...f, clientId }))
     const c = clients.find((x) => x.id === clientId)
-    setClientTag(c?.tag ?? "")
+    if (c?.tag) {
+      setClientTag(c.tag)
+    } else if (clientId) {
+      try {
+        const res = await fetch(`/api/clientes/${clientId}/etiquetas`)
+        const labels = await res.json()
+        const first = Array.isArray(labels) ? labels.find((l: { name: string }) => l.name !== "__blacklist__") : null
+        setClientTag(first?.name ?? "")
+      } catch {
+        setClientTag("")
+      }
+    } else {
+      setClientTag("")
+    }
   }
 
   async function handleClientTagChange(newTag: string) {
@@ -919,7 +941,7 @@ export default function AgendaPage() {
                   className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[#1a1a2e] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                 >
                   <option value="">Sem serviço específico</option>
-                  {services.map((s) => (
+                  {[...services].sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })).map((s) => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
