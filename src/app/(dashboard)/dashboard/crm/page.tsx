@@ -17,6 +17,7 @@ type ClientCard = {
   totalSpent: number
   firstServiceName: string | null
   blacklistReason?: string | null
+  lastPaymentStatus?: string | null
 }
 
 type Column = {
@@ -503,6 +504,7 @@ export default function CrmPage() {
   const [pendingReason, setPendingReason] = useState("")
   const [loading, setLoading] = useState(true)
   const dragRef = useRef<{ clientId: string; fromColId: string } | null>(null)
+  const dashboardRef = useRef<HTMLDivElement>(null)
   const [topThreshold, setTopThreshold] = useState<number>(500)
 
   useEffect(() => {
@@ -642,23 +644,43 @@ export default function CrmPage() {
     )
   }
 
-  const totalClients = columns.reduce((s, c) => s + c.clients.length, 0)
+  const allRegularClients = columns.flatMap((c) => c.clients)
+  const totalClients = allRegularClients.length + blacklist.clients.length
   const labelCount = columns.filter((c) => !c.isUntagged).length
+  const recorrentes = allRegularClients.filter((c) => c.completedCount > 1).length
+  const topClientes = allRegularClients.filter((c) => c.totalSpent >= topThreshold).length
+  const devendo = allRegularClients.filter((c) => c.lastPaymentStatus === "Pendente").length
+  const totalReceita = allRegularClients.reduce((s, c) => s + c.totalSpent, 0)
+
+  const stats = [
+    { label: "Total de clientes", value: totalClients, color: "#8b5cf6", bg: "rgba(139,92,246,0.1)", border: "rgba(139,92,246,0.25)" },
+    { label: "Com recorrência", value: recorrentes, color: "#a78bfa", bg: "rgba(167,139,250,0.1)", border: "rgba(167,139,250,0.25)" },
+    { label: "Top clientes", value: topClientes, color: "#f59e0b", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.25)" },
+    { label: "Na blacklist", value: blacklist.clients.length, color: "#ef4444", bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.25)" },
+    { label: "Com pagamento pendente", value: devendo, color: "#f97316", bg: "rgba(249,115,22,0.1)", border: "rgba(249,115,22,0.25)" },
+    { label: "Receita total", value: formatCurrency(totalReceita), color: "#34d399", bg: "rgba(52,211,153,0.1)", border: "rgba(52,211,153,0.25)" },
+  ]
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-y-auto">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0 sticky top-0 z-10 bg-[#0a0a14]">
         <div>
           <h1 className="text-lg font-semibold text-white">CRM</h1>
           <p className="text-xs text-gray-500 mt-0.5">
             {totalClients} clientes · {labelCount} {labelCount === 1 ? "etiqueta" : "etiquetas"}
           </p>
         </div>
+        <button
+          onClick={() => dashboardRef.current?.scrollIntoView({ behavior: "smooth" })}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-violet-500/30 text-violet-400 hover:bg-violet-500/10 transition-colors"
+        >
+          Dashboard
+        </button>
       </div>
 
       {/* Kanban board */}
-      <div className="flex-1 min-h-0 overflow-x-auto px-6 py-4">
+      <div className="overflow-x-auto px-6 py-4" style={{ height: "calc(100vh - 130px)", minHeight: 480 }}>
         <div className="flex gap-4 h-full" style={{ minWidth: "max-content" }}>
           {columns.map((col) => (
             <KanbanColumn
@@ -671,7 +693,7 @@ export default function CrmPage() {
             />
           ))}
           <TopClientesColumn
-            allClients={columns.flatMap((c) => c.clients)}
+            allClients={allRegularClients}
             threshold={topThreshold}
             onThresholdChange={handleTopThresholdChange}
           />
@@ -685,6 +707,64 @@ export default function CrmPage() {
             />
           )}
           <NewColumnCard onCreated={fetchData} />
+        </div>
+      </div>
+
+      {/* Dashboard */}
+      <div ref={dashboardRef} className="border-t border-white/5 px-6 py-8 flex-shrink-0">
+        <div className="mb-6">
+          <h2 className="text-base font-semibold text-white">Dashboard</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Visao geral das suas clientes</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="rounded-2xl p-4 flex flex-col gap-2"
+              style={{ background: s.bg, border: `1px solid ${s.border}` }}
+            >
+              <span className="text-[10px] text-gray-500 leading-tight">{s.label}</span>
+              <span className="text-2xl font-bold leading-none" style={{ color: s.color }}>
+                {s.value}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Barra de proporcao */}
+        <div className="mt-6 rounded-2xl p-5 border border-white/5 bg-[#0f0f1a]">
+          <p className="text-xs text-gray-500 mb-4">Distribuicao de clientes</p>
+          <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+            {totalClients > 0 && [
+              { pct: (recorrentes / totalClients) * 100, color: "#8b5cf6", label: "Recorrentes" },
+              { pct: (blacklist.clients.length / totalClients) * 100, color: "#ef4444", label: "Blacklist" },
+              { pct: (devendo / totalClients) * 100, color: "#f97316", label: "Pendente" },
+              { pct: ((totalClients - recorrentes - blacklist.clients.length - devendo) / totalClients) * 100, color: "#1e1b4b", label: "Outros" },
+            ].map((seg) => (
+              seg.pct > 0 && (
+                <div
+                  key={seg.label}
+                  className="h-full rounded-sm"
+                  style={{ width: `${seg.pct}%`, background: seg.color }}
+                  title={`${seg.label}: ${Math.round(seg.pct)}%`}
+                />
+              )
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-4 mt-3">
+            {[
+              { color: "#8b5cf6", label: "Recorrentes", n: recorrentes },
+              { color: "#f59e0b", label: "Top clientes", n: topClientes },
+              { color: "#ef4444", label: "Blacklist", n: blacklist.clients.length },
+              { color: "#f97316", label: "Pendente", n: devendo },
+            ].map((leg) => (
+              <div key={leg.label} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full" style={{ background: leg.color }} />
+                <span className="text-[10px] text-gray-500">{leg.label} <span className="text-gray-400">{leg.n}</span></span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

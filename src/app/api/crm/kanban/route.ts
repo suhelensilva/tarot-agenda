@@ -20,7 +20,7 @@ export async function GET() {
               _count: { select: { appointments: true } },
               appointments: {
                 orderBy: { startTime: "asc" },
-                select: { startTime: true, amountPaid: true, status: true, title: true, service: { select: { name: true } } },
+                select: { startTime: true, amountPaid: true, status: true, title: true, paymentStatus: true, service: { select: { name: true } } },
               },
             },
           },
@@ -45,7 +45,7 @@ export async function GET() {
       _count: { select: { appointments: true } },
       appointments: {
         orderBy: { startTime: "asc" },
-        select: { startTime: true, amountPaid: true, status: true, title: true, service: { select: { name: true } } },
+        select: { startTime: true, amountPaid: true, status: true, title: true, paymentStatus: true, service: { select: { name: true } } },
       },
     },
     orderBy: { name: "asc" },
@@ -55,7 +55,7 @@ export async function GET() {
     id: string
     name: string
     phone: string
-    appointments: { startTime: Date; amountPaid: number | null; status: string; title: string; service: { name: string } | null }[]
+    appointments: { startTime: Date; amountPaid: number | null; status: string; title: string; paymentStatus?: string | null; service: { name: string } | null }[]
     _count: { appointments: number }
   }) {
     const completed = client.appointments.filter((a) => a.status === "COMPLETED")
@@ -63,6 +63,8 @@ export async function GET() {
     const lastAppt = completed.length > 0 ? completed[completed.length - 1].startTime : null
     const first = client.appointments[0]
     const firstServiceName = first?.service?.name ?? first?.title ?? null
+    const lastCompleted = completed[completed.length - 1]
+    const lastPaymentStatus = lastCompleted?.paymentStatus ?? null
     return {
       id:          client.id,
       name:        client.name,
@@ -72,6 +74,7 @@ export async function GET() {
       lastAppointmentDate: lastAppt,
       totalSpent,
       firstServiceName,
+      lastPaymentStatus,
     }
   }
 
