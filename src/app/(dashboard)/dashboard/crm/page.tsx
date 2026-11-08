@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, X, Check } from "lucide-react"
+import { Plus, X, Check, Crown, Pencil } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+
+const TOP_THRESHOLD_KEY = "crm_top_threshold"
 
 type ClientCard = {
   id: string
@@ -49,10 +51,12 @@ function formatDate(dateStr: string | null) {
 function KanbanCard({
   client,
   color,
+  isTop = false,
   onDragStart,
 }: {
   client: ClientCard
   color: string
+  isTop?: boolean
   onDragStart: (e: React.DragEvent, clientId: string) => void
 }) {
   const [hovered, setHovered] = useState(false)
@@ -89,6 +93,14 @@ function KanbanCard({
         )}
       </div>
 
+      {/* Badge Top Cliente */}
+      {isTop && (
+        <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-amber-500/20 border border-amber-500/40 rounded-full px-1.5 py-0.5">
+          <Crown size={9} className="text-amber-400" />
+          <span className="text-[9px] font-semibold text-amber-400">Top</span>
+        </div>
+      )}
+
       {/* Tooltip ao passar o mouse */}
       {hovered && client.firstServiceName && (
         <div className="absolute left-full top-0 ml-2 z-50 w-48 rounded-lg bg-[#1e1b4b] border border-violet-500/30 px-3 py-2 shadow-xl pointer-events-none">
@@ -103,11 +115,13 @@ function KanbanCard({
 // ----- Column -----
 function KanbanColumn({
   col,
+  topThreshold,
   onDragStart,
   onDrop,
   onDragOver,
 }: {
   col: Column
+  topThreshold: number
   onDragStart: (e: React.DragEvent, clientId: string, fromColId: string) => void
   onDrop: (e: React.DragEvent, toColId: string) => void
   onDragOver: (e: React.DragEvent) => void
@@ -165,12 +179,91 @@ function KanbanColumn({
             key={c.id}
             client={c}
             color={color}
+            isTop={c.totalSpent >= topThreshold}
             onDragStart={(e, id) => onDragStart(e, id, col.id)}
           />
         ))}
         {col.clients.length === 0 && (
           <div className="text-[11px] text-gray-700 text-center py-4">
             Arraste clientes aqui
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ----- Top Clientes Column -----
+function TopClientesColumn({
+  allClients,
+  threshold,
+  onThresholdChange,
+}: {
+  allClients: ClientCard[]
+  threshold: number
+  onThresholdChange: (v: number) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [inputVal, setInputVal] = useState(String(threshold))
+  const color = "#f59e0b"
+  const topClients = allClients.filter((c) => c.totalSpent >= threshold)
+
+  function saveThreshold() {
+    const v = parseFloat(inputVal.replace(",", "."))
+    if (!isNaN(v) && v >= 0) onThresholdChange(v)
+    setEditing(false)
+  }
+
+  return (
+    <div className="flex-shrink-0 w-[210px] flex flex-col gap-2 h-full">
+      {/* Cabeçalho */}
+      <div className="rounded-xl overflow-hidden flex-shrink-0">
+        <div className="px-4 py-3 flex items-center gap-2" style={{ background: color }}>
+          <Crown size={13} className="text-white/90" />
+          <span className="text-sm font-medium text-white/95">Top Clientes</span>
+        </div>
+        <div className="bg-[#12121e] px-4 py-3">
+          <div className="text-2xl font-medium text-white leading-none mb-1">{topClients.length}</div>
+          <div className="flex items-center gap-1">
+            {editing ? (
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-500">R$</span>
+                <input
+                  autoFocus
+                  value={inputVal}
+                  onChange={(e) => setInputVal(e.target.value)}
+                  onBlur={saveThreshold}
+                  onKeyDown={(e) => { if (e.key === "Enter") saveThreshold(); if (e.key === "Escape") setEditing(false) }}
+                  className="w-20 text-[11px] bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-white focus:outline-none"
+                />
+              </div>
+            ) : (
+              <button
+                onClick={() => { setInputVal(String(threshold)); setEditing(true) }}
+                className="flex items-center gap-1 group"
+              >
+                <span className="text-[10px] text-gray-600">acima de {formatCurrency(threshold)}</span>
+                <Pencil size={9} className="text-gray-700 group-hover:text-gray-400 transition-colors" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Cards (somente leitura) */}
+      <div className="flex flex-col gap-2 overflow-y-auto flex-1 rounded-xl p-1">
+        {topClients.map((c) => (
+          <KanbanCard
+            key={c.id}
+            client={c}
+            color={color}
+            isTop={true}
+            onDragStart={() => {}}
+          />
+        ))}
+        {topClients.length === 0 && (
+          <div className="text-[11px] text-gray-700 text-center py-4">
+            Nenhuma cliente acima de {formatCurrency(threshold)}
           </div>
         )}
       </div>
@@ -278,6 +371,17 @@ export default function CrmPage() {
   const [columns, setColumns] = useState<Column[]>([])
   const [loading, setLoading] = useState(true)
   const dragRef = useRef<{ clientId: string; fromColId: string } | null>(null)
+  const [topThreshold, setTopThreshold] = useState<number>(500)
+
+  useEffect(() => {
+    const saved = localStorage.getItem(TOP_THRESHOLD_KEY)
+    if (saved !== null) setTopThreshold(parseFloat(saved))
+  }, [])
+
+  function handleTopThresholdChange(v: number) {
+    setTopThreshold(v)
+    localStorage.setItem(TOP_THRESHOLD_KEY, String(v))
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -385,11 +489,17 @@ export default function CrmPage() {
             <KanbanColumn
               key={col.id}
               col={col}
+              topThreshold={topThreshold}
               onDragStart={handleDragStart}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             />
           ))}
+          <TopClientesColumn
+            allClients={columns.flatMap((c) => c.clients)}
+            threshold={topThreshold}
+            onThresholdChange={handleTopThresholdChange}
+          />
           <NewColumnCard onCreated={fetchData} />
         </div>
       </div>
