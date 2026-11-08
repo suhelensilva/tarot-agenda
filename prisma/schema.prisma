@@ -65,6 +65,8 @@ model User {
   purchases        Purchase[]
   crmLists         CrmList[]
   metaPixels       MetaPixel[]
+  automationSettings AutomationSettings?
+  birthdayLogs     BirthdayLog[]
 
   @@map("users")
 }
@@ -508,4 +510,37 @@ model CrmListMember {
   @@unique([listId, clientId])
   @@index([clientId])
   @@map("crm_list_members")
+}
+
+model AutomationSettings {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Aniversário
+  birthdayEnabled    Boolean  @default(false)
+  birthdaySendHour   Int      @default(13)  // hora em BRT (0-23)
+  birthdayMessage    String   @default("Oi {nome}, parabéns pelo seu novo ciclo! ✨🌙\n\nQue este ano seja repleto de luz e realizações.\n\nCom carinho 💜")
+
+  // Modo teste — enquanto ativo, todos os envios vão para testPhone
+  testMode           Boolean  @default(true)
+  testPhone          String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("automation_settings")
+}
+
+model BirthdayLog {
+  id        String   @id @default(cuid())
+  userId    String
+  clientId  String
+  year      Int
+  sentAt    DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientId, year])
+  @@map("birthday_logs")
 }

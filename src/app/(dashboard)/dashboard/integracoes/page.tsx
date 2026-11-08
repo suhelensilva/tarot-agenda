@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Plus, Trash2, Eye, EyeOff, Zap, Puzzle, Copy, RefreshCw, ChevronDown, ChevronUp, Pencil } from "lucide-react"
+import { Plus, Trash2, Eye, EyeOff, Zap, Puzzle, Copy, RefreshCw, ChevronDown, ChevronUp, Pencil, Bell, FlaskConical, Save } from "lucide-react"
 
 type MetaPixel = { id: string; name: string; pixelId: string; testEventCode: string | null }
 type CrmList = { id: string; name: string; color: string; metaPixelId: string | null }
@@ -23,10 +23,31 @@ export default function IntegracoesPage() {
   const [crmCopied, setCrmCopied] = useState(false)
   const [apiUrl, setApiUrl] = useState("")
 
+  // Automações
+  type AutoSettings = {
+    birthdayEnabled: boolean
+    birthdaySendHour: number
+    birthdayMessage: string
+    testMode: boolean
+    testPhone: string | null
+  }
+  const DEFAULT_AUTO: AutoSettings = {
+    birthdayEnabled: false,
+    birthdaySendHour: 13,
+    birthdayMessage: "Oi {nome}, parabéns pelo seu novo ciclo! ✨🌙\n\nQue este ano seja repleto de luz e realizações.\n\nCom carinho 💜",
+    testMode: true,
+    testPhone: null,
+  }
+  const [autoSettings, setAutoSettings] = useState<AutoSettings>(DEFAULT_AUTO)
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [autoSaved, setAutoSaved] = useState(false)
+  const [testingBirthday, setTestingBirthday] = useState(false)
+
   useEffect(() => {
     fetch("/api/meta-pixels").then((r) => r.json()).then((d) => setPixels(Array.isArray(d) ? d : [])).catch(() => {})
     fetch("/api/crm/lists").then((r) => r.json()).then((d) => setCrmLists(Array.isArray(d) ? d : [])).catch(() => {})
     fetch("/api/crm/token").then((r) => r.json()).then((d) => setCrmToken(d.token ?? null)).catch(() => {})
+    fetch("/api/automations/settings").then((r) => r.json()).then((d) => setAutoSettings({ ...DEFAULT_AUTO, ...d })).catch(() => {})
     if (typeof window !== "undefined") setApiUrl(window.location.origin)
   }, [])
 
@@ -83,6 +104,32 @@ export default function IntegracoesPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ metaPixelId: pixelId }),
     })
+  }
+
+  async function saveAutoSettings() {
+    setAutoSaving(true)
+    try {
+      const res = await fetch("/api/automations/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(autoSettings),
+      })
+      if (res.ok) { setAutoSaved(true); setTimeout(() => setAutoSaved(false), 2000) }
+    } finally {
+      setAutoSaving(false)
+    }
+  }
+
+  async function testBirthdayNow() {
+    setTestingBirthday(true)
+    try {
+      await fetch("/api/automations/birthday", { method: "POST" })
+      alert("Disparo de teste executado! Verifique o WhatsApp do número de teste.")
+    } catch {
+      alert("Erro ao disparar teste.")
+    } finally {
+      setTestingBirthday(false)
+    }
   }
 
   async function generateCrmToken() {
@@ -284,6 +331,120 @@ export default function IntegracoesPage() {
           <RefreshCw size={14} />
           {crmLoading ? "Gerando..." : crmToken ? "Gerar novo token" : "Gerar token"}
         </button>
+      </div>
+
+      {/* Automações WhatsApp */}
+      <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-6 space-y-5">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 w-9 h-9 rounded-lg flex items-center justify-center">
+            <Bell size={18} />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Automações WhatsApp</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Envios automáticos para suas clientes</p>
+          </div>
+        </div>
+
+        {/* Aniversário */}
+        <div className="border border-gray-100 dark:border-[rgba(255,255,255,0.06)] rounded-xl p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-gray-800 dark:text-white">Mensagem de Aniversário</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Enviada automaticamente no aniversário de cada cliente</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoSettings.birthdayEnabled}
+                onChange={(e) => setAutoSettings((p) => ({ ...p, birthdayEnabled: e.target.checked }))}
+                className="sr-only peer"
+              />
+              <div className="w-10 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600" />
+            </label>
+          </div>
+
+          {autoSettings.birthdayEnabled && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Horário de envio (BRT)</label>
+                <select
+                  value={autoSettings.birthdaySendHour}
+                  onChange={(e) => setAutoSettings((p) => ({ ...p, birthdaySendHour: Number(e.target.value) }))}
+                  className="border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Mensagem <span className="text-violet-500">{"{nome}"}</span> = nome completo · <span className="text-violet-500">{"{primeiro_nome}"}</span> = primeiro nome
+                </label>
+                <textarea
+                  value={autoSettings.birthdayMessage}
+                  onChange={(e) => setAutoSettings((p) => ({ ...p, birthdayMessage: e.target.value }))}
+                  rows={5}
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Modo teste */}
+        <div className="border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FlaskConical size={15} className="text-amber-600 dark:text-amber-400" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Modo Teste</p>
+                <p className="text-xs text-amber-700/70 dark:text-amber-400/60 mt-0.5">Enquanto ativo, todos os envios vão para o número de teste</p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoSettings.testMode}
+                onChange={(e) => setAutoSettings((p) => ({ ...p, testMode: e.target.checked }))}
+                className="sr-only peer"
+              />
+              <div className="w-10 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+            </label>
+          </div>
+
+          {autoSettings.testMode && (
+            <input
+              value={autoSettings.testPhone ?? ""}
+              onChange={(e) => setAutoSettings((p) => ({ ...p, testPhone: e.target.value || null }))}
+              placeholder="Número de teste (ex: 5511999999999)"
+              className="w-full border border-amber-300 dark:border-amber-500/30 bg-white dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          )}
+        </div>
+
+        {/* Botões */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={saveAutoSettings}
+            disabled={autoSaving}
+            className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            <Save size={14} />
+            {autoSaved ? "Salvo!" : autoSaving ? "Salvando..." : "Salvar configurações"}
+          </button>
+
+          <button
+            onClick={testBirthdayNow}
+            disabled={testingBirthday || !autoSettings.testMode || !autoSettings.testPhone}
+            className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            title={!autoSettings.testPhone ? "Configure o número de teste primeiro" : ""}
+          >
+            <FlaskConical size={14} />
+            {testingBirthday ? "Disparando..." : "Disparar teste agora"}
+          </button>
+        </div>
       </div>
     </div>
   )
