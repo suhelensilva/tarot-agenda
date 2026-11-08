@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
 const statusSchema = z.object({
-  status: z.enum(["SCHEDULED", "CONFIRMED", "COMPLETED", "NO_SHOW", "CANCELLED"]),
+  status: z.enum(["SCHEDULED", "CONFIRMED", "COMPLETED", "NO_SHOW", "CANCELLED"]).optional(),
   cancellationReason: z.string().optional(),
   amountPaid: z.number().optional(),
+  paymentStatus: z.string().optional().nullable(),
 })
 
 const editSchema = z.object({

@@ -17,6 +17,7 @@ type Appointment = {
   motivo: string | null
   meetingLink: string | null
   amountPaid: number | null
+  paymentStatus: string | null
   cancellationReason: string | null
   client: Client & { tag: string | null }
   service: Service | null
@@ -53,7 +54,17 @@ export default function AgendaPage() {
   const [newClientError, setNewClientError] = useState<string | null>(null)
   const [clientTag, setClientTag] = useState<string>("")
   const [savingTag, setSavingTag] = useState(false)
+  const [paymentStatusInput, setPaymentStatusInput] = useState<string>("")
+  const [savingPayment, setSavingPayment] = useState(false)
+  const [showCustomPayment, setShowCustomPayment] = useState(false)
   const planFetch = usePlanFetch()
+
+  const PAYMENT_PRESETS = ["Pago", "Pendente", "A combinar"]
+  const paymentStatusConfig: Record<string, string> = {
+    "Pago":        "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400",
+    "Pendente":    "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
+    "A combinar":  "bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-gray-400",
+  }
 
   const TAG_COLORS: Record<string, string> = {
     "Compradora":  "bg-green-100 text-green-700 border-green-400 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/50",
@@ -293,6 +304,23 @@ export default function AgendaPage() {
     }
   }
 
+  async function updatePaymentStatus(id: string, value: string | null) {
+    setSavingPayment(true)
+    try {
+      await fetch(`/api/agendamentos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentStatus: value }),
+      })
+      setSelected((prev) => prev ? { ...prev, paymentStatus: value } : prev)
+      setAppointments((prev) => prev.map((a) => a.id === id ? { ...a, paymentStatus: value } : a))
+      setShowCustomPayment(false)
+      setPaymentStatusInput("")
+    } finally {
+      setSavingPayment(false)
+    }
+  }
+
   async function handleCreateClient() {
     if (!newClient.name.trim()) {
       setNewClientError("Nome é obrigatório")
@@ -465,9 +493,67 @@ export default function AgendaPage() {
             </button>
           </div>
 
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusConfig[selected.status].color}`}>
-            {statusConfig[selected.status].label}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusConfig[selected.status].color}`}>
+              {statusConfig[selected.status].label}
+            </span>
+            {selected.paymentStatus && (
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${paymentStatusConfig[selected.paymentStatus] ?? "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400"}`}>
+                {selected.paymentStatus}
+              </span>
+            )}
+          </div>
+
+          {/* Seletor de status de pagamento */}
+          <div className="mt-3">
+            <p className="text-[10px] font-medium text-gray-400 dark:text-gray-600 uppercase tracking-wide mb-1.5">Pagamento</p>
+            <div className="flex flex-wrap gap-1.5">
+              {PAYMENT_PRESETS.map((opt) => (
+                <button
+                  key={opt}
+                  disabled={savingPayment}
+                  onClick={() => updatePaymentStatus(selected.id, selected.paymentStatus === opt ? null : opt)}
+                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-all ${
+                    selected.paymentStatus === opt
+                      ? (paymentStatusConfig[opt] ?? "") + " border-current"
+                      : "border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-500 hover:border-gray-300 dark:hover:border-white/20"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+              <button
+                onClick={() => setShowCustomPayment((v) => !v)}
+                className="text-xs px-2.5 py-1 rounded-full border border-dashed border-gray-300 dark:border-white/10 text-gray-400 dark:text-gray-600 hover:border-gray-400 dark:hover:border-white/20 transition-all"
+              >
+                + outro
+              </button>
+            </div>
+            {showCustomPayment && (
+              <div className="flex gap-1.5 mt-1.5">
+                <input
+                  autoFocus
+                  value={paymentStatusInput}
+                  onChange={(e) => setPaymentStatusInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && paymentStatusInput.trim()) {
+                      updatePaymentStatus(selected.id, paymentStatusInput.trim())
+                    }
+                    if (e.key === "Escape") setShowCustomPayment(false)
+                  }}
+                  placeholder="Ex: Vai pagar dia 10"
+                  className="flex-1 text-xs border border-gray-200 dark:border-white/10 dark:bg-white/5 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-gray-300 dark:focus:border-white/20 dark:text-gray-200 dark:placeholder-gray-600"
+                />
+                <button
+                  disabled={!paymentStatusInput.trim() || savingPayment}
+                  onClick={() => updatePaymentStatus(selected.id, paymentStatusInput.trim())}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white disabled:opacity-40"
+                >
+                  Ok
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="mt-4 space-y-3">
             <div className="flex items-center gap-3 text-sm">
