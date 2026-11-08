@@ -80,7 +80,7 @@ export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok
   }
 
   const bodyStr = JSON.stringify(body)
-  console.log("[meta-capi] PAYLOAD ENVIADO:", bodyStr)
+  console.log("[meta-capi] PAYLOAD ENVIADO:", JSON.stringify({ ...body, access_token: "***" }))
 
   try {
     const res = await fetch(
