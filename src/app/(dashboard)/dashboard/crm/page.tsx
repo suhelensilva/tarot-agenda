@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, X, Check, Crown, Pencil, Ban } from "lucide-react"
+import { Plus, X, Check, Crown, Pencil, Ban, Download } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -51,6 +51,32 @@ function formatDate(dateStr: string | null) {
   if (!dateStr) return null
   const d = new Date(dateStr)
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+}
+
+function phoneToE164(phone: string): string {
+  const digits = phone.replace(/\D/g, "")
+  if (digits.startsWith("55") && digits.length >= 12) return "+" + digits
+  return "+55" + digits
+}
+
+function exportMetaCSV(clients: ClientCard[], filename: string) {
+  const rows: string[][] = [["phone", "fn", "ln", "country"]]
+  for (const c of clients) {
+    if (!c.phone) continue
+    const phone = phoneToE164(c.phone)
+    const parts = c.name.trim().split(/\s+/)
+    const fn = parts[0] ?? ""
+    const ln = parts.slice(1).join(" ")
+    rows.push([phone, fn, ln, "BR"])
+  }
+  const csv = rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n")
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 // ----- Card -----
@@ -510,6 +536,8 @@ export default function CrmPage() {
   const [blacklist, setBlacklist] = useState<{ id: string; clients: ClientCard[] }>({ id: "", clients: [] })
   const [pendingBlacklist, setPendingBlacklist] = useState<{ card: ClientCard; fromColId: string } | null>(null)
   const [pendingReason, setPendingReason] = useState("")
+  const [exportOpen, setExportOpen] = useState(false)
+  const [exportTarget, setExportTarget] = useState<string>("__all__")
   const [loading, setLoading] = useState(true)
   const dragRef = useRef<{ clientId: string; fromColId: string } | null>(null)
   const dashboardRef = useRef<HTMLDivElement>(null)
@@ -687,12 +715,21 @@ export default function CrmPage() {
             {totalClients} clientes · {labelCount} {labelCount === 1 ? "etiqueta" : "etiquetas"}
           </p>
         </div>
-        <button
-          onClick={() => dashboardRef.current?.scrollIntoView({ behavior: "smooth" })}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-violet-500/30 text-violet-400 hover:bg-violet-500/10 transition-colors"
-        >
-          Dashboard
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setExportOpen(true)}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-colors"
+          >
+            <Download size={13} />
+            Exportar
+          </button>
+          <button
+            onClick={() => dashboardRef.current?.scrollIntoView({ behavior: "smooth" })}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-violet-500/30 text-violet-400 hover:bg-violet-500/10 transition-colors"
+          >
+            Dashboard
+          </button>
+        </div>
       </div>
 
       {/* Kanban board — altura fixa para colunas scrollarem internamente */}
@@ -931,6 +968,114 @@ export default function CrmPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de exportação */}
+      {exportOpen && (() => {
+        const namedCols = columns.filter((c) => !c.isUntagged)
+        const untaggedCol = columns.find((c) => c.isUntagged)
+
+        function getClientsToExport(): ClientCard[] {
+          if (exportTarget === "__all__") return columns.flatMap((c) => c.clients)
+          if (exportTarget === "__untagged__") return untaggedCol?.clients ?? []
+          const col = namedCols.find((c) => c.id === exportTarget)
+          return col?.clients ?? []
+        }
+
+        function doExport() {
+          const clients = getClientsToExport()
+          const label = exportTarget === "__all__"
+            ? "todas"
+            : exportTarget === "__untagged__"
+            ? "sem-etiqueta"
+            : namedCols.find((c) => c.id === exportTarget)?.name.toLowerCase().replace(/\s+/g, "-") ?? "clientes"
+          exportMetaCSV(clients, `clientes-${label}-meta.csv`)
+          setExportOpen(false)
+        }
+
+        const previewCount = getClientsToExport().length
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.75)" }}>
+            <div className="rounded-2xl p-6 w-96 shadow-2xl bg-[#0f0f1a] border border-[rgba(170,85,249,0.2)]">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <Download size={15} className="text-green-400" />
+                  <h3 className="text-sm font-bold text-white">Exportar para Meta</h3>
+                </div>
+                <button onClick={() => setExportOpen(false)} className="text-gray-600 hover:text-gray-400">
+                  <X size={15} />
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                Gera um CSV no formato de Públicos Personalizados da Meta (phone, fn, ln, country). Pronto para importar no Gerenciador de Anúncios.
+              </p>
+
+              <div className="space-y-2 mb-5">
+                <label className="block text-xs font-medium text-gray-400 mb-2">Quais clientes exportar?</label>
+
+                <label className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
+                  <input type="radio" name="exportTarget" value="__all__"
+                    checked={exportTarget === "__all__"}
+                    onChange={() => setExportTarget("__all__")}
+                    className="accent-violet-500" />
+                  <div>
+                    <p className="text-sm text-white font-medium">Todas as clientes</p>
+                    <p className="text-xs text-gray-600">{columns.flatMap((c) => c.clients).length} clientes (exceto blacklist)</p>
+                  </div>
+                </label>
+
+                {namedCols.map((col) => (
+                  <label key={col.id} className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
+                    <input type="radio" name="exportTarget" value={col.id}
+                      checked={exportTarget === col.id}
+                      onChange={() => setExportTarget(col.id)}
+                      className="accent-violet-500" />
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: col.color }} />
+                      <div>
+                        <p className="text-sm text-white font-medium">{col.name}</p>
+                        <p className="text-xs text-gray-600">{col.clients.length} clientes</p>
+                      </div>
+                    </div>
+                  </label>
+                ))}
+
+                {(untaggedCol?.clients.length ?? 0) > 0 && (
+                  <label className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
+                    <input type="radio" name="exportTarget" value="__untagged__"
+                      checked={exportTarget === "__untagged__"}
+                      onChange={() => setExportTarget("__untagged__")}
+                      className="accent-violet-500" />
+                    <div>
+                      <p className="text-sm text-white font-medium">Sem etiqueta</p>
+                      <p className="text-xs text-gray-600">{untaggedCol?.clients.length ?? 0} clientes</p>
+                    </div>
+                  </label>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">{previewCount} contatos no arquivo</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setExportOpen(false)}
+                    className="text-xs px-4 py-2 rounded-xl text-gray-500 hover:text-gray-300 transition-colors">
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={doExport}
+                    disabled={previewCount === 0}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white transition-colors"
+                  >
+                    <Download size={12} />
+                    Baixar CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
