@@ -6,21 +6,23 @@ import { signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import {
   CalendarDays, Users, LayoutDashboard, Package,
-  BarChart3, Settings, LogOut, Link2, Crown, CreditCard, BookHeart, Kanban,
+  BarChart3, Settings, LogOut, Link2, Crown, CreditCard, BookHeart, Kanban, Puzzle, User,
 } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 
 const nav = [
-  { href: "/dashboard",               icon: LayoutDashboard, label: "Painel",       exact: true  },
-  { href: "/dashboard/agenda",        icon: CalendarDays,    label: "Agenda",        exact: false },
-  { href: "/dashboard/clientes",      icon: Users,           label: "Clientes",      exact: false },
-  { href: "/dashboard/crm",           icon: Kanban,          label: "CRM",           exact: false },
-  { href: "/dashboard/servicos",      icon: Package,         label: "Serviços",      exact: false },
-  { href: "/dashboard/link",          icon: Link2,           label: "Link Público",  exact: false },
-  { href: "/dashboard/relatorios",    icon: BarChart3,       label: "Relatórios",    exact: false },
-  { href: "/dashboard/configuracoes", icon: Settings,        label: "Configurações", exact: false },
-  { href: "/dashboard/planner",       icon: BookHeart,       label: "Planner",       exact: false },
-  { href: "/dashboard/assinatura",    icon: CreditCard,      label: "Assinatura",    exact: false },
+  { href: "/dashboard",               icon: LayoutDashboard, label: "Painel",        exact: true  },
+  { href: "/dashboard/agenda",        icon: CalendarDays,    label: "Agenda",         exact: false },
+  { href: "/dashboard/clientes",      icon: Users,           label: "Clientes",       exact: false },
+  { href: "/dashboard/crm",           icon: Kanban,          label: "CRM",            exact: false },
+  { href: "/dashboard/servicos",      icon: Package,         label: "Serviços",       exact: false },
+  { href: "/dashboard/link",          icon: Link2,           label: "Link Público",   exact: false },
+  { href: "/dashboard/relatorios",    icon: BarChart3,       label: "Relatórios",     exact: false },
+  { href: "/dashboard/planner",       icon: BookHeart,       label: "Planner",        exact: false },
+  { href: "/dashboard/perfil",        icon: User,            label: "Perfil",         exact: false },
+  { href: "/dashboard/integracoes",   icon: Puzzle,          label: "Integrações",    exact: false },
+  { href: "/dashboard/configuracoes", icon: Settings,        label: "Configurações",  exact: false },
+  { href: "/dashboard/assinatura",    icon: CreditCard,      label: "Assinatura",     exact: false },
 ]
 
 export default function Sidebar({ user }: {
@@ -103,8 +105,11 @@ export default function Sidebar({ user }: {
           <ThemeToggle />
         </div>
 
-        {/* Usuário */}
-        <div className="flex items-center gap-2.5">
+        {/* Usuário — clica para ir à conta */}
+        <Link
+          href="/dashboard/conta"
+          className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-violet-50 dark:hover:bg-[rgba(170,85,249,0.06)] transition-colors group"
+        >
           <div className="relative shrink-0">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)] dark:[box-shadow:0_0_10px_rgba(170,85,249,0.2)]">
               {user?.name?.[0]?.toUpperCase() ?? "T"}
@@ -116,10 +121,10 @@ export default function Sidebar({ user }: {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#1e1b4b] dark:text-white truncate">{user?.name ?? "Taróloga"}</p>
+            <p className="text-sm font-semibold text-[#1e1b4b] dark:text-white truncate group-hover:text-violet-700 dark:group-hover:text-[#aa55f9] transition-colors">{user?.name ?? "Taróloga"}</p>
             <p className="text-xs text-slate-400 dark:text-gray-500 truncate">{user?.email}</p>
           </div>
-        </div>
+        </Link>
 
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
