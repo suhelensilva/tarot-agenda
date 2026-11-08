@@ -2,26 +2,42 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { getUserFromToken } from "@/lib/crm-auth"
+import { auth } from "@/lib/auth"
 
 // GET /api/crm/lists -> todas as listas/etiquetas do usuário, com contagem de membros.
+// Aceita autenticação via CRM token (extensão) OU sessão (dashboard).
 export async function GET(req: NextRequest) {
-  const user = await getUserFromToken(req)
-  if (!user) return NextResponse.json({ error: "Token inválido" }, { status: 401 })
+  let userId: string | undefined
+
+  // Tenta CRM token (extensão Chrome)
+  const tokenUser = await getUserFromToken(req)
+  if (tokenUser) {
+    userId = tokenUser.id
+  } else {
+    // Fallback: sessão do dashboard
+    const session = await auth()
+    if (session) userId = session.user.id
+  }
+
+  if (!userId) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
 
   const lists = await prisma.crmList.findMany({
-    where: { userId: user.id },
+    where: { userId },
     orderBy: [{ order: "asc" }, { createdAt: "asc" }],
     include: { _count: { select: { members: true } } },
   })
 
   return NextResponse.json(
-    lists.map((l) => ({
-      id: l.id,
-      name: l.name,
-      color: l.color,
-      order: l.order,
-      count: l._count.members,
-    }))
+    lists
+      .filter((l) => l.name !== "__blacklist__")
+      .map((l) => ({
+        id: l.id,
+        name: l.name,
+        color: l.color,
+        order: l.order,
+        count: l._count.members,
+        metaPixelId: l.metaPixelId ?? null,
+      }))
   )
 }
 

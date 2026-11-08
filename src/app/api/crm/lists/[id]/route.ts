@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { getUserFromToken } from "@/lib/crm-auth"
+import { auth } from "@/lib/auth"
+
+async function resolveUserId(req: NextRequest): Promise<string | null> {
+  const tokenUser = await getUserFromToken(req)
+  if (tokenUser) return tokenUser.id
+  const session = await auth()
+  return session?.user.id ?? null
+}
 
 const patchSchema = z.object({
   name: z.string().min(1).max(60).optional(),
@@ -10,13 +18,13 @@ const patchSchema = z.object({
   metaPixelId: z.string().optional().nullable(),
 })
 
-// PATCH /api/crm/lists/[id] -> renomeia / recolore / reordena.
+// PATCH /api/crm/lists/[id] -> renomeia / recolore / reordena / vincula pixel.
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const user = await getUserFromToken(req)
-  if (!user) return NextResponse.json({ error: "Token inválido" }, { status: 401 })
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
 
   const { id } = await ctx.params
-  const owned = await prisma.crmList.findFirst({ where: { id, userId: user.id } })
+  const owned = await prisma.crmList.findFirst({ where: { id, userId } })
   if (!owned) return NextResponse.json({ error: "Lista não encontrada" }, { status: 404 })
 
   let data: z.infer<typeof patchSchema>
@@ -41,11 +49,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
 // DELETE /api/crm/lists/[id] -> apaga a lista (membros caem por cascade).
 export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const user = await getUserFromToken(req)
-  if (!user) return NextResponse.json({ error: "Token inválido" }, { status: 401 })
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
 
   const { id } = await ctx.params
-  const owned = await prisma.crmList.findFirst({ where: { id, userId: user.id } })
+  const owned = await prisma.crmList.findFirst({ where: { id, userId } })
   if (!owned) return NextResponse.json({ error: "Lista não encontrada" }, { status: 404 })
 
   await prisma.crmList.delete({ where: { id } })
