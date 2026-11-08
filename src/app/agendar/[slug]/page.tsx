@@ -25,6 +25,7 @@ type PageData = {
   publicButtons: PButton[]
   services: Service[]
   availability: Availability[]
+  metaPixelId: string | null
 }
 
 // ── Theme config ──────────────────────────────────────────────────────────────
@@ -69,6 +70,24 @@ export default function AgendarPage() {
   useEffect(() => {
     fetch(`/api/agendar/${slug}`).then((r) => r.json()).then(setData)
   }, [slug])
+
+  // Carrega o Pixel da Meta só para setar o cookie _fbp no navegador da cliente.
+  // O _fbp é por domínio, então vale para qualquer pixel da taróloga depois.
+  useEffect(() => {
+    const pid = data?.metaPixelId
+    if (!pid) return
+    const w = window as unknown as { fbq?: ((...a: unknown[]) => void) & { callMethod?: unknown } }
+    if (w.fbq) { w.fbq("init", pid); w.fbq("track", "PageView"); return }
+    /* eslint-disable */
+    ;(function (f: any, b, e, v, n?: any, t?: any, s?: any) {
+      if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments) }
+      if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = "2.0"; n.queue = []
+      t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s)
+    })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js")
+    /* eslint-enable */
+    w.fbq!("init", pid)
+    w.fbq!("track", "PageView")
+  }, [data?.metaPixelId])
 
   // Inject Google Font
   useEffect(() => {
@@ -472,10 +491,23 @@ function BookingModal({ data, font, onClose }: { data: PageData; font: string; o
     if (!selectedService || !selectedDate || !selectedSlot) return
     setSaving(true)
     const dateStr = selectedDate.toISOString().slice(0, 10)
+    // Sinais de correspondência da Meta: cookies do pixel + fbclid do anúncio
+    const readCookie = (name: string) =>
+      document.cookie.split("; ").find((c) => c.startsWith(name + "="))?.split("=")[1] || null
+    const fbclid = new URLSearchParams(window.location.search).get("fbclid")
     await fetch(`/api/agendar/${data.id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientName: form.name, clientPhone: form.phone, serviceId: selectedService.id, date: dateStr, startTime: selectedSlot }),
+      body: JSON.stringify({
+        clientName: form.name,
+        clientPhone: form.phone,
+        serviceId: selectedService.id,
+        date: dateStr,
+        startTime: selectedSlot,
+        fbp: readCookie("_fbp"),
+        fbc: readCookie("_fbc"),
+        fbclid,
+      }),
     })
     setSaving(false)
     setStep("done")

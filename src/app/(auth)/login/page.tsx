@@ -47,13 +47,20 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <Image
-            src="/logo-small.png"
-            alt="Mística Agenda"
-            width={320}
-            height={214}
-            className="mx-auto"
-          />
+          <div className="relative mx-auto w-80">
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 blur-2xl bg-[radial-gradient(ellipse_at_center,rgba(216,180,254,0.5),rgba(216,180,254,0.15)_45%,transparent_72%)]"
+            />
+            <Image
+              src="/logo-small.png"
+              alt="Mística Agenda"
+              width={320}
+              height={214}
+              className="mx-auto drop-shadow-[0_2px_18px_rgba(168,85,247,0.55)]"
+              priority
+            />
+          </div>
           <p className="text-purple-200 mt-2">Gerencie seus atendimentos</p>
         </div>
 

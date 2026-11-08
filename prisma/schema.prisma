@@ -179,6 +179,11 @@ model Appointment {
   amountPaid         Float?
   paymentStatus      String?
   remindersSent      Json              @default("[]")
+  // Sinais de correspondência da Meta capturados no agendamento público (navegador da cliente)
+  fbp                String?
+  fbc                String?
+  clientIp           String?
+  clientUserAgent    String?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 

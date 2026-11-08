@@ -33,6 +33,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
 
   if (!user) return NextResponse.json({ error: "Não encontrado" }, { status: 404 })
 
+  // Um pixelId da taróloga só para setar o cookie _fbp no navegador da cliente.
+  // O _fbp é por domínio, então qualquer pixel dela serve.
+  const firstPixel = await prisma.metaPixel.findFirst({
+    where: { userId: user.id },
+    select: { pixelId: true },
+    orderBy: { createdAt: "asc" },
+  })
+  const metaPixelId = firstPixel?.pixelId ?? null
+
   // Aplica restrições por plano antes de retornar
   const plan = user.plan ?? "FREE"
 
@@ -41,6 +50,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     return NextResponse.json({
       ...user,
       plan,
+      metaPixelId,
       publicBio: null,
       publicTheme: "BASIC",
       publicFont: null,
@@ -56,6 +66,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     return NextResponse.json({
       ...user,
       plan,
+      metaPixelId,
       publicBio: null,
       publicTheme: "BASIC",
       publicFont: null,
@@ -65,7 +76,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   }
 
   // PREMIUM: tudo liberado
-  return NextResponse.json({ ...user, plan })
+  return NextResponse.json({ ...user, plan, metaPixelId })
 }
 
 const bookSchema = z.object({
@@ -74,6 +85,10 @@ const bookSchema = z.object({
   serviceId: z.string().min(1),
   date: z.string(),
   startTime: z.string(),
+  // Sinais de correspondência da Meta (enviados pelo navegador da cliente)
+  fbp: z.string().optional().nullable(),
+  fbc: z.string().optional().nullable(),
+  fbclid: z.string().optional().nullable(),
 })
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
@@ -104,6 +119,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     const start = new Date(`${data.date}T${data.startTime}:00`)
     const end = addMinutes(start, service.duration)
 
+    // Sinais de correspondência da Meta: IP e user agent vêm da requisição;
+    // fbc é o cookie _fbc OU reconstruído a partir do fbclid da URL do anúncio.
+    const clientIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      null
+    const clientUserAgent = req.headers.get("user-agent") || null
+    const fbc =
+      data.fbc?.trim() ||
+      (data.fbclid?.trim() ? `fb.1.${Date.now()}.${data.fbclid.trim()}` : null)
+    const fbp = data.fbp?.trim() || null
+
     const appointment = await prisma.appointment.create({
       data: {
         userId: slug,
@@ -113,6 +140,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         startTime: start,
         endTime: end,
         amountPaid: service.price,
+        fbp,
+        fbc,
+        clientIp,
+        clientUserAgent,
       },
     })
 

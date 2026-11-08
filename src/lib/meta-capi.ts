@@ -20,12 +20,29 @@ function splitName(fullName: string) {
   return { fn: parts[0] ?? "", ln: parts.slice(1).join(" ") || parts[0] || "" }
 }
 
+// Data de nascimento no formato que a Meta espera: YYYYMMDD (ex: 19971226)
+function formatBirthDate(d: Date | string | null | undefined): string | undefined {
+  if (!d) return undefined
+  const date = typeof d === "string" ? new Date(d) : d
+  if (isNaN(date.getTime())) return undefined
+  const y = date.getUTCFullYear()
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0")
+  const day = String(date.getUTCDate()).padStart(2, "0")
+  return `${y}${m}${day}`
+}
+
 export interface CAPIEventPayload {
   appointmentId: string
   clientId: string
   clientName: string
   clientPhone: string
   clientEmail?: string | null
+  clientBirthDate?: Date | string | null
+  // Sinais de navegador capturados no agendamento (elevam a qualidade da correspondência)
+  fbp?: string | null
+  fbc?: string | null
+  clientIp?: string | null
+  clientUserAgent?: string | null
   amountPaid: number
   isFirstPurchase: boolean
   pixelId: string
@@ -42,7 +59,7 @@ export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok
   const { fn, ln } = splitName(clientName)
   const phoneNorm = normalizePhone(clientPhone)
 
-  const userData: Record<string, string[]> = {
+  const userData: Record<string, unknown> = {
     // Telefone hasheado — principal para EMQ sem email
     ph: [h(phoneNorm)!],
     // external_id = ID estável do cliente no banco (hasheado por boas práticas)
@@ -58,11 +75,24 @@ export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok
     userData.em = [h(clientEmail)!]
   }
 
+  // Data de nascimento (db) — sinal extra de correspondência quando a cliente tem no cadastro
+  const db = formatBirthDate(payload.clientBirthDate)
+  if (db) {
+    userData.db = [h(db)!]
+  }
+
+  // fbp / fbc — cookies do navegador da cliente capturados no agendamento. Strings simples, NÃO hasheadas.
+  if (payload.fbp) userData.fbp = payload.fbp
+  if (payload.fbc) userData.fbc = payload.fbc
+  // IP e user agent — strings simples em user_data, ajudam a correspondência.
+  if (payload.clientIp) userData.client_ip_address = payload.clientIp
+  if (payload.clientUserAgent) userData.client_user_agent = payload.clientUserAgent
+
   const eventData: Record<string, unknown> = {
     event_name: "Purchase",
     event_time: Math.floor(Date.now() / 1000),
     event_id: `purchase_${appointmentId}`,  // deduplicação — único por agendamento
-    action_source: "website",
+    action_source: "phone_call",             // sessão agendada via WhatsApp/telefone (evento offline, sem penalidade por falta de fbp/IP/UA)
     user_data: userData,
     custom_data: {
       currency: "BRL",
@@ -121,13 +151,17 @@ export async function fireCAPIEvent(
   if (!clientId) return { skipped: "sem clientId" }
 
   try {
-    const [client, completedCount] = await Promise.all([
+    const [client, completedCount, appointment] = await Promise.all([
       prisma.client.findUnique({
         where: { id: clientId },
-        select: { id: true, name: true, phone: true, email: true },
+        select: { id: true, name: true, phone: true, email: true, birthDate: true },
       }),
       prisma.appointment.count({
         where: { clientId, userId, status: "COMPLETED", paymentStatus: "Pago" },
+      }),
+      prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { fbp: true, fbc: true, clientIp: true, clientUserAgent: true },
       }),
     ])
     if (!client) return { skipped: "cliente nao encontrado" }
@@ -164,6 +198,11 @@ export async function fireCAPIEvent(
           clientName: client.name,
           clientPhone: client.phone,
           clientEmail: client.email,
+          clientBirthDate: client.birthDate,
+          fbp: appointment?.fbp,
+          fbc: appointment?.fbc,
+          clientIp: appointment?.clientIp,
+          clientUserAgent: appointment?.clientUserAgent,
           amountPaid,
           isFirstPurchase,
           pixelId: pixel.pixelId,
