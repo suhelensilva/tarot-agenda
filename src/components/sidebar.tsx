@@ -6,9 +6,10 @@ import { signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import {
   CalendarDays, Users, LayoutDashboard, Package,
-  BarChart3, Settings, LogOut, Link2, Crown, CreditCard, BookHeart, Kanban, Puzzle, User,
+  BarChart3, Settings, LogOut, Link2, Crown, CreditCard, BookHeart, Kanban, Puzzle, User, ChevronUp,
 } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
+import { useState, useRef, useEffect } from "react"
 
 const nav = [
   { href: "/dashboard",               icon: LayoutDashboard, label: "Painel",        exact: true  },
@@ -19,7 +20,6 @@ const nav = [
   { href: "/dashboard/link",          icon: Link2,           label: "Link Público",   exact: false },
   { href: "/dashboard/relatorios",    icon: BarChart3,       label: "Relatórios",     exact: false },
   { href: "/dashboard/planner",       icon: BookHeart,       label: "Planner",        exact: false },
-  { href: "/dashboard/perfil",        icon: User,            label: "Perfil",         exact: false },
   { href: "/dashboard/integracoes",   icon: Puzzle,          label: "Integrações",    exact: false },
   { href: "/dashboard/configuracoes", icon: Settings,        label: "Configurações",  exact: false },
   { href: "/dashboard/assinatura",    icon: CreditCard,      label: "Assinatura",     exact: false },
@@ -29,6 +29,18 @@ export default function Sidebar({ user }: {
   user: { name?: string | null; email?: string | null; plan?: string }
 }) {
   const pathname = usePathname()
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   return (
     <aside className="
@@ -105,34 +117,54 @@ export default function Sidebar({ user }: {
           <ThemeToggle />
         </div>
 
-        {/* Usuário — clica para ir à conta */}
-        <Link
-          href="/dashboard/conta"
-          className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-violet-50 dark:hover:bg-[rgba(170,85,249,0.06)] transition-colors group"
-        >
-          <div className="relative shrink-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)] dark:[box-shadow:0_0_10px_rgba(170,85,249,0.2)]">
-              {user?.name?.[0]?.toUpperCase() ?? "T"}
+        {/* Usuário com popover */}
+        <div ref={userMenuRef} className="relative">
+          {userMenuOpen && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-[rgba(170,85,249,0.2)] rounded-xl shadow-lg overflow-hidden z-50">
+              <Link href="/dashboard/conta" onClick={() => setUserMenuOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-violet-50 dark:hover:bg-[rgba(170,85,249,0.08)] transition-colors">
+                <User size={15} className="text-gray-400 dark:text-gray-500" />
+                Conta
+              </Link>
+              <Link href="/dashboard/perfil" onClick={() => setUserMenuOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-violet-50 dark:hover:bg-[rgba(170,85,249,0.08)] transition-colors border-t border-gray-100 dark:border-[rgba(255,255,255,0.05)]">
+                <Settings size={15} className="text-gray-400 dark:text-gray-500" />
+                Perfil da empresa
+              </Link>
+              <Link href="/dashboard/assinatura" onClick={() => setUserMenuOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-violet-50 dark:hover:bg-[rgba(170,85,249,0.08)] transition-colors border-t border-gray-100 dark:border-[rgba(255,255,255,0.05)]">
+                <CreditCard size={15} className="text-gray-400 dark:text-gray-500" />
+                Assinatura
+              </Link>
+              <button onClick={() => signOut({ callbackUrl: "/login" })}
+                className="flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors w-full text-left border-t border-gray-100 dark:border-[rgba(255,255,255,0.05)]">
+                <LogOut size={15} />
+                Sair
+              </button>
             </div>
-            {(user?.plan === "PREMIUM" || user?.plan === "PRO") && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 dark:bg-[#aa55f9] flex items-center justify-center dark:[box-shadow:0_0_8px_rgba(170,85,249,0.8)]">
-                <Crown size={9} className="text-amber-900 dark:text-white" />
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#1e1b4b] dark:text-white truncate group-hover:text-violet-700 dark:group-hover:text-[#aa55f9] transition-colors">{user?.name ?? "Taróloga"}</p>
-            <p className="text-xs text-slate-400 dark:text-gray-500 truncate">{user?.email}</p>
-          </div>
-        </Link>
+          )}
 
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-2 text-sm text-slate-400 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors w-full"
-        >
-          <LogOut size={15} />
-          Sair
-        </button>
+          <button
+            onClick={() => setUserMenuOpen((v) => !v)}
+            className="flex items-center gap-2.5 w-full rounded-xl px-2 py-1.5 hover:bg-violet-50 dark:hover:bg-[rgba(170,85,249,0.06)] transition-colors group"
+          >
+            <div className="relative shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)] dark:[box-shadow:0_0_10px_rgba(170,85,249,0.2)]">
+                {user?.name?.[0]?.toUpperCase() ?? "T"}
+              </div>
+              {(user?.plan === "PREMIUM" || user?.plan === "PRO") && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 dark:bg-[#aa55f9] flex items-center justify-center dark:[box-shadow:0_0_8px_rgba(170,85,249,0.8)]">
+                  <Crown size={9} className="text-amber-900 dark:text-white" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-semibold text-[#1e1b4b] dark:text-white truncate group-hover:text-violet-700 dark:group-hover:text-[#aa55f9] transition-colors">{user?.name ?? "Taróloga"}</p>
+              <p className="text-xs text-slate-400 dark:text-gray-500 truncate">{user?.email}</p>
+            </div>
+            <ChevronUp size={14} className={cn("text-gray-400 shrink-0 transition-transform", userMenuOpen ? "rotate-0" : "rotate-180")} />
+          </button>
+        </div>
       </div>
     </aside>
   )
