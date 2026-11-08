@@ -20,11 +20,10 @@ export async function POST(req: NextRequest) {
   const currentDay = nowBRT.getDate()
   const currentYear = nowBRT.getFullYear()
 
-  // Busca usuárias com aniversário ativo no horário certo
+  // Busca usuárias com aniversário ativo (Hobby plan: cron roda 1x/dia às 13h BRT)
   const settings = await prisma.automationSettings.findMany({
     where: {
       birthdayEnabled: true,
-      birthdaySendHour: currentHour,
       user: { whatsappConfig: { connected: true } },
     },
     include: {

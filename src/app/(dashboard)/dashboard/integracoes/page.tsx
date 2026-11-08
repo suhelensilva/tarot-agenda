@@ -366,11 +366,13 @@ export default function IntegracoesPage() {
           {autoSettings.birthdayEnabled && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Horário de envio (BRT)</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Horário de envio (BRT) <span className="text-amber-500 dark:text-amber-400 font-normal">· fixo às 13h no plano atual</span>
+                </label>
                 <select
                   value={autoSettings.birthdaySendHour}
-                  onChange={(e) => setAutoSettings((p) => ({ ...p, birthdaySendHour: Number(e.target.value) }))}
-                  className="border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  disabled
+                  className="border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-400 dark:text-gray-500 focus:outline-none opacity-60 cursor-not-allowed"
                 >
                   {Array.from({ length: 24 }, (_, h) => (
                     <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
