@@ -662,9 +662,9 @@ export default function CrmPage() {
   ]
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto">
+    <div className="flex flex-col">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0 sticky top-0 z-10 bg-[#0a0a14]">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 sticky top-0 z-10 bg-[#0a0a0f]">
         <div>
           <h1 className="text-lg font-semibold text-white">CRM</h1>
           <p className="text-xs text-gray-500 mt-0.5">
@@ -679,8 +679,8 @@ export default function CrmPage() {
         </button>
       </div>
 
-      {/* Kanban board */}
-      <div className="overflow-x-auto px-6 py-4" style={{ height: "calc(100vh - 130px)", minHeight: 480 }}>
+      {/* Kanban board — altura fixa para colunas scrollarem internamente */}
+      <div className="overflow-x-auto px-6 py-4" style={{ height: "calc(100vh - 65px)" }}>
         <div className="flex gap-4 h-full" style={{ minWidth: "max-content" }}>
           {columns.map((col) => (
             <KanbanColumn
