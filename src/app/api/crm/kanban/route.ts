@@ -75,7 +75,12 @@ export async function GET() {
     }
   }
 
-  const result = lists.map((list) => {
+  // Separa blacklist das listas normais
+  const blacklistRecord = lists.find((l) => l.name === "__blacklist__")
+  const normalLists = lists.filter((l) => l.name !== "__blacklist__")
+  const blacklistClientIds = new Set(blacklistRecord?.members.map((m) => m.clientId) ?? [])
+
+  const result = normalLists.map((list) => {
     const clients = list.members.map((m) => summarize(m.client))
     const totalRevenue = clients.reduce((s, c) => s + c.totalSpent, 0)
     return {
@@ -88,8 +93,22 @@ export async function GET() {
     }
   })
 
-  const untagged = untaggedClients.map(summarize)
+  // Clientes sem etiqueta excluindo os da blacklist
+  const untagged = untaggedClients
+    .filter((c) => !blacklistClientIds.has(c.id))
+    .map(summarize)
   const untaggedRevenue = untagged.reduce((s, c) => s + c.totalSpent, 0)
 
-  return NextResponse.json({ lists: result, untagged, untaggedRevenue })
+  // Garante que a lista blacklist existe no banco
+  let blacklistId = blacklistRecord?.id ?? null
+  if (!blacklistId) {
+    const created = await prisma.crmList.create({
+      data: { userId, name: "__blacklist__", color: "#ef4444", order: 9999 },
+    })
+    blacklistId = created.id
+  }
+
+  const blacklistClients = (blacklistRecord?.members ?? []).map((m) => summarize(m.client))
+
+  return NextResponse.json({ lists: result, untagged, untaggedRevenue, blacklist: { id: blacklistId, clients: blacklistClients } })
 }

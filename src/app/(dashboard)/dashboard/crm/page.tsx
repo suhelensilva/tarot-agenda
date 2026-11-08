@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, X, Check, Crown, Pencil } from "lucide-react"
+import { Plus, X, Check, Crown, Pencil, Ban } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 
 const TOP_THRESHOLD_KEY = "crm_top_threshold"
@@ -277,6 +277,62 @@ function TopClientesColumn({
   )
 }
 
+// ----- Blacklist -----
+function BlacklistColumn({
+  clients,
+  listId,
+  onDragStart,
+  onDrop,
+  onDragOver,
+}: {
+  clients: ClientCard[]
+  listId: string
+  onDragStart: (e: React.DragEvent, clientId: string, fromColId: string) => void
+  onDrop: (e: React.DragEvent, toColId: string) => void
+  onDragOver: (e: React.DragEvent) => void
+}) {
+  const color = "#ef4444"
+  const [dragOver, setDragOver] = useState(false)
+
+  return (
+    <div className="flex-shrink-0 w-[210px] flex flex-col gap-2 h-full">
+      {/* Cabeçalho */}
+      <div className="rounded-xl overflow-hidden flex-shrink-0">
+        <div className="px-4 py-3 flex items-center gap-2" style={{ background: color }}>
+          <Ban size={13} className="text-white/90" />
+          <span className="text-sm font-medium text-white/95">Blacklist</span>
+        </div>
+        <div className="bg-[#12121e] px-4 py-3">
+          <div className="text-2xl font-medium text-white leading-none mb-1">{clients.length}</div>
+          <div className="text-[10px] text-gray-600">clientes bloqueadas</div>
+        </div>
+      </div>
+
+      {/* Zona de drop + cards */}
+      <div
+        className={`flex flex-col gap-2 overflow-y-auto flex-1 rounded-xl p-1 transition-colors ${dragOver ? "bg-red-500/10 border border-red-500/30" : ""}`}
+        onDrop={(e) => { setDragOver(false); onDrop(e, listId) }}
+        onDragOver={(e) => { onDragOver(e); setDragOver(true) }}
+        onDragLeave={() => setDragOver(false)}
+      >
+        {clients.map((c) => (
+          <KanbanCard
+            key={c.id}
+            client={c}
+            color={color}
+            onDragStart={(e, id) => onDragStart(e, id, listId)}
+          />
+        ))}
+        {clients.length === 0 && (
+          <div className={`text-[11px] text-center py-4 transition-colors ${dragOver ? "text-red-400" : "text-gray-700"}`}>
+            Arraste clientes aqui
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ----- Nova Coluna -----
 function NewColumnCard({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false)
@@ -375,6 +431,7 @@ function NewColumnCard({ onCreated }: { onCreated: () => void }) {
 // ----- Main Page -----
 export default function CrmPage() {
   const [columns, setColumns] = useState<Column[]>([])
+  const [blacklist, setBlacklist] = useState<{ id: string; clients: ClientCard[] }>({ id: "", clients: [] })
   const [loading, setLoading] = useState(true)
   const dragRef = useRef<{ clientId: string; fromColId: string } | null>(null)
   const [topThreshold, setTopThreshold] = useState<number>(500)
@@ -406,6 +463,7 @@ export default function CrmPage() {
       }
       const userCols: Column[] = data.lists.map((l: Column) => ({ ...l, isUntagged: false }))
       setColumns([untaggedCol, ...userCols])
+      setBlacklist(data.blacklist ?? { id: "", clients: [] })
     } finally {
       setLoading(false)
     }
@@ -432,32 +490,55 @@ export default function CrmPage() {
     dragRef.current = null
 
     const { clientId, fromColId } = drag
+    const blacklistId = blacklist.id
 
-    setColumns((prev) => {
-      const next = prev.map((col) => ({ ...col, clients: [...col.clients] }))
-      const src = next.find((c) => c.id === fromColId)
-      const dst = next.find((c) => c.id === toColId)
-      if (!src || !dst) return prev
-      const idx = src.clients.findIndex((c) => c.id === clientId)
-      if (idx === -1) return prev
-      const [card] = src.clients.splice(idx, 1)
-      dst.clients.unshift(card)
-      return next
-    })
+    // Atualização otimista: move cliente entre colunas (incluindo blacklist)
+    const getCard = () => {
+      const fromCol = columns.find((c) => c.id === fromColId)
+      if (fromCol) return fromCol.clients.find((c) => c.id === clientId) ?? null
+      return blacklist.clients.find((c) => c.id === clientId) ?? null
+    }
+    const card = getCard()
+    if (!card) return
+
+    if (fromColId === blacklistId) {
+      setBlacklist((prev) => ({ ...prev, clients: prev.clients.filter((c) => c.id !== clientId) }))
+    } else {
+      setColumns((prev) => prev.map((col) =>
+        col.id === fromColId ? { ...col, clients: col.clients.filter((c) => c.id !== clientId) } : col
+      ))
+    }
+
+    if (toColId === blacklistId) {
+      setBlacklist((prev) => ({ ...prev, clients: [card, ...prev.clients] }))
+    } else {
+      setColumns((prev) => prev.map((col) =>
+        col.id === toColId ? { ...col, clients: [card, ...col.clients] } : col
+      ))
+    }
 
     try {
-      if (fromColId !== "__untagged__") {
+      const isSpecialFrom = fromColId === "__untagged__" || fromColId === blacklistId
+      const isSpecialTo = toColId === "__untagged__" || toColId === blacklistId
+
+      if (!isSpecialFrom) {
         await fetch(`/api/clientes/${clientId}/etiquetas`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ listId: fromColId }),
         })
       }
-      if (toColId !== "__untagged__") {
+      if (!isSpecialTo) {
         await fetch(`/api/clientes/${clientId}/etiquetas`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ listId: toColId }),
+        })
+      } else if (toColId === blacklistId) {
+        await fetch(`/api/clientes/${clientId}/etiquetas`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ listId: blacklistId }),
         })
       }
     } catch {
@@ -506,6 +587,15 @@ export default function CrmPage() {
             threshold={topThreshold}
             onThresholdChange={handleTopThresholdChange}
           />
+          {blacklist.id && (
+            <BlacklistColumn
+              clients={blacklist.clients}
+              listId={blacklist.id}
+              onDragStart={handleDragStart}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            />
+          )}
           <NewColumnCard onCreated={fetchData} />
         </div>
       </div>
