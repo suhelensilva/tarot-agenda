@@ -103,8 +103,9 @@ function KanbanColumn({
   const color = col.isUntagged ? "#6b7280" : col.color
 
   return (
-    <div className="flex-shrink-0 w-[210px] flex flex-col gap-2">
-      <div className="rounded-xl overflow-hidden">
+    <div className="flex-shrink-0 w-[210px] flex flex-col gap-2 h-full">
+      {/* Cabeçalho fixo */}
+      <div className="rounded-xl overflow-hidden flex-shrink-0">
         <div className="px-4 py-3" style={{ background: color }}>
           <span className="text-sm font-medium text-white/95">{col.name}</span>
         </div>
@@ -130,8 +131,9 @@ function KanbanColumn({
         </div>
       </div>
 
+      {/* Cards com scroll próprio */}
       <div
-        className={`flex flex-col gap-2 min-h-[80px] rounded-xl transition-colors p-1 ${
+        className={`flex flex-col gap-2 overflow-y-auto flex-1 rounded-xl transition-colors p-1 ${
           over ? "bg-white/5" : ""
         }`}
         onDragOver={(e) => {
@@ -364,7 +366,7 @@ export default function CrmPage() {
       </div>
 
       {/* Kanban board */}
-      <div className="flex-1 overflow-x-auto px-6 py-4">
+      <div className="flex-1 min-h-0 overflow-x-auto px-6 py-4">
         <div className="flex gap-4 h-full" style={{ minWidth: "max-content" }}>
           {columns.map((col) => (
             <KanbanColumn
