@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { sendPurchaseEvent } from "@/lib/meta-capi"
 
 const statusSchema = z.object({
   status: z.enum(["SCHEDULED", "CONFIRMED", "COMPLETED", "NO_SHOW", "CANCELLED"]).optional(),
@@ -22,6 +23,63 @@ const editSchema = z.object({
   amountPaid: z.number().optional().nullable(),
 })
 
+async function fireCAPIEvent(appointmentId: string, clientId: string | null, amountPaid: number, userId: string) {
+  if (!clientId) return
+
+  try {
+    // Busca cliente e quantos atendimentos concluidos ela tinha antes deste
+    const [client, completedCount] = await Promise.all([
+      prisma.client.findUnique({
+        where: { id: clientId },
+        select: { id: true, name: true, phone: true, email: true },
+      }),
+      prisma.appointment.count({
+        where: { clientId, userId, status: "COMPLETED", paymentStatus: "Pago" },
+      }),
+    ])
+    if (!client) return
+
+    // Busca etiquetas da cliente e os pixels associados
+    const memberships = await prisma.crmListMember.findMany({
+      where: { clientId, list: { userId } },
+      include: {
+        list: {
+          include: {
+            metaPixel: { select: { pixelId: true, accessToken: true, testEventCode: true } },
+          },
+        },
+      },
+    })
+
+    const pixels = memberships
+      .map((m) => m.list.metaPixel)
+      .filter((p): p is NonNullable<typeof p> => p !== null)
+
+    if (pixels.length === 0) return // cliente sem etiqueta com pixel — ignora
+
+    const isFirstPurchase = completedCount === 0
+
+    await Promise.all(
+      pixels.map((pixel) =>
+        sendPurchaseEvent({
+          appointmentId,
+          clientId: client.id,
+          clientName: client.name,
+          clientPhone: client.phone,
+          clientEmail: client.email,
+          amountPaid,
+          isFirstPurchase,
+          pixelId: pixel.pixelId,
+          accessToken: pixel.accessToken,
+          testEventCode: pixel.testEventCode,
+        })
+      )
+    )
+  } catch (err) {
+    console.error("[fireCAPIEvent] erro:", err)
+  }
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
@@ -37,10 +95,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: `Campos inválidos: ${fields}` }, { status: 400 })
     }
 
+    // Busca estado anterior para detectar mudança de paymentStatus
+    const before = await prisma.appointment.findFirst({
+      where: { id, userId: session.user.id },
+      select: { paymentStatus: true, amountPaid: true, clientId: true },
+    })
+
     await prisma.appointment.updateMany({
       where: { id, userId: session.user.id },
       data: parsed.data,
     })
+
+    // Dispara CAPI somente quando paymentStatus muda para "Pago"
+    if (parsed.data.paymentStatus === "Pago" && before?.paymentStatus !== "Pago") {
+      void fireCAPIEvent(id, before?.clientId ?? null, parsed.data.amountPaid ?? before?.amountPaid ?? 0, session.user.id)
+    }
 
     return NextResponse.json({ ok: true })
   } catch (err) {

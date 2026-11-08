@@ -7,6 +7,7 @@ const patchSchema = z.object({
   name: z.string().min(1).max(60).optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   order: z.number().int().optional(),
+  metaPixelId: z.string().optional().nullable(),
 })
 
 // PATCH /api/crm/lists/[id] -> renomeia / recolore / reordena.
@@ -31,6 +32,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       ...(data.name !== undefined && { name: data.name.trim() }),
       ...(data.color !== undefined && { color: data.color }),
       ...(data.order !== undefined && { order: data.order }),
+      ...("metaPixelId" in data && { metaPixelId: data.metaPixelId }),
     },
   })
 
