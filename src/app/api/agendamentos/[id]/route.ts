@@ -109,7 +109,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     })
 
     // Dispara CAPI somente quando paymentStatus muda para "Pago"
+    console.log(`[PATCH agendamentos] id=${id} paymentStatus novo="${parsed.data.paymentStatus}" antes="${before?.paymentStatus}"`)
     if (parsed.data.paymentStatus === "Pago" && before?.paymentStatus !== "Pago") {
+      console.log("[PATCH agendamentos] disparando fireCAPIEvent")
       void fireCAPIEvent(id, before?.clientId ?? null, parsed.data.amountPaid ?? before?.amountPaid ?? 0, session.user.id)
     }
 
