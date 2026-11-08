@@ -70,15 +70,29 @@ function KanbanCard({
       className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0f0f1a] hover:bg-[#14142a] transition-colors cursor-grab active:cursor-grabbing select-none"
       style={{ borderLeftWidth: 3, borderLeftColor: color, borderLeftStyle: "solid" }}
     >
+      {/* Tooltip flutuante acima do card */}
+      {hovered && client.firstServiceName && (
+        <div className="absolute bottom-full left-0 right-0 mb-1.5 z-50 rounded-lg bg-[#1e1b4b] border border-violet-500/30 px-3 py-2 shadow-xl pointer-events-none">
+          <p className="text-[9px] text-violet-400 font-medium mb-0.5">1º atendimento</p>
+          <p className="text-[11px] text-white">{client.firstServiceName}</p>
+        </div>
+      )}
+
       <div className="p-3">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-start gap-2 mb-2">
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0 mt-0.5"
             style={{ background: color + "22", color }}
           >
             {initials(client.name)}
           </div>
-          <span className="text-sm font-medium text-white">{client.name}</span>
+          <span className="text-sm font-medium text-white flex-1 leading-snug">{client.name}</span>
+          {isTop && (
+            <div className="flex items-center gap-0.5 bg-amber-500/20 border border-amber-500/40 rounded-full px-1.5 py-0.5 flex-shrink-0 mt-0.5">
+              <Crown size={9} className="text-amber-400" />
+              <span className="text-[9px] font-semibold text-amber-400">Top</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-gray-500">{client.completedCount} atend.</span>
@@ -92,22 +106,6 @@ function KanbanCard({
           </div>
         )}
       </div>
-
-      {/* Badge Top Cliente */}
-      {isTop && (
-        <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-amber-500/20 border border-amber-500/40 rounded-full px-1.5 py-0.5">
-          <Crown size={9} className="text-amber-400" />
-          <span className="text-[9px] font-semibold text-amber-400">Top</span>
-        </div>
-      )}
-
-      {/* Tooltip ao passar o mouse */}
-      {hovered && client.firstServiceName && (
-        <div className="absolute left-full top-0 ml-2 z-50 w-48 rounded-lg bg-[#1e1b4b] border border-violet-500/30 px-3 py-2 shadow-xl pointer-events-none">
-          <p className="text-[10px] text-violet-400 font-medium mb-0.5">1º atendimento</p>
-          <p className="text-xs text-white">{client.firstServiceName}</p>
-        </div>
-      )}
     </div>
   )
 }
@@ -206,7 +204,9 @@ function TopClientesColumn({
   const [editing, setEditing] = useState(false)
   const [inputVal, setInputVal] = useState(String(threshold))
   const color = "#f59e0b"
-  const topClients = allClients.filter((c) => c.totalSpent >= threshold)
+  const topClients = allClients
+    .filter((c) => c.totalSpent >= threshold)
+    .sort((a, b) => b.totalSpent - a.totalSpent)
 
   function saveThreshold() {
     const v = parseFloat(inputVal.replace(",", "."))
