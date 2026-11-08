@@ -25,7 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id: clientId } = await params
 
-  const { listId } = z.object({ listId: z.string() }).parse(await req.json())
+  const { listId, reason } = z.object({ listId: z.string(), reason: z.string().optional().nullable() }).parse(await req.json())
 
   // Verifica que a etiqueta pertence ao user
   const list = await prisma.crmList.findFirst({ where: { id: listId, userId: session.user.id } })
@@ -33,8 +33,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   await prisma.crmListMember.upsert({
     where: { listId_clientId: { listId, clientId } },
-    create: { listId, clientId },
-    update: {},
+    create: { listId, clientId, reason: reason ?? null },
+    update: { reason: reason ?? null },
   })
 
   return NextResponse.json({ ok: true })

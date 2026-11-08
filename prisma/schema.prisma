@@ -479,6 +479,7 @@ model CrmListMember {
   id        String   @id @default(cuid())
   listId    String
   clientId  String
+  reason    String?
   createdAt DateTime @default(now())
 
   list   CrmList @relation(fields: [listId], references: [id], onDelete: Cascade)

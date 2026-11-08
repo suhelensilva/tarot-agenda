@@ -108,7 +108,10 @@ export async function GET() {
     blacklistId = created.id
   }
 
-  const blacklistClients = (blacklistRecord?.members ?? []).map((m) => summarize(m.client))
+  const blacklistClients = (blacklistRecord?.members ?? []).map((m) => ({
+    ...summarize(m.client),
+    blacklistReason: m.reason ?? null,
+  }))
 
   return NextResponse.json({ lists: result, untagged, untaggedRevenue, blacklist: { id: blacklistId, clients: blacklistClients } })
 }

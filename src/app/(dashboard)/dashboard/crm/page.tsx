@@ -16,6 +16,7 @@ type ClientCard = {
   lastAppointmentDate: string | null
   totalSpent: number
   firstServiceName: string | null
+  blacklistReason?: string | null
 }
 
 type Column = {
@@ -278,6 +279,72 @@ function TopClientesColumn({
 }
 
 // ----- Blacklist -----
+// ----- Blacklist Card (visual agressivo) -----
+function BlacklistCard({
+  client,
+  onDragStart,
+}: {
+  client: ClientCard
+  onDragStart: (e: React.DragEvent, clientId: string) => void
+}) {
+  const [nameHovered, setNameHovered] = useState(false)
+
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, client.id)}
+      className="relative rounded-xl cursor-grab active:cursor-grabbing select-none overflow-hidden"
+      style={{
+        background: "#0a0000",
+        borderLeft: "3px solid #ff2222",
+        border: "1px solid rgba(255,30,30,0.2)",
+        borderLeftWidth: "3px",
+        borderLeftColor: "#ff2222",
+      }}
+    >
+      {/* Overlay ao passar no nome */}
+      {nameHovered && (
+        <div className="absolute inset-0 z-50 rounded-xl p-3 flex flex-col justify-center pointer-events-none"
+          style={{ background: "rgba(10,0,0,0.96)" }}>
+          <p className="text-[13px] font-semibold text-red-100 leading-snug mb-2">{client.name}</p>
+          {client.firstServiceName && (
+            <p className="text-[9px] leading-snug" style={{ color: "rgba(255,80,80,0.5)" }}>{client.firstServiceName}</p>
+          )}
+        </div>
+      )}
+
+      <div className="p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+            style={{ background: "rgba(220,0,0,0.3)", color: "#ff4444" }}
+          >
+            {initials(client.name)}
+          </div>
+          <span
+            className="text-sm font-medium text-red-100 flex-1 truncate cursor-default"
+            onMouseEnter={() => setNameHovered(true)}
+            onMouseLeave={() => setNameHovered(false)}
+          >
+            {client.name}
+          </span>
+        </div>
+        {client.blacklistReason ? (
+          <p className="text-[10px] italic mb-1.5 leading-snug" style={{ color: "rgba(255,80,80,0.6)" }}>
+            {client.blacklistReason}
+          </p>
+        ) : (
+          <p className="text-[10px] italic mb-1.5" style={{ color: "rgba(255,80,80,0.25)" }}>sem motivo registrado</p>
+        )}
+        <div className="text-[10px]" style={{ color: "rgba(255,60,60,0.35)" }}>
+          {client.completedCount} atend. · {formatCurrency(client.totalSpent)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ----- Blacklist Column -----
 function BlacklistColumn({
   clients,
   listId,
@@ -291,40 +358,40 @@ function BlacklistColumn({
   onDrop: (e: React.DragEvent, toColId: string) => void
   onDragOver: (e: React.DragEvent) => void
 }) {
-  const color = "#ef4444"
   const [dragOver, setDragOver] = useState(false)
 
   return (
     <div className="flex-shrink-0 w-[210px] flex flex-col gap-2 h-full">
       {/* Cabeçalho */}
-      <div className="rounded-xl overflow-hidden flex-shrink-0">
-        <div className="px-4 py-3 flex items-center gap-2" style={{ background: color }}>
-          <Ban size={13} className="text-white/90" />
-          <span className="text-sm font-medium text-white/95">Blacklist</span>
+      <div className="rounded-xl overflow-hidden flex-shrink-0" style={{ border: "1px solid rgba(220,0,0,0.3)" }}>
+        <div className="px-4 py-3 flex items-center gap-2" style={{ background: "#b91c1c" }}>
+          <Ban size={13} className="text-white" />
+          <span className="text-sm font-bold text-white tracking-wide">BLACKLIST</span>
         </div>
-        <div className="bg-[#12121e] px-4 py-3">
-          <div className="text-2xl font-medium text-white leading-none mb-1">{clients.length}</div>
-          <div className="text-[10px] text-gray-600">clientes bloqueadas</div>
+        <div className="px-4 py-3" style={{ background: "#0a0000" }}>
+          <div className="text-2xl font-medium leading-none mb-1" style={{ color: "#ff4444" }}>{clients.length}</div>
+          <div className="text-[10px]" style={{ color: "rgba(255,60,60,0.4)" }}>clientes bloqueadas</div>
         </div>
       </div>
 
       {/* Zona de drop + cards */}
       <div
-        className={`flex flex-col gap-2 overflow-y-auto flex-1 rounded-xl p-1 transition-colors ${dragOver ? "bg-red-500/10 border border-red-500/30" : ""}`}
+        className={`flex flex-col gap-2 overflow-y-auto flex-1 rounded-xl p-1 transition-all ${dragOver ? "ring-1 ring-red-600" : ""}`}
+        style={dragOver ? { background: "rgba(180,0,0,0.08)" } : {}}
         onDrop={(e) => { setDragOver(false); onDrop(e, listId) }}
         onDragOver={(e) => { onDragOver(e); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
       >
         {clients.map((c) => (
-          <KanbanCard
+          <BlacklistCard
             key={c.id}
             client={c}
-            color={color}
             onDragStart={(e, id) => onDragStart(e, id, listId)}
           />
         ))}
         {clients.length === 0 && (
-          <div className={`text-[11px] text-center py-4 transition-colors ${dragOver ? "text-red-400" : "text-gray-700"}`}>
+          <div className={`text-[11px] text-center py-4 transition-colors ${dragOver ? "" : ""}`}
+            style={{ color: dragOver ? "#ff4444" : "rgba(255,60,60,0.25)" }}>
             Arraste clientes aqui
           </div>
         )}
@@ -432,6 +499,8 @@ function NewColumnCard({ onCreated }: { onCreated: () => void }) {
 export default function CrmPage() {
   const [columns, setColumns] = useState<Column[]>([])
   const [blacklist, setBlacklist] = useState<{ id: string; clients: ClientCard[] }>({ id: "", clients: [] })
+  const [pendingBlacklist, setPendingBlacklist] = useState<{ card: ClientCard; fromColId: string } | null>(null)
+  const [pendingReason, setPendingReason] = useState("")
   const [loading, setLoading] = useState(true)
   const dragRef = useRef<{ clientId: string; fromColId: string } | null>(null)
   const [topThreshold, setTopThreshold] = useState<number>(500)
@@ -483,16 +552,9 @@ export default function CrmPage() {
     e.dataTransfer.dropEffect = "move"
   }
 
-  async function handleDrop(e: React.DragEvent, toColId: string) {
-    e.preventDefault()
-    const drag = dragRef.current
-    if (!drag || drag.fromColId === toColId) return
-    dragRef.current = null
-
-    const { clientId, fromColId } = drag
+  async function executeMove(clientId: string, fromColId: string, toColId: string, reason?: string) {
     const blacklistId = blacklist.id
 
-    // Atualização otimista: move cliente entre colunas (incluindo blacklist)
     const getCard = () => {
       const fromCol = columns.find((c) => c.id === fromColId)
       if (fromCol) return fromCol.clients.find((c) => c.id === clientId) ?? null
@@ -510,7 +572,7 @@ export default function CrmPage() {
     }
 
     if (toColId === blacklistId) {
-      setBlacklist((prev) => ({ ...prev, clients: [card, ...prev.clients] }))
+      setBlacklist((prev) => ({ ...prev, clients: [{ ...card, blacklistReason: reason ?? null }, ...prev.clients] }))
     } else {
       setColumns((prev) => prev.map((col) =>
         col.id === toColId ? { ...col, clients: [card, ...col.clients] } : col
@@ -519,8 +581,6 @@ export default function CrmPage() {
 
     try {
       const isSpecialFrom = fromColId === "__untagged__" || fromColId === blacklistId
-      const isSpecialTo = toColId === "__untagged__" || toColId === blacklistId
-
       if (!isSpecialFrom) {
         await fetch(`/api/clientes/${clientId}/etiquetas`, {
           method: "DELETE",
@@ -528,22 +588,50 @@ export default function CrmPage() {
           body: JSON.stringify({ listId: fromColId }),
         })
       }
-      if (!isSpecialTo) {
+      if (toColId !== "__untagged__") {
         await fetch(`/api/clientes/${clientId}/etiquetas`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ listId: toColId }),
-        })
-      } else if (toColId === blacklistId) {
-        await fetch(`/api/clientes/${clientId}/etiquetas`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ listId: blacklistId }),
+          body: JSON.stringify({ listId: toColId === blacklistId ? blacklistId : toColId, reason: reason ?? null }),
         })
       }
     } catch {
       fetchData()
     }
+  }
+
+  async function handleDrop(e: React.DragEvent, toColId: string) {
+    e.preventDefault()
+    const drag = dragRef.current
+    if (!drag || drag.fromColId === toColId) return
+    dragRef.current = null
+
+    const { clientId, fromColId } = drag
+
+    if (toColId === blacklist.id) {
+      // Pede motivo antes de confirmar
+      const fromCol = columns.find((c) => c.id === fromColId)
+      const card = fromCol?.clients.find((c) => c.id === clientId) ?? blacklist.clients.find((c) => c.id === clientId)
+      if (card) {
+        setPendingBlacklist({ card, fromColId })
+        setPendingReason("")
+      }
+      return
+    }
+
+    await executeMove(clientId, fromColId, toColId)
+  }
+
+  async function confirmBlacklist() {
+    if (!pendingBlacklist) return
+    const { card, fromColId } = pendingBlacklist
+    setPendingBlacklist(null)
+    await executeMove(card.id, fromColId, blacklist.id, pendingReason.trim() || undefined)
+  }
+
+  function cancelBlacklist() {
+    setPendingBlacklist(null)
+    setPendingReason("")
   }
 
   if (loading) {
@@ -599,6 +687,45 @@ export default function CrmPage() {
           <NewColumnCard onCreated={fetchData} />
         </div>
       </div>
+
+      {/* Modal de motivo ao arrastar para blacklist */}
+      {pendingBlacklist && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.75)" }}>
+          <div className="rounded-2xl p-6 w-80 shadow-2xl" style={{ background: "#0d0000", border: "1px solid rgba(220,0,0,0.35)" }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Ban size={15} style={{ color: "#ff4444" }} />
+              <h3 className="text-sm font-bold" style={{ color: "#ff4444" }}>Adicionar a Blacklist</h3>
+            </div>
+            <p className="text-xs text-red-200/60 mb-4 truncate">{pendingBlacklist.card.name}</p>
+            <textarea
+              autoFocus
+              rows={3}
+              placeholder="Motivo (opcional)..."
+              value={pendingReason}
+              onChange={(e) => setPendingReason(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && e.ctrlKey) confirmBlacklist(); if (e.key === "Escape") cancelBlacklist() }}
+              className="w-full text-sm text-red-100 placeholder-red-900/60 rounded-xl px-3 py-2.5 focus:outline-none resize-none"
+              style={{ background: "#080000", border: "1px solid rgba(200,0,0,0.25)" }}
+            />
+            <div className="flex gap-2 mt-4 justify-end">
+              <button
+                onClick={cancelBlacklist}
+                className="text-xs px-4 py-2 rounded-xl transition-colors"
+                style={{ color: "rgba(255,100,100,0.5)" }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmBlacklist}
+                className="text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
+                style={{ background: "#7f1d1d", color: "#ffcccc" }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
