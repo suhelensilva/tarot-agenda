@@ -313,34 +313,87 @@ function TopClientesColumn({
 // ----- Blacklist Card (visual agressivo) -----
 function BlacklistCard({
   client,
+  listId,
   onDragStart,
+  onReasonChange,
 }: {
   client: ClientCard
+  listId: string
   onDragStart: (e: React.DragEvent, clientId: string) => void
+  onReasonChange: (clientId: string, reason: string | null) => void
 }) {
-  const [nameHovered, setNameHovered] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const [localReason, setLocalReason] = useState(client.blacklistReason ?? "")
+  const [saving, setSaving] = useState(false)
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  function handleEnter() {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current)
+    setHovered(true)
+    setTimeout(() => textareaRef.current?.focus(), 30)
+  }
+
+  function handleLeave() {
+    leaveTimer.current = setTimeout(() => {
+      setHovered(false)
+      saveReason()
+    }, 150)
+  }
+
+  async function saveReason() {
+    const trimmed = localReason.trim() || null
+    if (trimmed === (client.blacklistReason ?? null)) return
+    setSaving(true)
+    try {
+      await fetch(`/api/clientes/${client.id}/etiquetas`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listId, reason: trimmed }),
+      })
+      onReasonChange(client.id, trimmed)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div
-      draggable
-      onDragStart={(e) => onDragStart(e, client.id)}
+      draggable={!hovered}
+      onDragStart={(e) => { if (!hovered) onDragStart(e, client.id) }}
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
       className="relative rounded-xl cursor-grab active:cursor-grabbing select-none overflow-hidden"
       style={{
         background: "#0a0000",
-        borderLeft: "3px solid #ff2222",
         border: "1px solid rgba(255,30,30,0.2)",
         borderLeftWidth: "3px",
         borderLeftColor: "#ff2222",
       }}
     >
-      {/* Overlay ao passar no nome */}
-      {nameHovered && (
-        <div className="absolute inset-0 z-50 rounded-xl p-3 flex flex-col justify-center pointer-events-none"
-          style={{ background: "rgba(10,0,0,0.96)" }}>
-          <p className="text-[13px] font-semibold text-red-100 leading-snug mb-2">{client.name}</p>
-          {client.firstServiceName && (
-            <p className="text-[9px] leading-snug" style={{ color: "rgba(255,80,80,0.5)" }}>{client.firstServiceName}</p>
-          )}
+      {/* Overlay de edição do motivo ao hover */}
+      {hovered && (
+        <div
+          className="absolute inset-0 z-50 rounded-xl p-3 flex flex-col gap-1.5"
+          style={{ background: "rgba(8,0,0,0.97)" }}
+          onMouseEnter={() => { if (leaveTimer.current) clearTimeout(leaveTimer.current) }}
+          onMouseLeave={handleLeave}
+        >
+          <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,60,60,0.5)" }}>
+            Motivo da blacklist
+          </p>
+          <textarea
+            ref={textareaRef}
+            value={localReason}
+            onChange={(e) => setLocalReason(e.target.value)}
+            onMouseDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === "Escape") { setHovered(false); saveReason() } }}
+            placeholder="Por que está na blacklist?"
+            rows={3}
+            className="w-full text-[11px] text-red-100 bg-transparent rounded-lg px-2 py-1.5 resize-none focus:outline-none placeholder-red-900/50"
+            style={{ border: "1px solid rgba(200,0,0,0.3)" }}
+          />
+          {saving && <p className="text-[9px]" style={{ color: "rgba(255,60,60,0.4)" }}>Salvando...</p>}
         </div>
       )}
 
@@ -352,11 +405,7 @@ function BlacklistCard({
           >
             {initials(client.name)}
           </div>
-          <span
-            className="text-sm font-medium text-red-100 flex-1 truncate cursor-default"
-            onMouseEnter={() => setNameHovered(true)}
-            onMouseLeave={() => setNameHovered(false)}
-          >
+          <span className="text-sm font-medium text-red-100 flex-1 truncate">
             {client.name}
           </span>
         </div>
@@ -386,12 +435,14 @@ function BlacklistColumn({
   onDragStart,
   onDrop,
   onDragOver,
+  onReasonChange,
 }: {
   clients: ClientCard[]
   listId: string
   onDragStart: (e: React.DragEvent, clientId: string, fromColId: string) => void
   onDrop: (e: React.DragEvent, toColId: string) => void
   onDragOver: (e: React.DragEvent) => void
+  onReasonChange: (clientId: string, reason: string | null) => void
 }) {
   const [dragOver, setDragOver] = useState(false)
 
@@ -421,7 +472,9 @@ function BlacklistColumn({
           <BlacklistCard
             key={c.id}
             client={c}
+            listId={listId}
             onDragStart={(e, id) => onDragStart(e, id, listId)}
+            onReasonChange={onReasonChange}
           />
         ))}
         {clients.length === 0 && (
@@ -757,6 +810,14 @@ export default function CrmPage() {
               onDragStart={handleDragStart}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
+              onReasonChange={(clientId, reason) => {
+                setBlacklist((prev) => ({
+                  ...prev,
+                  clients: prev.clients.map((c) =>
+                    c.id === clientId ? { ...c, blacklistReason: reason } : c
+                  ),
+                }))
+              }}
             />
           )}
           <NewColumnCard onCreated={fetchData} />

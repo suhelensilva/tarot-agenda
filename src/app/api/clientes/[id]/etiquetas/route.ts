@@ -40,6 +40,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json({ ok: true })
 }
 
+/** PATCH — atualiza o motivo de uma etiqueta */
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+
+  const { id: clientId } = await params
+  const { listId, reason } = z.object({ listId: z.string(), reason: z.string().nullable() }).parse(await req.json())
+
+  await prisma.crmListMember.updateMany({
+    where: { listId, clientId, list: { userId: session.user.id } },
+    data: { reason: reason ?? null },
+  })
+
+  return NextResponse.json({ ok: true })
+}
+
 /** DELETE — remove etiqueta da cliente */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
