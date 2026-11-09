@@ -112,9 +112,13 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Dispara CAPI se já criou com paymentStatus "Pago"
+    // Dispara CAPI se já criou com paymentStatus "Pago".
+    // IMPORTANTE: precisa AWAIT. Sem await (void), a Vercel congela a função
+    // ao enviar a resposta e o envio pro Meta morre pela metade (sem log, sem evento).
+    // fireCAPIEvent trata os próprios erros e nunca lança, então o await é seguro
+    // e não quebra a criação do agendamento.
     if (data.paymentStatus === "Pago") {
-      void fireCAPIEvent(appointment.id, data.clientId, data.amountPaid ?? 0, session.user.id)
+      await fireCAPIEvent(appointment.id, data.clientId, data.amountPaid ?? 0, session.user.id)
     }
 
     return NextResponse.json(appointment, { status: 201 })
