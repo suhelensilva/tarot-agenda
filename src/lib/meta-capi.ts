@@ -148,7 +148,11 @@ export async function fireCAPIEvent(
   amountPaid: number,
   userId: string,
 ): Promise<unknown> {
-  if (!clientId) return { skipped: "sem clientId" }
+  console.log(`[fireCAPIEvent] INICIO: appointment=${appointmentId} client=${clientId} valor=${amountPaid}`)
+  if (!clientId) {
+    console.warn("[fireCAPIEvent] PULOU: sem clientId")
+    return { skipped: "sem clientId" }
+  }
 
   try {
     const [client, completedCount, appointment] = await Promise.all([
@@ -164,7 +168,10 @@ export async function fireCAPIEvent(
         select: { fbp: true, fbc: true, clientIp: true, clientUserAgent: true },
       }),
     ])
-    if (!client) return { skipped: "cliente nao encontrado" }
+    if (!client) {
+      console.warn("[fireCAPIEvent] PULOU: cliente nao encontrado no banco")
+      return { skipped: "cliente nao encontrado" }
+    }
 
     const memberships = await prisma.crmListMember.findMany({
       where: { clientId, list: { userId } },
@@ -181,12 +188,13 @@ export async function fireCAPIEvent(
       .map((m) => m.list.metaPixel)
       .filter((p): p is NonNullable<typeof p> => p !== null)
 
+    console.log(`[fireCAPIEvent] cliente em ${memberships.length} etiqueta(s), ${pixels.length} com pixel ligado`)
     if (pixels.length === 0) {
-      return {
-        skipped: "sem pixels",
-        listas: memberships.map((m) => ({ nome: m.list.name, pixelId: m.list.metaPixel?.pixelId ?? null })),
-      }
+      const listas = memberships.map((m) => ({ nome: m.list.name, pixelId: m.list.metaPixel?.pixelId ?? null }))
+      console.warn("[fireCAPIEvent] PULOU: nenhuma etiqueta da cliente tem pixel ligado. Etiquetas:", JSON.stringify(listas))
+      return { skipped: "sem pixels", listas }
     }
+    console.log(`[fireCAPIEvent] vai disparar para ${pixels.length} pixel(s):`, JSON.stringify(pixels.map((p) => p.pixelId)))
 
     const isFirstPurchase = completedCount === 0
 
