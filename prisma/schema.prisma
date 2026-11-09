@@ -310,6 +310,7 @@ model Ficha {
   // Ficha Interna — sessão
   sessionCards            Json      @default("[]")  // [{card, interpretation}]
   topicsAddressed         String?
+  clientQuestions         String?
   energeticObservations   String?
   therapeuticSuggestions  String?
   returnSchedule          String?

@@ -38,6 +38,7 @@ const schema = z.object({
   // Ficha Interna
   sessionCards: z.array(sessionCardSchema).optional(),
   topicsAddressed: z.string().nullable().optional(),
+  clientQuestions: z.string().nullable().optional(),
   energeticObservations: z.string().nullable().optional(),
   therapeuticSuggestions: z.string().nullable().optional(),
   returnSchedule: z.string().nullable().optional(),
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest) {
         additionalServices: data.additionalServices,
         sessionCards: data.sessionCards ?? [],
         topicsAddressed: data.topicsAddressed,
+        clientQuestions: data.clientQuestions,
         energeticObservations: data.energeticObservations,
         therapeuticSuggestions: data.therapeuticSuggestions,
         returnSchedule: data.returnSchedule,

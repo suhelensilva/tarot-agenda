@@ -88,6 +88,7 @@ export default function AgendaPage() {
     startHour: "09:00",
     endHour: "10:00",
     motivo: "",
+    perguntas: "",
     notes: "",
     meetingLink: "",
     amountPaid: "",
@@ -168,7 +169,7 @@ export default function AgendaPage() {
       endHour   = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`
     }
 
-    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", notes: "", meetingLink: "", amountPaid: "", paymentStatus: "" })
+    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", perguntas: "", notes: "", meetingLink: "", amountPaid: "", paymentStatus: "" })
     setEditingId(null)
     setSelected(null)
     setShowNewClient(false)
@@ -193,6 +194,7 @@ export default function AgendaPage() {
       startHour,
       endHour,
       motivo: apt.motivo ?? "",
+      perguntas: "",
       notes: apt.notes ?? "",
       meetingLink: apt.meetingLink ?? "",
       amountPaid: apt.amountPaid != null ? String(apt.amountPaid) : "",
@@ -288,6 +290,7 @@ export default function AgendaPage() {
       startTime: startTime.toISOString(),
       endTime: endTime.toISOString(),
       motivo: form.motivo || null,
+      perguntas: form.perguntas || null,
       notes: form.notes || null,
       meetingLink: form.meetingLink || null,
       amountPaid: form.amountPaid !== "" ? parseFloat(form.amountPaid) : null,
@@ -937,6 +940,18 @@ export default function AgendaPage() {
                   onChange={(e) => setForm({ ...form, motivo: e.target.value })}
                   className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600 resize-none"
                   placeholder="Por que a cliente está vindo? O que quer saber?"
+                />
+              </div>
+
+              {/* Perguntas */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Perguntas <span className="text-gray-400 font-normal">(opcional)</span></label>
+                <textarea
+                  rows={3}
+                  value={form.perguntas}
+                  onChange={(e) => setForm({ ...form, perguntas: e.target.value })}
+                  className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600 resize-none"
+                  placeholder={"1. Pergunta da cliente\n2. Pergunta da cliente"}
                 />
               </div>
 

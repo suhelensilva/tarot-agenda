@@ -13,6 +13,7 @@ const schema = z.object({
   endTime: z.string(),
   notes: z.string().optional().nullable(),
   motivo: z.string().optional().nullable(),
+  perguntas: z.string().optional().nullable(),
   meetingLink: z.string().optional().nullable(),
   amountPaid: z.number().optional().nullable(),
   paymentStatus: z.string().optional().nullable(),
@@ -112,16 +113,26 @@ export async function POST(req: NextRequest) {
           serviceId: data.serviceId || null,
           type: "INTERNAL",
           topicsAddressed: data.motivo ? `[${dateLabel}] ${data.motivo}` : null,
+          clientQuestions: data.perguntas ? `[${dateLabel}] ${data.perguntas}` : null,
           involvedPeople,
         },
       })
-    } else if (data.motivo) {
-      // Tem ficha: acrescenta o novo motivo em topicsAddressed
-      const anterior = fichaExistente.topicsAddressed ?? ""
-      const motivoEntry = `[${dateLabel}] ${data.motivo}`
+    } else if (data.motivo || data.perguntas) {
+      // Tem ficha: acrescenta motivo e/ou perguntas
+      const updateData: Record<string, string> = {}
+      if (data.motivo) {
+        const anteriorTopics = fichaExistente.topicsAddressed ?? ""
+        const motivoEntry = `[${dateLabel}] ${data.motivo}`
+        updateData.topicsAddressed = anteriorTopics ? `${anteriorTopics}\n${motivoEntry}` : motivoEntry
+      }
+      if (data.perguntas) {
+        const anteriorQuestions = fichaExistente.clientQuestions ?? ""
+        const perguntasEntry = `[${dateLabel}] ${data.perguntas}`
+        updateData.clientQuestions = anteriorQuestions ? `${anteriorQuestions}\n${perguntasEntry}` : perguntasEntry
+      }
       await prisma.ficha.update({
         where: { id: fichaExistente.id },
-        data: { topicsAddressed: anterior ? `${anterior}\n${motivoEntry}` : motivoEntry },
+        data: updateData,
       })
     }
 

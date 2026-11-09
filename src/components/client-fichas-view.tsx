@@ -29,6 +29,7 @@ type FichaForm = {
   mainComplaint: string
   complaintText: string
   topicsAddressed: string
+  clientQuestions: string
   energeticObservations: string
   therapeuticSuggestions: string
   returnSchedule: string
@@ -49,6 +50,7 @@ type SavedFicha = {
   mainComplaint: string | null
   complaintText: string | null
   topicsAddressed: string | null
+  clientQuestions: string | null
   energeticObservations: string | null
   therapeuticSuggestions: string | null
   returnSchedule: string | null
@@ -85,6 +87,7 @@ const emptyForm = (type: "INTERNAL" | "REPORT"): FichaForm => ({
   mainComplaint: "",
   complaintText: "",
   topicsAddressed: "",
+  clientQuestions: "",
   energeticObservations: "",
   therapeuticSuggestions: "",
   returnSchedule: "",
@@ -298,6 +301,7 @@ export default function ClientFichasView({
       mainComplaint: ficha.mainComplaint ?? "",
       complaintText: ficha.complaintText ?? "",
       topicsAddressed: ficha.topicsAddressed ?? "",
+      clientQuestions: ficha.clientQuestions ?? "",
       energeticObservations: ficha.energeticObservations ?? "",
       therapeuticSuggestions: ficha.therapeuticSuggestions ?? "",
       returnSchedule: ficha.returnSchedule ?? "",
@@ -330,6 +334,7 @@ export default function ClientFichasView({
         mainComplaint: form.mainComplaint || null,
         complaintText: form.complaintText || null,
         topicsAddressed: form.topicsAddressed || null,
+        clientQuestions: form.clientQuestions || null,
         energeticObservations: form.energeticObservations || null,
         therapeuticSuggestions: form.therapeuticSuggestions || null,
         returnSchedule: form.returnSchedule || null,
@@ -757,6 +762,19 @@ export default function ClientFichasView({
                     onChange={(e) => setForm({ ...form, topicsAddressed: e.target.value })}
                     className={TEXTAREA_CLS}
                     placeholder="Descreva os temas principais abordados na sessão..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    ❓ Perguntas da cliente
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={form.clientQuestions}
+                    onChange={(e) => setForm({ ...form, clientQuestions: e.target.value })}
+                    className={TEXTAREA_CLS}
+                    placeholder={"Ex:\n1. Pergunta 1\n2. Pergunta 2"}
                   />
                 </div>
 
