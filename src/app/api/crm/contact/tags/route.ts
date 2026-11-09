@@ -3,6 +3,7 @@ import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { getUserFromToken, normalizePhone } from "@/lib/crm-auth"
 import { buildContact, findClientByPhone } from "@/lib/crm"
+import { syncClientTagFromLists } from "@/lib/client-tag"
 
 const schema = z.object({
   phone: z.string().min(1),
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
       where: { listId: list.id, clientId: client.id },
     })
   }
+  await syncClientTagFromLists(client.id)
 
   const contact = await buildContact(user.id, client.id)
   return NextResponse.json(contact)
