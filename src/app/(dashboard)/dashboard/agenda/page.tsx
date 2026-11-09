@@ -89,11 +89,14 @@ export default function AgendaPage() {
     endHour: "10:00",
     motivo: "",
     perguntas: "",
+    person2Name: "",
+    person2BirthDate: "",
     notes: "",
     meetingLink: "",
     amountPaid: "",
     paymentStatus: "",
   })
+  const [showPerson2Apt, setShowPerson2Apt] = useState(false)
 
   const fetchAppointments = useCallback(async () => {
     const m = currentDate.getMonth() + 1
@@ -169,11 +172,12 @@ export default function AgendaPage() {
       endHour   = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`
     }
 
-    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", perguntas: "", notes: "", meetingLink: "", amountPaid: "", paymentStatus: "" })
+    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", perguntas: "", person2Name: "", person2BirthDate: "", notes: "", meetingLink: "", amountPaid: "", paymentStatus: "" })
     setEditingId(null)
     setSelected(null)
     setShowNewClient(false)
     setShowPerson2(false)
+    setShowPerson2Apt(false)
     setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
     setClientTag("")
@@ -195,6 +199,8 @@ export default function AgendaPage() {
       endHour,
       motivo: apt.motivo ?? "",
       perguntas: "",
+      person2Name: "",
+      person2BirthDate: "",
       notes: apt.notes ?? "",
       meetingLink: apt.meetingLink ?? "",
       amountPaid: apt.amountPaid != null ? String(apt.amountPaid) : "",
@@ -203,6 +209,7 @@ export default function AgendaPage() {
     setEditingId(apt.id)
     setShowNewClient(false)
     setShowPerson2(false)
+    setShowPerson2Apt(false)
     setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
     setClientTag(apt.client.tag ?? "")
@@ -291,6 +298,8 @@ export default function AgendaPage() {
       endTime: endTime.toISOString(),
       motivo: form.motivo || null,
       perguntas: form.perguntas || null,
+      person2Name: form.person2Name || null,
+      person2BirthDate: form.person2BirthDate || null,
       notes: form.notes || null,
       meetingLink: form.meetingLink || null,
       amountPaid: form.amountPaid !== "" ? parseFloat(form.amountPaid) : null,
@@ -927,6 +936,39 @@ export default function AgendaPage() {
                         )}
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+
+              {/* Segunda pessoa */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => { setShowPerson2Apt(!showPerson2Apt); if (showPerson2Apt) setForm({ ...form, person2Name: "", person2BirthDate: "" }) }}
+                  className="flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                >
+                  <span className="text-lg leading-none">{showPerson2Apt ? "−" : "+"}</span>
+                  {showPerson2Apt ? "Remover pessoa adicional" : "Adicionar pessoa"}
+                </button>
+                {showPerson2Apt && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div className="col-span-2">
+                      <input
+                        value={form.person2Name}
+                        onChange={(e) => setForm({ ...form, person2Name: e.target.value })}
+                        className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
+                        placeholder="Nome da pessoa"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Data de nascimento (opcional)</label>
+                      <input
+                        type="date"
+                        value={form.person2BirthDate}
+                        onChange={(e) => setForm({ ...form, person2BirthDate: e.target.value })}
+                        className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
+                      />
+                    </div>
                   </div>
                 )}
               </div>

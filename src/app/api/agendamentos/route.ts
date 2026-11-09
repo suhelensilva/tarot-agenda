@@ -14,6 +14,8 @@ const schema = z.object({
   notes: z.string().optional().nullable(),
   motivo: z.string().optional().nullable(),
   perguntas: z.string().optional().nullable(),
+  person2Name: z.string().optional().nullable(),
+  person2BirthDate: z.string().optional().nullable(),
   meetingLink: z.string().optional().nullable(),
   amountPaid: z.number().optional().nullable(),
   paymentStatus: z.string().optional().nullable(),
@@ -100,9 +102,10 @@ export async function POST(req: NextRequest) {
 
     const startDate = new Date(data.startTime)
     const dateLabel = startDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Sao_Paulo" })
-    const involvedPeople = client?.person2Name
-      ? [{ name: client.person2Name, birthDate: client.person2BirthDate?.toISOString().slice(0, 10) ?? "", relation: "" }]
-      : []
+    // Pessoa adicional: prioridade para o que veio no form; fallback para cadastro da cliente
+    const p2Name = data.person2Name || client?.person2Name || null
+    const p2Birth = data.person2BirthDate || client?.person2BirthDate?.toISOString().slice(0, 10) || null
+    const involvedPeople = p2Name ? [{ name: p2Name, birthDate: p2Birth ?? "", relation: "" }] : []
 
     if (!fichaExistente) {
       // Não tem ficha: cria, populando dados da cliente
@@ -117,9 +120,9 @@ export async function POST(req: NextRequest) {
           involvedPeople,
         },
       })
-    } else if (data.motivo || data.perguntas) {
-      // Tem ficha: acrescenta motivo e/ou perguntas
-      const updateData: Record<string, string> = {}
+    } else if (data.motivo || data.perguntas || data.person2Name) {
+      // Tem ficha: acrescenta motivo, perguntas e/ou pessoa adicional
+      const updateData: Record<string, unknown> = {}
       if (data.motivo) {
         const anteriorTopics = fichaExistente.topicsAddressed ?? ""
         const motivoEntry = `[${dateLabel}] ${data.motivo}`
@@ -129,6 +132,14 @@ export async function POST(req: NextRequest) {
         const anteriorQuestions = fichaExistente.clientQuestions ?? ""
         const perguntasEntry = `[${dateLabel}] ${data.perguntas}`
         updateData.clientQuestions = anteriorQuestions ? `${anteriorQuestions}\n${perguntasEntry}` : perguntasEntry
+      }
+      if (data.person2Name) {
+        // Adiciona a pessoa na lista de envolvidos (sem duplicar por nome)
+        const existing = Array.isArray(fichaExistente.involvedPeople) ? fichaExistente.involvedPeople as { name: string; birthDate: string; relation: string }[] : []
+        const alreadyIn = existing.some((p) => p.name.toLowerCase() === data.person2Name!.toLowerCase())
+        if (!alreadyIn) {
+          updateData.involvedPeople = [...existing, { name: data.person2Name, birthDate: data.person2BirthDate ?? "", relation: "" }]
+        }
       }
       await prisma.ficha.update({
         where: { id: fichaExistente.id },
