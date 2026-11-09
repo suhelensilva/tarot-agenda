@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getPlanLimits } from "@/lib/plan"
 import { z } from "zod"
+import { applyClientTag } from "@/lib/client-tag"
 
 const schema = z.object({
   name: z.string().min(1),
@@ -73,6 +74,8 @@ export async function POST(req: NextRequest) {
         tag: data.tag || null,
       },
     })
+    // Etiqueta = lista do Kanban (fonte única)
+    await applyClientTag(session.user.id, client.id, data.tag)
 
     return NextResponse.json(client, { status: 201 })
   } catch (err) {

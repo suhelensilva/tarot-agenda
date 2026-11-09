@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { applyClientTag } from "@/lib/client-tag"
 
 const schema = z.object({
   name: z.string().min(1).optional(),
@@ -64,6 +65,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       where: { id, userId: session.user.id },
       data: updateData,
     })
+
+    // Etiqueta = lista do Kanban (fonte única)
+    if ("tag" in body) {
+      await applyClientTag(session.user.id, id, data.tag)
+    }
 
     return NextResponse.json(client)
   } catch (err) {
