@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { fireCAPIEvent, fbcIsFresh } from "@/lib/meta-capi"
+import { fbcIsFresh } from "@/lib/meta-capi" // fireCAPIEvent comentado — META CAPI DESATIVADO
 import { TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
 
 const schema = z.object({
@@ -125,14 +125,10 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Dispara CAPI se já criou com paymentStatus "Pago".
-    // IMPORTANTE: precisa AWAIT. Sem await (void), a Vercel congela a função
-    // ao enviar a resposta e o envio pro Meta morre pela metade (sem log, sem evento).
-    // fireCAPIEvent trata os próprios erros e nunca lança, então o await é seguro
-    // e não quebra a criação do agendamento.
-    if (data.paymentStatus === "Pago") {
-      await fireCAPIEvent(appointment.id, data.clientId, data.amountPaid ?? 0, session.user.id)
-    }
+    // [META CAPI DESATIVADO] — reativar quando houver solução de atribuição para recompras
+    // if (data.paymentStatus === "Pago") {
+    //   await fireCAPIEvent(appointment.id, data.clientId, data.amountPaid ?? 0, session.user.id)
+    // }
 
     return NextResponse.json(appointment, { status: 201 })
   } catch (err) {

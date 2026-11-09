@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { fireCAPIEvent } from "@/lib/meta-capi"
+// import { fireCAPIEvent } from "@/lib/meta-capi" // META CAPI DESATIVADO
 
 const statusSchema = z.object({
   status: z.enum(["SCHEDULED", "CONFIRMED", "COMPLETED", "NO_SHOW", "CANCELLED"]).optional(),
@@ -50,10 +50,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: parsed.data,
     })
 
-    // Dispara CAPI somente quando paymentStatus muda para "Pago"
-    if (parsed.data.paymentStatus === "Pago" && before?.paymentStatus !== "Pago") {
-      await fireCAPIEvent(id, before?.clientId ?? null, parsed.data.amountPaid ?? before?.amountPaid ?? 0, session.user.id)
-    }
+    // [META CAPI DESATIVADO] — reativar quando houver solução de atribuição para recompras
+    // if (parsed.data.paymentStatus === "Pago" && before?.paymentStatus !== "Pago") {
+    //   await fireCAPIEvent(id, before?.clientId ?? null, parsed.data.amountPaid ?? before?.amountPaid ?? 0, session.user.id)
+    // }
 
     return NextResponse.json({ ok: true })
   } catch (err) {

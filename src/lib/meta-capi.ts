@@ -152,90 +152,54 @@ export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok
   }
 }
 
-export async function fireCAPIEvent(
-  appointmentId: string,
-  clientId: string | null,
-  amountPaid: number,
-  userId: string,
-): Promise<unknown> {
-  console.log(`[fireCAPIEvent] INICIO: appointment=${appointmentId} client=${clientId} valor=${amountPaid}`)
-  if (!clientId) {
-    console.warn("[fireCAPIEvent] PULOU: sem clientId")
-    return { skipped: "sem clientId" }
-  }
-
-  try {
-    const [client, completedCount, appointment] = await Promise.all([
-      prisma.client.findUnique({
-        where: { id: clientId },
-        select: { id: true, name: true, phone: true, email: true, birthDate: true },
-      }),
-      prisma.appointment.count({
-        where: { clientId, userId, status: "COMPLETED", paymentStatus: "Pago" },
-      }),
-      prisma.appointment.findUnique({
-        where: { id: appointmentId },
-        select: { fbp: true, fbc: true, clientIp: true, clientUserAgent: true },
-      }),
-    ])
-    if (!client) {
-      console.warn("[fireCAPIEvent] PULOU: cliente nao encontrado no banco")
-      return { skipped: "cliente nao encontrado" }
-    }
-
-    // A etiqueta da cliente é a lista (CrmListMember) em que ela está.
-    // Pixel vem da lista (CrmList.metaPixel).
-    const memberships = await prisma.crmListMember.findMany({
-      where: { clientId, list: { userId } },
-      include: {
-        list: {
-          include: {
-            metaPixel: { select: { pixelId: true, accessToken: true, testEventCode: true } },
-          },
-        },
-      },
-    })
-
-    const pixelMap = new Map<string, { pixelId: string; accessToken: string; testEventCode: string | null }>()
-    for (const m of memberships) {
-      if (m.list.metaPixel) pixelMap.set(m.list.metaPixel.pixelId, m.list.metaPixel)
-    }
-    const pixels = [...pixelMap.values()]
-
-    console.log(`[fireCAPIEvent] etiquetas (listas): ${memberships.map((m) => m.list.name).join(", ") || "(nenhuma)"}; pixels: ${pixels.length}`)
-    if (pixels.length === 0) {
-      console.warn(`[fireCAPIEvent] PULOU: cliente sem pixel. Listas da cliente: ${memberships.map((m) => m.list.name).join(", ") || "(nenhuma)"}`)
-      return { skipped: "sem pixels", listas: memberships.map((m) => m.list.name) }
-    }
-    console.log(`[fireCAPIEvent] vai disparar para ${pixels.length} pixel(s):`, JSON.stringify(pixels.map((p) => p.pixelId)))
-
-    const isFirstPurchase = completedCount === 0
-
-    const results = await Promise.all(
-      pixels.map((pixel) =>
-        sendPurchaseEvent({
-          appointmentId,
-          clientId: client.id,
-          clientName: client.name,
-          clientPhone: client.phone,
-          clientEmail: client.email,
-          clientBirthDate: client.birthDate,
-          fbp: appointment?.fbp,
-          fbc: appointment?.fbc,
-          clientIp: appointment?.clientIp,
-          clientUserAgent: appointment?.clientUserAgent,
-          amountPaid,
-          isFirstPurchase,
-          pixelId: pixel.pixelId,
-          accessToken: pixel.accessToken,
-          testEventCode: pixel.testEventCode,
-        })
-      )
-    )
-    return { fired: true, results }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error("[fireCAPIEvent] erro:", msg)
-    return { error: msg }
-  }
-}
+// [META CAPI DESATIVADO] — reativar quando houver solução de atribuição para recompras
+// export async function fireCAPIEvent(
+//   appointmentId: string,
+//   clientId: string | null,
+//   amountPaid: number,
+//   userId: string,
+// ): Promise<unknown> {
+//   if (!clientId) return { skipped: "sem clientId" }
+//   try {
+//     const [client, completedCount, appointment] = await Promise.all([
+//       prisma.client.findUnique({
+//         where: { id: clientId },
+//         select: { id: true, name: true, phone: true, email: true, birthDate: true },
+//       }),
+//       prisma.appointment.count({
+//         where: { clientId, userId, status: "COMPLETED", paymentStatus: "Pago" },
+//       }),
+//       prisma.appointment.findUnique({
+//         where: { id: appointmentId },
+//         select: { fbp: true, fbc: true, clientIp: true, clientUserAgent: true },
+//       }),
+//     ])
+//     if (!client) return { skipped: "cliente nao encontrado" }
+//     const memberships = await prisma.crmListMember.findMany({
+//       where: { clientId, list: { userId } },
+//       include: { list: { include: { metaPixel: { select: { pixelId: true, accessToken: true, testEventCode: true } } } } },
+//     })
+//     const pixelMap = new Map()
+//     for (const m of memberships) {
+//       if (m.list.metaPixel) pixelMap.set(m.list.metaPixel.pixelId, m.list.metaPixel)
+//     }
+//     const pixels = [...pixelMap.values()]
+//     if (pixels.length === 0) return { skipped: "sem pixels" }
+//     const isFirstPurchase = completedCount === 0
+//     const results = await Promise.all(
+//       pixels.map((pixel) =>
+//         sendPurchaseEvent({
+//           appointmentId, clientId: client.id, clientName: client.name, clientPhone: client.phone,
+//           clientEmail: client.email, clientBirthDate: client.birthDate,
+//           fbp: appointment?.fbp, fbc: appointment?.fbc,
+//           clientIp: appointment?.clientIp, clientUserAgent: appointment?.clientUserAgent,
+//           amountPaid, isFirstPurchase, pixelId: pixel.pixelId,
+//           accessToken: pixel.accessToken, testEventCode: pixel.testEventCode,
+//         })
+//       )
+//     )
+//     return { fired: true, results }
+//   } catch (err) {
+//     return { error: err instanceof Error ? err.message : String(err) }
+//   }
+// }
