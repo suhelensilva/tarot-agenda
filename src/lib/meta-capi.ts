@@ -92,7 +92,7 @@ export async function sendPurchaseEvent(payload: CAPIEventPayload): Promise<{ ok
     event_name: "Purchase",
     event_time: Math.floor(Date.now() / 1000),
     event_id: `purchase_${appointmentId}`,  // deduplicação — único por agendamento
-    action_source: "phone_call",             // sessão agendada via WhatsApp/telefone (evento offline, sem penalidade por falta de fbp/IP/UA)
+    action_source: "website",                 // venda real (PIX/WhatsApp); tratada como conversão de site para casar com o pixel do navegador
     user_data: userData,
     custom_data: {
       currency: "BRL",
