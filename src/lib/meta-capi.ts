@@ -158,7 +158,7 @@ export async function fireCAPIEvent(
     const [client, completedCount, appointment] = await Promise.all([
       prisma.client.findUnique({
         where: { id: clientId },
-        select: { id: true, name: true, phone: true, email: true, birthDate: true },
+        select: { id: true, name: true, phone: true, email: true, birthDate: true, tag: true },
       }),
       prisma.appointment.count({
         where: { clientId, userId, status: "COMPLETED", paymentStatus: "Pago" },
@@ -173,6 +173,11 @@ export async function fireCAPIEvent(
       return { skipped: "cliente nao encontrado" }
     }
 
+    // Pixels vêm de DOIS lugares de "etiqueta" que o sistema tem:
+    // 1) CrmListMember -> etiquetas do Kanban/CRM (ligadas a pixel via CrmList.metaPixel)
+    // 2) Client.tag    -> etiqueta de texto da tela de Clientes; casada por NOME com a CrmList
+    const pixelMap = new Map<string, { pixelId: string; accessToken: string; testEventCode: string | null }>()
+
     const memberships = await prisma.crmListMember.findMany({
       where: { clientId, list: { userId } },
       include: {
@@ -183,16 +188,33 @@ export async function fireCAPIEvent(
         },
       },
     })
+    for (const m of memberships) {
+      if (m.list.metaPixel) pixelMap.set(m.list.metaPixel.pixelId, m.list.metaPixel)
+    }
+    console.log(`[fireCAPIEvent] etiquetas Kanban: ${memberships.length}, com pixel: ${pixelMap.size}`)
 
-    const pixels = memberships
-      .map((m) => m.list.metaPixel)
-      .filter((p): p is NonNullable<typeof p> => p !== null)
+    // Ponte: etiqueta de texto (Client.tag) -> CrmList de mesmo nome que tenha pixel.
+    // Normaliza (sem acento, maiúsculas, sem espaço/hífen, sem "s" final) pra casar
+    // "Paga-pouco" com "PAGA POUCO" e "Compradora" com "COMPRADORAS".
+    if (client.tag) {
+      const norm = (s: string) =>
+        s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/S$/, "")
+      const tagN = norm(client.tag)
+      const listsWithPixel = await prisma.crmList.findMany({
+        where: { userId, metaPixelId: { not: null } },
+        include: { metaPixel: { select: { pixelId: true, accessToken: true, testEventCode: true } } },
+      })
+      const matched = listsWithPixel.filter((l) => norm(l.name) === tagN)
+      console.log(`[fireCAPIEvent] etiqueta de texto da cliente="${client.tag}" casou com ${matched.length} etiqueta(s) com pixel:`, JSON.stringify(matched.map((m) => m.name)))
+      for (const l of matched) {
+        if (l.metaPixel) pixelMap.set(l.metaPixel.pixelId, l.metaPixel)
+      }
+    }
 
-    console.log(`[fireCAPIEvent] cliente em ${memberships.length} etiqueta(s), ${pixels.length} com pixel ligado`)
+    const pixels = [...pixelMap.values()]
     if (pixels.length === 0) {
-      const listas = memberships.map((m) => ({ nome: m.list.name, pixelId: m.list.metaPixel?.pixelId ?? null }))
-      console.warn("[fireCAPIEvent] PULOU: nenhuma etiqueta da cliente tem pixel ligado. Etiquetas:", JSON.stringify(listas))
-      return { skipped: "sem pixels", listas }
+      console.warn(`[fireCAPIEvent] PULOU: cliente sem nenhum pixel. etiqueta de texto="${client.tag ?? "(vazia)"}", etiquetas Kanban=${memberships.length}`)
+      return { skipped: "sem pixels", tag: client.tag ?? null, listasKanban: memberships.map((m) => m.list.name) }
     }
     console.log(`[fireCAPIEvent] vai disparar para ${pixels.length} pixel(s):`, JSON.stringify(pixels.map((p) => p.pixelId)))
 
