@@ -20,6 +20,16 @@ function splitName(fullName: string) {
   return { fn: parts[0] ?? "", ln: parts.slice(1).join(" ") || parts[0] || "" }
 }
 
+// fbc = "fb.1.<timestamp do clique>.<fbclid>". A Meta só atribui clique de até 28 dias.
+const FB_CLICK_WINDOW_MS = 28 * 24 * 60 * 60 * 1000
+export function fbcIsFresh(fbc: string | null | undefined): boolean {
+  const m = fbc?.match(/^fb\.\d+\.(\d{10,13})\./)
+  if (!m) return false
+  const ts = Number(m[1])
+  const ms = ts < 1e12 ? ts * 1000 : ts
+  return Date.now() - ms < FB_CLICK_WINDOW_MS
+}
+
 // Data de nascimento no formato que a Meta espera: YYYYMMDD (ex: 19971226)
 function formatBirthDate(d: Date | string | null | undefined): string | undefined {
   if (!d) return undefined

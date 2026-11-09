@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { fireCAPIEvent } from "@/lib/meta-capi"
+import { fireCAPIEvent, fbcIsFresh } from "@/lib/meta-capi"
 import { TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
 
 const schema = z.object({
@@ -60,6 +60,15 @@ export async function POST(req: NextRequest) {
     }
     const data = parsed.data
 
+    // Recompra herda o clique do anúncio (fbc) da última compra da cliente,
+    // enquanto ainda estiver dentro da janela de 28 dias da Meta.
+    const lastWithFbc = await prisma.appointment.findFirst({
+      where: { clientId: data.clientId, userId: session.user.id, fbc: { not: null } },
+      orderBy: { startTime: "desc" },
+      select: { fbc: true },
+    })
+    const fbcHerdado = fbcIsFresh(lastWithFbc?.fbc) ? lastWithFbc?.fbc ?? null : null
+
     const [appointment, client, fichaExistente] = await Promise.all([
       prisma.appointment.create({
         data: {
@@ -74,6 +83,7 @@ export async function POST(req: NextRequest) {
           meetingLink: data.meetingLink || null,
           amountPaid: data.amountPaid ?? null,
           paymentStatus: data.paymentStatus ?? null,
+          fbc: fbcHerdado,
         },
         include: { client: true, service: true },
       }),
