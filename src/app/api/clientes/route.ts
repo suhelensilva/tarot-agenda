@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getPlanLimits } from "@/lib/plan"
 import { z } from "zod"
-import { applyClientTag } from "@/lib/client-tag"
+import { applyClientTag, TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
 
 const schema = z.object({
   name: z.string().min(1),
@@ -35,11 +35,12 @@ export async function GET(req: NextRequest) {
     },
     include: {
       _count: { select: { appointments: true } },
+      ...TAG_MEMBERSHIP_INCLUDE,
     },
     orderBy: { name: "asc" },
   })
 
-  return NextResponse.json(clients)
+  return NextResponse.json(clients.map(withTag))
 }
 
 export async function POST(req: NextRequest) {
@@ -71,13 +72,12 @@ export async function POST(req: NextRequest) {
         notes: data.notes || null,
         person2Name: data.person2Name || null,
         person2BirthDate: data.person2BirthDate ? new Date(data.person2BirthDate) : null,
-        tag: data.tag || null,
       },
     })
-    // Etiqueta = lista do Kanban (fonte única)
-    await applyClientTag(session.user.id, client.id, data.tag)
+    // Etiqueta = lista do Kanban (vínculo no banco, única fonte)
+    const tag = await applyClientTag(session.user.id, client.id, data.tag)
 
-    return NextResponse.json(client, { status: 201 })
+    return NextResponse.json({ ...client, tag }, { status: 201 })
   } catch (err) {
     console.error("[clientes POST]", err)
     return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })

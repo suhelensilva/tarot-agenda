@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { fireCAPIEvent } from "@/lib/meta-capi"
+import { TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
 
 const schema = z.object({
   clientId: z.string().min(1),
@@ -34,11 +35,13 @@ export async function GET(req: NextRequest) {
 
   const appointments = await prisma.appointment.findMany({
     where: { userId: session.user.id, ...dateFilter },
-    include: { client: true, service: true },
+    include: { client: { include: TAG_MEMBERSHIP_INCLUDE }, service: true },
     orderBy: { startTime: "asc" },
   })
 
-  return NextResponse.json(appointments)
+  return NextResponse.json(
+    appointments.map((a) => ({ ...a, client: a.client ? withTag(a.client) : a.client })),
+  )
 }
 
 export async function POST(req: NextRequest) {

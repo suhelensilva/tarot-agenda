@@ -15,19 +15,21 @@ export function normTag(s: string): string {
 }
 
 /**
- * Recalcula a etiqueta da cliente a partir das listas dela.
- * Chamar sempre que a cliente entrar ou sair de uma lista (ex.: mover no Kanban).
- * A etiqueta exibida é a lista mais recente em que a cliente está (sem blacklist).
+ * A etiqueta de uma cliente é a lista (CrmListMember) em que ela está.
+ * Use TAG_MEMBERSHIP_INCLUDE no include do Prisma e withTag() na resposta.
  */
-export async function syncClientTagFromLists(clientId: string): Promise<void> {
-  const memberships = await prisma.crmListMember.findMany({
-    where: { clientId, list: { name: { not: BLACKLIST_NAME } } },
-    orderBy: { createdAt: "desc" },
+export const TAG_MEMBERSHIP_INCLUDE = {
+  listMemberships: {
+    where: { list: { name: { not: BLACKLIST_NAME } } },
+    orderBy: { createdAt: "desc" as const },
     take: 1,
     include: { list: { select: { name: true } } },
-  })
-  const name = memberships[0]?.list.name ?? null
-  await prisma.client.update({ where: { id: clientId }, data: { tag: name } })
+  },
+}
+
+export function withTag<T extends { listMemberships?: { list: { name: string } }[] }>(c: T) {
+  const { listMemberships, ...rest } = c
+  return { ...rest, tag: listMemberships?.[0]?.list.name ?? null }
 }
 
 /**

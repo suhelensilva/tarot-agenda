@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { applyClientTag } from "@/lib/client-tag"
+import { applyClientTag, TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
 
 const schema = z.object({
   name: z.string().min(1).optional(),
@@ -31,12 +31,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       anamnesisRecords: {
         orderBy: { date: "desc" },
       },
+      ...TAG_MEMBERSHIP_INCLUDE,
     },
   })
 
   if (!client) return NextResponse.json({ error: "Não encontrado" }, { status: 404 })
 
-  return NextResponse.json(client)
+  return NextResponse.json(withTag(client))
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -59,7 +60,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if ("notes"          in body) updateData.notes          = data.notes || null
     if ("person2Name"    in body) updateData.person2Name    = data.person2Name || null
     if ("person2BirthDate" in body) updateData.person2BirthDate = data.person2BirthDate ? new Date(data.person2BirthDate) : null
-    if ("tag"            in body) updateData.tag            = data.tag || null
 
     const client = await prisma.client.updateMany({
       where: { id, userId: session.user.id },

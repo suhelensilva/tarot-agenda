@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { syncClientTagFromLists } from "@/lib/client-tag"
 
 /** GET — etiquetas atribuídas à cliente */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -37,8 +36,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     create: { listId, clientId, reason: reason ?? null },
     update: { reason: reason ?? null },
   })
-  await syncClientTagFromLists(clientId)
-
   return NextResponse.json({ ok: true })
 }
 
@@ -69,7 +66,5 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   await prisma.crmListMember.deleteMany({
     where: { listId, clientId, list: { userId: session.user.id } },
   })
-  await syncClientTagFromLists(clientId)
-
   return NextResponse.json({ ok: true })
 }
