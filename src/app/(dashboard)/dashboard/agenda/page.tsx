@@ -53,6 +53,13 @@ export default function AgendaPage() {
   const [savingClient, setSavingClient] = useState(false)
   const [newClientError, setNewClientError] = useState<string | null>(null)
   const [clientTag, setClientTag] = useState<string>("")
+  // Etiquetas = listas do Kanban (fonte única). Sem a lista interna de blacklist.
+  const [labels, setLabels] = useState<{ id: string; name: string; color: string }[]>([])
+  useEffect(() => {
+    fetch("/api/etiquetas")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: { id: string; name: string; color: string }[]) => setLabels(d.filter((l) => l.name !== "__blacklist__")))
+  }, [])
   const [savingTag, setSavingTag] = useState(false)
   const [paymentStatusInput, setPaymentStatusInput] = useState<string>("")
   const [savingPayment, setSavingPayment] = useState(false)
@@ -753,7 +760,7 @@ export default function AgendaPage() {
 
                     {/* Etiqueta (topo) */}
                     <div className="flex flex-wrap gap-1.5">
-                      {(["Compradora", "Paga-pouco", "Cliente R$5"] as const).map((t) => {
+                      {labels.map((l) => l.name).map((t) => {
                         const activeStyle = t === "Compradora"
                           ? "bg-green-100 text-green-700 border-green-400 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/50"
                           : t === "Paga-pouco"
@@ -887,7 +894,7 @@ export default function AgendaPage() {
                           </div>
                         ) : clientTag === "__choosing__" ? null : (
                           <div className="flex flex-wrap gap-1.5">
-                            {(["Compradora", "Paga-pouco", "Cliente R$5"] as const).map((t) => (
+                            {labels.map((l) => l.name).map((t) => (
                               <button
                                 key={t}
                                 type="button"
@@ -902,7 +909,7 @@ export default function AgendaPage() {
                         )}
                         {clientTag === "__choosing__" && (
                           <div className="flex flex-wrap gap-1.5">
-                            {(["Compradora", "Paga-pouco", "Cliente R$5"] as const).map((t) => (
+                            {labels.map((l) => l.name).map((t) => (
                               <button
                                 key={t}
                                 type="button"

@@ -35,7 +35,6 @@ type FormData = {
 
 const empty: FormData = { name: "", phone: "", email: "", birthDate: "", notes: "", tag: "" }
 
-const TAGS = ["Compradora", "Paga-pouco", "Cliente R$5"] as const
 const TAG_STYLES: Record<string, string> = {
   "Compradora":  "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400 border-green-200 dark:border-green-500/30",
   "Paga-pouco":  "bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-400 border-pink-200 dark:border-pink-500/30",
@@ -57,6 +56,13 @@ export default function ClientesPage() {
   const [form, setForm] = useState<FormData>(empty)
   const [saving, setSaving] = useState(false)
   const [importing, setImporting] = useState(false)
+  // Etiquetas = listas do Kanban (fonte única). Sem a lista interna de blacklist.
+  const [labels, setLabels] = useState<{ id: string; name: string; color: string }[]>([])
+  useEffect(() => {
+    fetch("/api/etiquetas")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: { id: string; name: string; color: string }[]) => setLabels(d.filter((l) => l.name !== "__blacklist__")))
+  }, [])
   const [importResult, setImportResult] = useState<ImportResult>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -369,7 +375,7 @@ export default function ClientesPage() {
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Etiqueta <span className="text-gray-400 dark:text-gray-600">(opcional)</span></label>
                 <div className="flex flex-wrap gap-1.5">
-                  {TAGS.map((t) => (
+                  {labels.map((l) => l.name).map((t) => (
                     <button
                       key={t}
                       type="button"

@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma"
 
-// Etiquetas que a cliente pode ter. Cada uma é uma CrmList (lista do Kanban).
+// Lista interna do Kanban (cliente bloqueada). Não é etiqueta, então fica de fora.
+export const BLACKLIST_NAME = "__blacklist__"
+
 // Casamento por nome ignora acento, maiúsculas, espaço, hífen e "s" final:
 // "Paga-pouco" casa com "PAGA POUCO", "Compradora" casa com "COMPRADORAS".
-export const TAG_NAMES = ["Compradora", "Paga-pouco", "Cliente R$5"] as const
-
 export function normTag(s: string): string {
   return s
     .normalize("NFD")
@@ -14,12 +14,10 @@ export function normTag(s: string): string {
     .replace(/S$/, "")
 }
 
-const TAG_KEYS = new Set(TAG_NAMES.map(normTag))
-
 /**
  * Única forma de gravar a etiqueta da cliente.
- * A lista do Kanban (CrmListMember) é a fonte de verdade: a cliente fica só
- * na lista da etiqueta escolhida e sai das outras etiquetas.
+ * A etiqueta é uma lista do Kanban (CrmListMember). Escolher uma coloca a cliente
+ * nela e tira das outras etiquetas (uma etiqueta por cliente).
  * `tag` vazio/null remove a cliente de todas as etiquetas.
  * Retorna o nome da lista aplicada (ou null).
  */
@@ -32,7 +30,7 @@ export async function applyClientTag(
   if (!client) return null
 
   const lists = await prisma.crmList.findMany({ where: { userId }, select: { id: true, name: true } })
-  const tagLists = lists.filter((l) => TAG_KEYS.has(normTag(l.name)))
+  const tagLists = lists.filter((l) => l.name !== BLACKLIST_NAME)
 
   // Tira a cliente das etiquetas que não são a escolhida
   const target = tag ? tagLists.find((l) => normTag(l.name) === normTag(tag)) : undefined
