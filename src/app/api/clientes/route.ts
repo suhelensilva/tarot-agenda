@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getPlanLimits } from "@/lib/plan"
 import { z } from "zod"
-import { applyClientTag, TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
+import { applyClientTag, tagListError, TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
 
 const schema = z.object({
   name: z.string().min(1),
@@ -61,6 +61,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const data = schema.parse(body)
+
+    const tagErr = await tagListError(session.user.id, data.tag)
+    if (tagErr) return NextResponse.json({ error: tagErr }, { status: 400 })
 
     const client = await prisma.client.create({
       data: {

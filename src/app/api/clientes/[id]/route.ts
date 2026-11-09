@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { applyClientTag, TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
+import { applyClientTag, tagListError, TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
 
 const schema = z.object({
   name: z.string().min(1).optional(),
@@ -49,6 +49,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const body = await req.json()
     const data = schema.parse(body)
+
+    if ("tag" in body) {
+      const tagErr = await tagListError(session.user.id, data.tag)
+      if (tagErr) return NextResponse.json({ error: tagErr }, { status: 400 })
+    }
 
     // Só atualiza os campos que vieram explicitamente no body
     // (evita apagar dados como birthDate quando só a tag é alterada)

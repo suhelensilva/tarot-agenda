@@ -33,6 +33,18 @@ export function withTag<T extends { listMemberships?: { list: { name: string } }
 }
 
 /**
+ * Valida antes de salvar: a etiqueta escolhida precisa existir como lista do Kanban.
+ * Retorna a mensagem de erro, ou null se estiver tudo certo.
+ * Assim a cliente nunca fica com etiqueta sem estar em uma lista.
+ */
+export async function tagListError(userId: string, tag: string | null | undefined): Promise<string | null> {
+  if (!tag) return null
+  const lists = await prisma.crmList.findMany({ where: { userId }, select: { name: true } })
+  const exists = lists.some((l) => l.name !== BLACKLIST_NAME && normTag(l.name) === normTag(tag))
+  return exists ? null : `A etiqueta "${tag}" não existe no Kanban. Crie a lista "${tag}" primeiro.`
+}
+
+/**
  * Única forma de gravar a etiqueta da cliente.
  * A etiqueta é uma lista do Kanban (CrmListMember). Escolher uma coloca a cliente
  * nela e tira das outras etiquetas (uma etiqueta por cliente).
