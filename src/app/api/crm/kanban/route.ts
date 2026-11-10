@@ -59,7 +59,7 @@ export async function GET() {
     _count: { appointments: number }
   }) {
     const completed = client.appointments.filter((a) => a.status === "COMPLETED")
-    const totalSpent = completed.reduce((s, a) => s + (a.amountPaid ?? 0), 0)
+    const totalSpent = client.appointments.filter((a) => a.paymentStatus === "Pago").reduce((s, a) => s + (a.amountPaid ?? 0), 0)
     const lastAppt = completed.length > 0 ? completed[completed.length - 1].startTime : null
     const first = client.appointments[0]
     const firstServiceName = first?.service?.name ?? first?.title ?? null

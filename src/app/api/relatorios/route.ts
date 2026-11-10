@@ -137,9 +137,9 @@ export async function GET(req: NextRequest) {
 
   // ── Dados do período atual ───────────────────────────────────────────────
   const [appointments, expenses, prevAppointments, prevExpenses, topClients, statusCounts] = await Promise.all([
-    // Receitas: agendamentos concluídos no período
+    // Receitas: só agendamentos com pagamento efetuado
     prisma.appointment.findMany({
-      where: { userId, startTime: { gte: start, lte: end }, status: "COMPLETED" },
+      where: { userId, startTime: { gte: start, lte: end }, paymentStatus: "Pago" },
       select: { startTime: true, amountPaid: true, title: true, service: { select: { name: true } }, client: { select: { name: true } } },
       orderBy: { startTime: "desc" },
     }),
@@ -152,7 +152,7 @@ export async function GET(req: NextRequest) {
 
     // Período anterior (para comparação, se disponível)
     prevStart && prevEnd ? prisma.appointment.aggregate({
-      where: { userId, startTime: { gte: prevStart, lte: prevEnd }, status: "COMPLETED" },
+      where: { userId, startTime: { gte: prevStart, lte: prevEnd }, paymentStatus: "Pago" },
       _sum: { amountPaid: true },
     }) : Promise.resolve(null),
 
@@ -163,10 +163,10 @@ export async function GET(req: NextRequest) {
 
     // Top clientes do período — inclui qualquer agendamento com valor pago
     prisma.client.findMany({
-      where: { userId, appointments: { some: { startTime: { gte: start, lte: end }, amountPaid: { gt: 0 } } } },
+      where: { userId, appointments: { some: { startTime: { gte: start, lte: end }, amountPaid: { gt: 0 }, paymentStatus: "Pago" } } },
       include: {
         appointments: {
-          where: { startTime: { gte: start, lte: end }, amountPaid: { gt: 0 } },
+          where: { startTime: { gte: start, lte: end }, amountPaid: { gt: 0 }, paymentStatus: "Pago" },
           select: { amountPaid: true },
         },
       },
@@ -198,7 +198,7 @@ export async function GET(req: NextRequest) {
     buckets.map(async (b) => {
       const [rev, exp] = await Promise.all([
         prisma.appointment.aggregate({
-          where: { userId, startTime: { gte: b.start, lte: b.end }, status: "COMPLETED" },
+          where: { userId, startTime: { gte: b.start, lte: b.end }, paymentStatus: "Pago" },
           _sum: { amountPaid: true },
         }),
         prisma.expense.aggregate({

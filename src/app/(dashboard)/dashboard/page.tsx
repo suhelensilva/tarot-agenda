@@ -65,12 +65,12 @@ export default async function DashboardPage() {
       orderBy: { startTime: "asc" },
     }),
     prisma.appointment.aggregate({
-      where: { userId, startTime: { gte: monthStart, lte: monthEnd }, status: "COMPLETED" },
+      where: { userId, startTime: { gte: monthStart, lte: monthEnd }, paymentStatus: "Pago" },
       _sum: { amountPaid: true },
     }),
     // Faturamento de hoje
     prisma.appointment.aggregate({
-      where: { userId, startTime: { gte: todayStart, lte: todayEnd }, status: "COMPLETED" },
+      where: { userId, startTime: { gte: todayStart, lte: todayEnd }, paymentStatus: "Pago" },
       _sum: { amountPaid: true },
     }),
     prisma.client.findMany({

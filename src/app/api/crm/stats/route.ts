@@ -14,10 +14,10 @@ export async function GET() {
   const appointments = await prisma.appointment.findMany({
     where: {
       userId,
-      status: "COMPLETED",
+      OR: [{ status: "COMPLETED" }, { paymentStatus: "Pago" }],
       startTime: { gte: sixMonthsAgo },
     },
-    select: { startTime: true, amountPaid: true },
+    select: { startTime: true, amountPaid: true, status: true, paymentStatus: true },
   })
 
   const monthMap: Record<string, { revenue: number; count: number }> = {}
@@ -33,8 +33,8 @@ export async function GET() {
     const d = new Date(appt.startTime)
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
     if (monthMap[key]) {
-      monthMap[key].revenue += appt.amountPaid ?? 0
-      monthMap[key].count += 1
+      if (appt.paymentStatus === "Pago") monthMap[key].revenue += appt.amountPaid ?? 0
+      if (appt.status === "COMPLETED") monthMap[key].count += 1
     }
   }
 
