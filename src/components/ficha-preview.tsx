@@ -35,6 +35,7 @@ export type FichaPreviewData = {
   complaintText?: string | null
   sessionCards?: Array<{ card: string; interpretation?: string | null }>
   topicsAddressed?: string | null
+  clientQuestions?: string | null
   energeticObservations?: string | null
   therapeuticSuggestions?: string | null
   returnSchedule?: string | null
@@ -173,6 +174,15 @@ export function FichaInternaPreview({
             <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
             <p style={{ fontSize: 16, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>🔮 Temas principais abordados:</p>
             <p style={{ fontSize: 15, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.8 }}>{data.topicsAddressed}</p>
+          </div>
+        )}
+
+        {/* Perguntas da cliente */}
+        {data.clientQuestions && (
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#374151", margin: "0 0 10px" }}>❓ Perguntas da cliente:</p>
+            <p style={{ fontSize: 15, color: "#4b5563", margin: 0, whiteSpace: "pre-line", lineHeight: 1.8 }}>{data.clientQuestions}</p>
           </div>
         )}
 
