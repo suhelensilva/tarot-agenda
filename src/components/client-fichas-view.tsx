@@ -8,6 +8,7 @@ import {
   FichaInternaPreview,
   RelatorioPreview,
   FichaPreviewModal,
+  downloadFichaPdf,
   type FichaPreviewData,
   type FichaProfile,
   type FichaServiceData,
@@ -403,54 +404,9 @@ export default function ClientFichasView({
     setDownloading(true)
     setDownloadError(null)
     try {
-      const html2canvas = (await import("html2canvas")).default
-
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        // scrollX e scrollY: garante que o html2canvas não aplica offset de scroll
-        scrollX: 0,
-        scrollY: 0,
-      })
-
-      if (canvas.width === 0 || canvas.height === 0) {
-        throw new Error("Canvas gerado está vazio. Tente novamente.")
-      }
-
-      // jsPDF v4: suporta default export e named export
-      const jspdfMod = await import("jspdf")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const JsPDF: any = (jspdfMod as any).jsPDF ?? (jspdfMod as any).default ?? jspdfMod
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.92)
-      const pdf = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
-
-      // jsPDF v4 usa .width/.height diretamente; versões anteriores têm .getWidth()/.getHeight()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ps = pdf.internal.pageSize as any
-      const pageWidth: number = ps.getWidth?.() ?? ps.width ?? 210
-      const pageHeight: number = ps.getHeight?.() ?? ps.height ?? 297
-
-      const imgWidth = pageWidth
-      const imgHeight = (canvas.height * pageWidth) / canvas.width
-      let heightLeft = imgHeight
-      let position = 0
-
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
-      while (heightLeft > 1) {
-        position -= pageHeight
-        pdf.addPage()
-        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight)
-        heightLeft -= pageHeight
-      }
-
       const tipo = (previewFicha?.type ?? "INTERNAL") === "INTERNAL" ? "ficha" : "relatorio"
       const nome = (previewFicha?.client?.name ?? clientName).replace(/\s+/g, "-")
-      pdf.save(`${tipo}-${nome}-${new Date().toISOString().slice(0, 10)}.pdf`)
+      await downloadFichaPdf(printRef.current, `${tipo}-${nome}-${new Date().toISOString().slice(0, 10)}.pdf`)
       setPreviewFicha(null)
     } catch (e) {
       console.error("[PDF] erro ao gerar:", e)
@@ -1049,8 +1005,7 @@ export default function ClientFichasView({
               <Maximize2 size={12} /> Ver maior
             </button>
           </div>
-          {/* width e height = A4 * 0.46 — elimina espaço branco causado por transform */}
-          <div style={{ width: 794 * 0.46, height: 1123 * 0.46, overflow: "hidden", position: "relative", borderRadius: 8, border: "1px solid #e5e7eb" }}>
+          <div style={{ width: 794 * 0.46, maxHeight: "calc(100vh - 160px)", overflowY: "auto", overflowX: "hidden", position: "relative", borderRadius: 8, border: "1px solid #e5e7eb" }}>
             {isInternal
               ? <FichaInternaPreview data={formPreviewData} client={formClient} service={formService} profile={localProfile} scale={0.46} />
               : <RelatorioPreview data={formPreviewData} client={formClient} service={formService} profile={localProfile} scale={0.46} />

@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import { formatDate, formatCurrency } from "@/lib/utils"
 import {
-  FichaInternaPreview, RelatorioPreview, FichaPreviewModal,
+  FichaInternaPreview, RelatorioPreview, FichaPreviewModal, downloadFichaPdf,
   type FichaPreviewData, type FichaProfile, type FichaServiceData, type FichaClientData,
 } from "@/components/ficha-preview"
 
@@ -113,15 +113,9 @@ export default function FichasTab({
     if (!printRef.current) return
     setDownloading(true)
     try {
-      const html2canvas = (await import("html2canvas")).default
-      const { jsPDF } = await import("jspdf")
-      const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#ffffff", width: 794, height: 1123 })
-      const imgData = canvas.toDataURL("image/jpeg", 0.95)
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
-      pdf.addImage(imgData, "JPEG", 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight())
       const name = selectedClient?.name ?? form.clientId ?? "ficha"
       const tipo = form.type === "INTERNAL" ? "ficha" : "relatorio"
-      pdf.save(`${tipo}-${name.replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.pdf`)
+      await downloadFichaPdf(printRef.current, `${tipo}-${name.replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.pdf`)
     } catch (e) { console.error("PDF error:", e) }
     setDownloading(false)
   }
@@ -477,7 +471,7 @@ export default function FichasTab({
             </div>
           </div>
           <div className="flex-1 overflow-auto p-4 flex justify-center">
-            <div style={{ width: 794 * previewScale, height: 1123 * previewScale, overflow: "hidden", position: "relative", boxShadow: "0 4px 24px rgba(0,0,0,0.12)", borderRadius: 6 }}>
+            <div>
               {isInternal
                 ? <FichaInternaPreview data={formAsPreview} client={clientAsData} service={serviceAsData} profile={profile} scale={previewScale} />
                 : <RelatorioPreview data={formAsPreview} client={clientAsData} service={serviceAsData} profile={profile} scale={previewScale} />
