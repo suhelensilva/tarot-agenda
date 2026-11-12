@@ -75,7 +75,6 @@ export default function LoginPage() {
           }
         }
       `}</style>
-      <div className="absolute inset-0 bg-black/40" />
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
           <h1
@@ -138,7 +137,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-purple-300 text-sm mt-6">
+          <p className="text-center text-purple-300 font-bold text-sm mt-6">
             Não tem conta?{" "}
             <Link href="/cadastro" className="text-white hover:underline font-medium">
               Criar conta grátis
