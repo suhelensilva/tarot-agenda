@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
         description: data.description,
         category:    data.category,
         amount:      data.amount,
-        date:        data.date ? new Date(data.date) : new Date(),
+        // Data só com dia ("YYYY-MM-DD") vira meio-dia UTC (09h em Brasília): cai no mesmo dia em qualquer fuso
+        date:        data.date ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date + "T12:00:00Z" : data.date) : new Date(),
       },
     })
 

@@ -7,8 +7,10 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
 
   const userId = session.user.id
-  const now = new Date()
-  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+  // "now" lido com getFullYear/getMonth: usamos o relógio de Brasília via getUTC* abaixo
+  const nowBR = new Date(Date.now() - 3 * 3600_000)
+  const now = new Date(nowBR.getUTCFullYear(), nowBR.getUTCMonth(), nowBR.getUTCDate())
+  const sixMonthsAgo = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 5, 1, 3))
 
   // Faturamento e quantidade de atendimentos por mes (ultimos 6 meses)
   const appointments = await prisma.appointment.findMany({
@@ -30,8 +32,9 @@ export async function GET() {
   }
 
   for (const appt of appointments) {
-    const d = new Date(appt.startTime)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+    // mês no horário de Brasília (UTC-3), independente do fuso do servidor
+    const d = new Date(new Date(appt.startTime).getTime() - 3 * 3600_000)
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
     if (monthMap[key]) {
       if (appt.paymentStatus === "Pago") monthMap[key].revenue += appt.amountPaid ?? 0
       if (appt.status === "COMPLETED") monthMap[key].count += 1
@@ -64,8 +67,8 @@ export async function GET() {
     clientMonthMap[key] = 0
   }
   for (const c of newClients) {
-    const d = new Date(c.createdAt)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+    const d = new Date(new Date(c.createdAt).getTime() - 3 * 3600_000)
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
     if (key in clientMonthMap) clientMonthMap[key]++
   }
 

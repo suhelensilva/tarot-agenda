@@ -26,7 +26,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(data.description !== undefined ? { description: data.description } : {}),
         ...(data.category    !== undefined ? { category:    data.category    } : {}),
         ...(data.amount      !== undefined ? { amount:      data.amount      } : {}),
-        ...(data.date        !== undefined ? { date:        new Date(data.date) } : {}),
+        ...(data.date        !== undefined ? { date:        new Date(/^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date + "T12:00:00Z" : data.date) } : {}),
       },
     })
 

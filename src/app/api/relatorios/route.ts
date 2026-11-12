@@ -1,126 +1,128 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import {
-  startOfWeek, endOfWeek,
-  startOfMonth, endOfMonth,
-  startOfYear, endOfYear,
-  startOfDay, endOfDay,
-  subMonths, subWeeks, subYears, subDays,
-  eachWeekOfInterval, eachMonthOfInterval, eachDayOfInterval,
-  format, parseISO,
-} from "date-fns"
-import { ptBR } from "date-fns/locale"
 
 type Period = "today" | "week" | "month" | "semester" | "year" | "custom"
 
-function getPeriodRange(period: Period, from?: string, to?: string) {
-  // O servidor roda em UTC. Brasil é UTC-3: usamos "now" ajustado para o fuso
-  // local em todos os cálculos de período, evitando que após as 21h o servidor
-  // já avance para o dia/semana/mês seguinte enquanto o usuário ainda está no dia atual.
-  const BRAZIL_OFFSET_MS = 3 * 60 * 60 * 1000
-  const now = new Date(Date.now() - BRAZIL_OFFSET_MS) // "now" no horário do Brasil
+// ── Fuso de Brasília (UTC-3, sem horário de verão) ─────────────────────────
+// Todas as bordas de período são calculadas no relógio de Brasília e
+// convertidas para o instante real (UTC), independente do fuso do servidor
+// (Vercel roda em UTC; o PC local roda em UTC-3).
+const BR_OFFSET = 3 * 3600_000
+const DAY = 24 * 3600_000
+const TZ = "America/Sao_Paulo"
 
-  if (period === "custom" && from && to) {
-    return {
-      start:     parseISO(from),
-      end:       new Date(to + "T23:59:59"),
-      prevStart: null,
-      prevEnd:   null,
-    }
-  }
-
-  if (period === "today") {
-    const todayStr     = now.toISOString().slice(0, 10)
-    const yesterdayStr = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-    return {
-      start:     new Date(todayStr     + "T00:00:00.000Z"),
-      end:       new Date(todayStr     + "T23:59:59.999Z"),
-      prevStart: new Date(yesterdayStr + "T00:00:00.000Z"),
-      prevEnd:   new Date(yesterdayStr + "T23:59:59.999Z"),
-    }
-  }
-
-  if (period === "week") {
-    const start = startOfWeek(now, { weekStartsOn: 1 })
-    const end   = endOfWeek(now,   { weekStartsOn: 1 })
-    const ps    = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
-    const pe    = endOfWeek(subWeeks(now, 1),   { weekStartsOn: 1 })
-    return { start, end, prevStart: ps, prevEnd: pe }
-  }
-
-  if (period === "month") {
-    const start = startOfMonth(now)
-    const end   = endOfMonth(now)
-    const prev  = subMonths(now, 1)
-    return { start, end, prevStart: startOfMonth(prev), prevEnd: endOfMonth(prev) }
-  }
-
-  if (period === "semester") {
-    const start = startOfMonth(subMonths(now, 5))
-    const end   = endOfMonth(now)
-    const ps    = startOfMonth(subMonths(now, 11))
-    const pe    = endOfMonth(subMonths(now, 6))
-    return { start, end, prevStart: ps, prevEnd: pe }
-  }
-
-  // year
-  const start = startOfYear(now)
-  const end   = endOfYear(now)
-  const prev  = subYears(now, 1)
-  return { start, end, prevStart: startOfYear(prev), prevEnd: endOfYear(prev) }
+/** Meia-noite (ou hora indicada) no relógio de Brasília → instante real. Aceita dia/mês fora do intervalo (rola). */
+function br(y: number, m: number, d: number, h = 0) {
+  return new Date(Date.UTC(y, m, d, h) + BR_OFFSET)
 }
 
-/** Gera labels e intervalos para o gráfico de área */
-function getChartBuckets(period: Period, start: Date, end: Date) {
+function getPeriodRange(period: Period, from?: string, to?: string) {
+  const nowBR = new Date(Date.now() - BR_OFFSET) // relógio de Brasília lido com getUTC*
+  const Y = nowBR.getUTCFullYear()
+  const M = nowBR.getUTCMonth()
+  const D = nowBR.getUTCDate()
+  const end = (next: Date) => new Date(next.getTime() - 1)
+
+  if (period === "custom" && from && to) {
+    const [fy, fm, fd] = from.split("-").map(Number)
+    const [ty, tm, td] = to.split("-").map(Number)
+    return { start: br(fy, fm - 1, fd), end: end(br(ty, tm - 1, td + 1)), prevStart: null, prevEnd: null }
+  }
+
   if (period === "today") {
-    // 6 blocos de 4 horas: 00h, 04h, 08h, 12h, 16h, 20h
-    return Array.from({ length: 6 }, (_, i) => {
-      const blockStart = new Date(start.getTime() + i * 4 * 3600_000)
-      const blockEnd   = new Date(blockStart.getTime() + 4 * 3600_000 - 1)
-      return {
-        label: format(blockStart, "HH'h'", { locale: ptBR }),
-        start: blockStart,
-        end:   blockEnd,
-      }
-    })
+    return {
+      start: br(Y, M, D),     end: end(br(Y, M, D + 1)),
+      prevStart: br(Y, M, D - 1), prevEnd: end(br(Y, M, D)),
+    }
   }
 
   if (period === "week") {
-    const days = eachDayOfInterval({ start, end })
-    return days.map((d) => ({
-      label: format(d, "EEE", { locale: ptBR }),
-      start: startOfDay(d),
-      end:   endOfDay(d),
-    }))
+    const back = (nowBR.getUTCDay() + 6) % 7 // segunda = início
+    const s = D - back
+    return {
+      start: br(Y, M, s),     end: end(br(Y, M, s + 7)),
+      prevStart: br(Y, M, s - 7), prevEnd: end(br(Y, M, s)),
+    }
   }
 
   if (period === "month") {
-    // semanas do mês (segunda a domingo, padrão brasileiro)
-    const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 })
-    return weeks.map((w, i) => ({
-      label: `Sem ${i + 1}`,
-      start: i === 0 ? start : w,
-      end:   i === weeks.length - 1 ? end : endOfWeek(w, { weekStartsOn: 1 }),
-    }))
+    return {
+      start: br(Y, M, 1),     end: end(br(Y, M + 1, 1)),
+      prevStart: br(Y, M - 1, 1), prevEnd: end(br(Y, M, 1)),
+    }
   }
 
   if (period === "semester") {
-    const months = eachMonthOfInterval({ start, end })
-    return months.map((m) => ({
-      label: format(m, "MMM", { locale: ptBR }),
-      start: startOfMonth(m),
-      end:   endOfMonth(m),
-    }))
+    return {
+      start: br(Y, M - 5, 1),  end: end(br(Y, M + 1, 1)),
+      prevStart: br(Y, M - 11, 1), prevEnd: end(br(Y, M - 5, 1)),
+    }
   }
 
   // year
-  const months = eachMonthOfInterval({ start, end })
-  return months.map((m) => ({
-    label: format(m, "MMM", { locale: ptBR }),
-    start: startOfMonth(m),
-    end:   endOfMonth(m),
-  }))
+  return {
+    start: br(Y, 0, 1),     end: end(br(Y + 1, 0, 1)),
+    prevStart: br(Y - 1, 0, 1), prevEnd: end(br(Y, 0, 1)),
+  }
+}
+
+/** Gera labels e intervalos para o gráfico de área (no relógio de Brasília) */
+function getChartBuckets(period: Period, start: Date, end: Date) {
+  const wall = (d: Date) => new Date(d.getTime() - BR_OFFSET) // ler com getUTC*
+  const s = wall(start)
+  const sy = s.getUTCFullYear(), sm = s.getUTCMonth(), sd = s.getUTCDate()
+  const buckets: { label: string; start: Date; end: Date }[] = []
+
+  if (period === "today") {
+    // 6 blocos de 4 horas: 00h, 04h, 08h, 12h, 16h, 20h
+    for (let i = 0; i < 6; i++) {
+      buckets.push({
+        label: `${String(i * 4).padStart(2, "0")}h`,
+        start: br(sy, sm, sd, i * 4),
+        end:   new Date(br(sy, sm, sd, i * 4 + 4).getTime() - 1),
+      })
+    }
+    return buckets
+  }
+
+  if (period === "week" || (period === "custom" && end.getTime() - start.getTime() <= 7 * DAY)) {
+    for (let i = 0; br(sy, sm, sd + i) <= end; i++) {
+      const b = br(sy, sm, sd + i)
+      buckets.push({
+        label: new Intl.DateTimeFormat("pt-BR", { weekday: "short", timeZone: TZ }).format(b).replace(".", ""),
+        start: b,
+        end:   new Date(br(sy, sm, sd + i + 1).getTime() - 1),
+      })
+    }
+    return buckets
+  }
+
+  if (period === "month" || (period === "custom" && end.getTime() - start.getTime() <= 62 * DAY)) {
+    // semanas (segunda a domingo, padrão brasileiro), cortadas nas bordas do período
+    let cur = start
+    let i = 1
+    while (cur <= end) {
+      const w = wall(cur)
+      const toMonday = 7 - ((w.getUTCDay() + 6) % 7)
+      const next = br(w.getUTCFullYear(), w.getUTCMonth(), w.getUTCDate() + toMonday)
+      const bEnd = new Date(Math.min(next.getTime() - 1, end.getTime()))
+      buckets.push({ label: `Sem ${i++}`, start: cur, end: bEnd })
+      cur = next
+    }
+    return buckets
+  }
+
+  // semestre / ano / período longo: um bloco por mês
+  for (let k = 0; br(sy, sm + k, 1) <= end; k++) {
+    const b = br(sy, sm + k, 1)
+    buckets.push({
+      label: new Intl.DateTimeFormat("pt-BR", { month: "short", timeZone: TZ }).format(b).replace(".", ""),
+      start: k === 0 ? start : b,
+      end:   new Date(Math.min(br(sy, sm + k + 1, 1).getTime() - 1, end.getTime())),
+    })
+  }
+  return buckets
 }
 
 export async function GET(req: NextRequest) {

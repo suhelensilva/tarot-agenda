@@ -21,6 +21,9 @@ type ExpenseCat = { category: string; amount: number }
 type Transaction = { id: string; type: "revenue" | "expense"; description: string; category: string; amount: number; date: string }
 type ClientStat  = { id: string; name: string; sessions: number; totalRevenue: number }
 type Expense     = { id: string; description: string; category: string; amount: number; date: string }
+
+/** Data de hoje no horário de Brasília, formato YYYY-MM-DD */
+const todayBR = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })
 type ReportData  = { summary: Summary & { totalSessions: number }; chartData: ChartPoint[]; expenseBreakdown: ExpenseCat[]; transactions: Transaction[]; clientStats: ClientStat[] }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -78,7 +81,7 @@ export default function RelatoriosPage() {
   const [expDesc, setExpDesc] = useState("")
   const [expCat, setExpCat]   = useState("Outros")
   const [expAmt, setExpAmt]   = useState("")
-  const [expDate, setExpDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [expDate, setExpDate] = useState(() => todayBR())
   const [savingExp, setSavExp] = useState(false)
 
   const [allExpenses, setAllExpenses] = useState<Expense[]>([])
@@ -108,7 +111,7 @@ export default function RelatoriosPage() {
 
   function openNewExp() {
     setEditExp(null); setExpDesc(""); setExpCat("Outros")
-    setExpAmt(""); setExpDate(new Date().toISOString().slice(0, 10)); setExpForm(true)
+    setExpAmt(""); setExpDate(todayBR()); setExpForm(true)
   }
   function openEditExp(e: Expense) {
     setEditExp(e); setExpDesc(e.description); setExpCat(e.category)
@@ -639,7 +642,7 @@ function MiniStat({ label, value, color }: { label: string; value: string; color
 
 function TxRow({ t, onEdit, onDelete }: { t: Transaction; onEdit?: () => void; onDelete?: () => void }) {
   const isRev  = t.type === "revenue"
-  const dateStr = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" }).format(new Date(t.date))
+  const dateStr = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }).format(new Date(t.date))
 
   return (
     <div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center py-3 border-b border-gray-50 dark:border-[rgba(255,255,255,0.04)] gap-3 px-1 group hover:bg-gray-50/60 dark:hover:bg-[rgba(170,85,249,0.04)] rounded-lg transition-colors">
