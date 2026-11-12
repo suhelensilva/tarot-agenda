@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Eye, EyeOff } from "lucide-react"
+import { Cormorant_Garamond } from "next/font/google"
+
+// Serifada elegante, parecida com a do texto do logo
+const logoFont = Cormorant_Garamond({ subsets: ["latin"], weight: ["600"] })
 
 export default function LoginPage() {
   const router = useRouter()
@@ -36,31 +40,49 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4">
-      <Image
-        src="/login-bg.webp"
-        alt=""
-        fill
-        className="object-cover object-center"
-        priority
-      />
+    <div className="min-h-screen relative flex items-center justify-center lg:justify-end p-4 lg:pr-[8%] bg-[#15102a] overflow-hidden">
+      {/* Celular: imagem cobre a tela toda. Desktop: ver .login-bg abaixo */}
+      <div className="login-bg absolute inset-0">
+        <Image
+          src="/login-bg.webp"
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 2600px, 100vw"
+          className="object-cover object-center"
+          priority
+        />
+      </div>
+      <style>{`
+        /* Desktop: a roda do zodíaco fica grandona, quase da borda de cima à de baixo da tela.
+           Medidas na imagem original (1672x941): a roda vai de y=135 a y=778 (643px), centro y=456.5,
+           e termina em x=747. --wh = altura da roda na tela:
+           - 92vh: quase a altura toda
+           - 1000px: teto (tamanho numa tela Full HD); em telas maiores não estica mais, o resto é a cor de fundo
+           - (92vw - 488px) / 1.162: nunca passa por baixo da caixa de login (caixa 448px + folga 40px) */
+        @media (min-width: 1024px) {
+          .login-bg {
+            --wh: min(92vh, 1000px, calc((92vw - 488px) / 1.162));
+            inset: auto;
+            left: 0;
+            top: calc(50% - var(--wh) * 456.5 / 643);
+            height: calc(var(--wh) * 941 / 643);
+            aspect-ratio: 1672 / 941;
+            /* bordas esfumadas na cor de fundo (#15102a), sem atingir a roda */
+            -webkit-mask-image: linear-gradient(to right, #000 55%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+            -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, #000 55%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+            mask-composite: intersect;
+          }
+        }
+      `}</style>
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="relative mx-auto w-80">
-            <div
-              aria-hidden
-              className="absolute inset-0 -z-10 blur-2xl bg-[radial-gradient(ellipse_at_center,rgba(216,180,254,0.5),rgba(216,180,254,0.15)_45%,transparent_72%)]"
-            />
-            <Image
-              src="/logo-small.png"
-              alt="Mística Agenda"
-              width={320}
-              height={214}
-              className="mx-auto drop-shadow-[0_2px_18px_rgba(168,85,247,0.55)]"
-              priority
-            />
-          </div>
+          <h1
+            className={`${logoFont.className} text-5xl sm:text-6xl font-semibold text-white tracking-wide drop-shadow-[0_2px_18px_rgba(168,85,247,0.6)]`}
+          >
+            Mística Agenda
+          </h1>
           <p className="text-purple-200 mt-2">Gerencie seus atendimentos</p>
         </div>
 
