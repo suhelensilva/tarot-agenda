@@ -2,6 +2,9 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { formatCurrency } from "@/lib/utils"
 import { CalendarDays, Users, TrendingUp, Clock, Cake } from "lucide-react"
+import { BirthdaySendButton } from "@/components/birthday-send-button"
+
+const DEFAULT_BIRTHDAY_MESSAGE = "Oi {primeiro_nome}, parabéns pelo seu novo ciclo!\n\nQue este ano seja repleto de luz e realizações.\n\nCom carinho"
 
 // Datas de nascimento são salvas como UTC midnight (ex: "1988-06-09T00:00:00Z").
 // Usar timeZone:"UTC" preserva o dia original; nunca converter para SP, senão
@@ -55,7 +58,7 @@ export default async function DashboardPage() {
   const monthStart = new Date(Date.UTC(my, mm - 1, 1,  3,  0,  0,   0))
   const monthEnd   = new Date(Date.UTC(my, mm,     1,  2, 59, 59, 999)) // 1º do próximo mês 02:59 UTC
 
-  const [totalClients, appointmentsThisMonth, allToday, revenue, revenueToday, clientsWithBirthday] = await Promise.all([
+  const [totalClients, appointmentsThisMonth, allToday, revenue, revenueToday, clientsWithBirthday, autoSettings] = await Promise.all([
     prisma.client.count({ where: { userId } }),
     prisma.appointment.count({ where: { userId, startTime: { gte: monthStart, lte: monthEnd } } }),
     // Todos os agendamentos de hoje (qualquer status), ordenados por horário
@@ -77,7 +80,9 @@ export default async function DashboardPage() {
       where: { userId, birthDate: { not: null } },
       select: { id: true, name: true, birthDate: true, phone: true },
     }),
+    prisma.automationSettings.findUnique({ where: { userId }, select: { birthdayMessage: true } }),
   ])
+  const birthdayTemplate = autoSettings?.birthdayMessage ?? DEFAULT_BIRTHDAY_MESSAGE
 
   const totalToday    = allToday.filter((a) => a.status === "COMPLETED").length
   const upcomingToday = allToday.filter((a) => a.status === "SCHEDULED" || a.status === "CONFIRMED")
@@ -220,10 +225,7 @@ export default async function DashboardPage() {
                           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{c.name}</p>
                           <p className="text-xs text-pink-500">{calcAge(c.birthDate!) + 1} anos hoje 🎉</p>
                         </div>
-                        <a href={whatsappBirthdayLink(c.phone, c.name, true)} target="_blank" rel="noopener noreferrer"
-                          className="text-xs font-medium text-green-600 dark:text-green-400 hover:text-green-500 border border-green-200 dark:border-green-500/30 hover:border-green-400 rounded-md px-2 py-1 shrink-0 transition-colors bg-white dark:bg-transparent">
-                          WhatsApp
-                        </a>
+                        <BirthdaySendButton name={c.name} phone={c.phone} template={birthdayTemplate} />
                       </div>
                     ))}
                   </div>

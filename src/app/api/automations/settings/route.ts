@@ -14,7 +14,7 @@ export async function GET() {
   return NextResponse.json(settings ?? {
     birthdayEnabled: false,
     birthdaySendHour: 13,
-    birthdayMessage: "Oi {nome}, parabéns pelo seu novo ciclo! ✨🌙\n\nQue este ano seja repleto de luz e realizações.\n\nCom carinho 💜",
+    birthdayMessage: "Oi {primeiro_nome}, parabéns pelo seu novo ciclo!\n\nQue este ano seja repleto de luz e realizações.\n\nCom carinho",
     testMode: true,
     testPhone: null,
   })
