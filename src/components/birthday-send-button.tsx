@@ -18,7 +18,7 @@ function waNumber(phone: string) {
   return d.length === 10 || d.length === 11 ? "55" + d : d
 }
 
-export function BirthdaySendButton({ name, phone, template }: { name: string; phone: string; template: string }) {
+export function BirthdaySendButton({ name, phone, template, senderName }: { name: string; phone: string; template: string; senderName: string }) {
   const [open, setOpen] = useState(false)
   const first = primeiroNome(name)
   const imageUrl = `/api/aniversario/imagem?nome=${encodeURIComponent(name)}`
@@ -28,9 +28,9 @@ export function BirthdaySendButton({ name, phone, template }: { name: string; ph
 
   useEffect(() => {
     if (!open) return
-    setMessage(template.replace(/\{nome\}/gi, name).replace(/\{primeiro_nome\}/gi, first))
+    setMessage(template.replace(/\{nome\}/gi, name).replace(/\{primeiro_nome\}/gi, first).replace(/\{meu_nome\}/gi, senderName))
     setHint("")
-  }, [open, template, name, first])
+  }, [open, template, name, first, senderName])
 
   const fileName = `parabens-${first.toLowerCase()}.png`
   const getBlob = () => fetch(imageUrl).then((r) => r.blob())

@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
       const message = setting.birthdayMessage
         .replace(/\{nome\}/gi, client.name)
         .replace(/\{primeiro_nome\}/gi, firstName)
+        .replace(/\{meu_nome\}/gi, user.name ?? "")
 
       // Em modo teste, envia para o testPhone; caso contrário para o cliente
       const targetPhone = setting.testMode && setting.testPhone

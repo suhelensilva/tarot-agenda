@@ -34,7 +34,7 @@ export default function IntegracoesPage() {
   const DEFAULT_AUTO: AutoSettings = {
     birthdayEnabled: false,
     birthdaySendHour: 13,
-    birthdayMessage: "Oi {primeiro_nome}, parabéns pelo seu novo ciclo!\n\nQue este ano seja repleto de luz e realizações.\n\nCom carinho",
+    birthdayMessage: "Oi {primeiro_nome}, parabéns pelo seu novo ciclo!\nQue este ano seja repleto de luz e realizações.\nCom carinho, {meu_nome} <3",
     testMode: true,
     testPhone: null,
   }
@@ -382,7 +382,7 @@ export default function IntegracoesPage() {
 
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Mensagem <span className="text-violet-500">{"{nome}"}</span> = nome completo · <span className="text-violet-500">{"{primeiro_nome}"}</span> = primeiro nome
+                  Mensagem <span className="text-violet-500">{"{nome}"}</span> = nome completo · <span className="text-violet-500">{"{primeiro_nome}"}</span> = primeiro nome · <span className="text-violet-500">{"{meu_nome}"}</span> = seu nome
                 </label>
                 <textarea
                   value={autoSettings.birthdayMessage}
