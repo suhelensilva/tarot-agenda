@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/utils"
 import { CalendarDays, Users, TrendingUp, Clock, Cake } from "lucide-react"
 import { BirthdaySendButton } from "@/components/birthday-send-button"
 
-const DEFAULT_BIRTHDAY_MESSAGE = "Oi {primeiro_nome}, parabéns pelo seu novo ciclo!\nQue este ano seja repleto de luz e realizações.\nCom carinho, {meu_nome} <3"
+const DEFAULT_BIRTHDAY_MESSAGE = "Oi {primeiro_nome}, parabéns pelo seu novo ciclo!\nQue este ano seja repleto de luz e realizações.\nCom carinho, *{meu_nome}* <3"
 
 // Datas de nascimento são salvas como UTC midnight (ex: "1988-06-09T00:00:00Z").
 // Usar timeZone:"UTC" preserva o dia original; nunca converter para SP, senão

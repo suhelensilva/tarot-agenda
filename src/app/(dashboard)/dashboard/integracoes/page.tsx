@@ -34,7 +34,7 @@ export default function IntegracoesPage() {
   const DEFAULT_AUTO: AutoSettings = {
     birthdayEnabled: false,
     birthdaySendHour: 13,
-    birthdayMessage: "Oi {primeiro_nome}, parabéns pelo seu novo ciclo!\nQue este ano seja repleto de luz e realizações.\nCom carinho, {meu_nome} <3",
+    birthdayMessage: "Oi {primeiro_nome}, parabéns pelo seu novo ciclo!\nQue este ano seja repleto de luz e realizações.\nCom carinho, *{meu_nome}* <3",
     testMode: true,
     testPhone: null,
   }
