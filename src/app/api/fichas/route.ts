@@ -19,7 +19,7 @@ const sessionCardSchema = z.object({
 const schema = z.object({
   clientId: z.string().min(1),
   type: z.enum(["INTERNAL", "REPORT"]),
-  serviceId: z.string().optional().or(z.literal("")),
+  serviceId: z.string().nullable().optional(),
   mainSubject: z.string().nullable().optional(),
   productName: z.string().nullable().optional(),
   removeBg: z.boolean().optional(),

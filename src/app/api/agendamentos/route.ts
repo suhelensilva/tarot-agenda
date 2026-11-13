@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { fbcIsFresh } from "@/lib/meta-capi" // fireCAPIEvent comentado — META CAPI DESATIVADO
 import { TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
+import { fitsOnePage } from "@/lib/ficha-fit"
 
 const schema = z.object({
   clientId: z.string().min(1),
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.client.findUnique({
         where: { id: data.clientId },
-        select: { birthDate: true, person2Name: true, person2BirthDate: true },
+        select: { name: true, birthDate: true, person2Name: true, person2BirthDate: true },
       }),
       prisma.ficha.findFirst({
         where: { clientId: data.clientId, userId: session.user.id, type: "INTERNAL" },
@@ -122,29 +123,53 @@ export async function POST(req: NextRequest) {
       })
     } else if (data.motivo || data.perguntas || data.person2Name) {
       // Tem ficha: acrescenta motivo, perguntas e/ou pessoa adicional
-      const updateData: Record<string, unknown> = {}
-      if (data.motivo) {
-        const anteriorTopics = fichaExistente.topicsAddressed ?? ""
-        const motivoEntry = `[${dateLabel}] ${data.motivo}`
-        updateData.topicsAddressed = anteriorTopics ? `${anteriorTopics}\n${motivoEntry}` : motivoEntry
+      const motivoEntry = data.motivo ? `[${dateLabel}] ${data.motivo}` : null
+      const perguntasEntry = data.perguntas ? `[${dateLabel}] ${data.perguntas}` : null
+
+      // Pessoa adicional entra na lista de envolvidos (sem duplicar por nome)
+      type Person = { name: string; birthDate: string; relation: string }
+      let people = Array.isArray(fichaExistente.involvedPeople) ? fichaExistente.involvedPeople as Person[] : []
+      if (data.person2Name && !people.some((p) => p.name?.toLowerCase() === data.person2Name!.toLowerCase())) {
+        people = [...people, { name: data.person2Name, birthDate: data.person2BirthDate ?? "", relation: "" }]
       }
-      if (data.perguntas) {
-        const anteriorQuestions = fichaExistente.clientQuestions ?? ""
-        const perguntasEntry = `[${dateLabel}] ${data.perguntas}`
-        updateData.clientQuestions = anteriorQuestions ? `${anteriorQuestions}\n${perguntasEntry}` : perguntasEntry
+
+      const updated = {
+        ...fichaExistente,
+        involvedPeople: people,
+        topicsAddressed: motivoEntry
+          ? (fichaExistente.topicsAddressed ? `${fichaExistente.topicsAddressed}\n${motivoEntry}` : motivoEntry)
+          : fichaExistente.topicsAddressed,
+        clientQuestions: perguntasEntry
+          ? (fichaExistente.clientQuestions ? `${fichaExistente.clientQuestions}\n${perguntasEntry}` : perguntasEntry)
+          : fichaExistente.clientQuestions,
       }
-      if (data.person2Name) {
-        // Adiciona a pessoa na lista de envolvidos (sem duplicar por nome)
-        const existing = Array.isArray(fichaExistente.involvedPeople) ? fichaExistente.involvedPeople as { name: string; birthDate: string; relation: string }[] : []
-        const alreadyIn = existing.some((p) => p.name.toLowerCase() === data.person2Name!.toLowerCase())
-        if (!alreadyIn) {
-          updateData.involvedPeople = [...existing, { name: data.person2Name, birthDate: data.person2BirthDate ?? "", relation: "" }]
-        }
+
+      // Uma ficha = uma folha. Se o atendimento novo não couber INTEIRO na folha atual,
+      // começa uma ficha nova com os dados da cliente (pessoas envolvidas, pacote) e só ele.
+      const isNewSession = Boolean(motivoEntry || perguntasEntry)
+      if (isNewSession && !fitsOnePage(updated, client?.name ?? "")) {
+        await prisma.ficha.create({
+          data: {
+            userId: session.user.id,
+            clientId: data.clientId,
+            serviceId: data.serviceId || fichaExistente.serviceId || null,
+            productName: fichaExistente.productName,
+            type: "INTERNAL",
+            topicsAddressed: motivoEntry,
+            clientQuestions: perguntasEntry,
+            involvedPeople: people,
+          },
+        })
+      } else {
+        await prisma.ficha.update({
+          where: { id: fichaExistente.id },
+          data: {
+            involvedPeople: people,
+            topicsAddressed: updated.topicsAddressed,
+            clientQuestions: updated.clientQuestions,
+          },
+        })
       }
-      await prisma.ficha.update({
-        where: { id: fichaExistente.id },
-        data: updateData,
-      })
     }
 
     // [META CAPI DESATIVADO] — reativar quando houver solução de atribuição para recompras

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
 const schema = z.object({
-  serviceId: z.string().optional().or(z.literal("")),
+  serviceId: z.string().nullable().optional(),
   mainSubject: z.string().nullable().optional(),
   productName: z.string().nullable().optional(),
   involvedPeople: z.array(z.object({

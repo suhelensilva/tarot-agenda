@@ -33,12 +33,15 @@ export function formatDate(date: Date | string) {
   }
   // Para ISO strings completas (ex: vindo do banco como "2026-06-05T00:00:00.000Z"),
   // formata em UTC para evitar o shift de -1 dia no Brasil (UTC-3).
+  const d = new Date(date)
+  // data incompleta/inválida (ex.: digitando) não pode derrubar a tela
+  if (isNaN(d.getTime())) return typeof date === "string" ? date : ""
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     timeZone: "UTC",
-  }).format(new Date(date))
+  }).format(d)
 }
 
 export function formatDateTime(date: Date | string) {

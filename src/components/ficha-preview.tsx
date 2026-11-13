@@ -97,7 +97,11 @@ function PagedA4({
     setPages((prev) => (JSON.stringify(prev) === next ? prev : result))
   })
 
-  const pageList = pages ?? [blocks.map((_, i) => i)]
+  // A divisão em folhas é calculada DEPOIS de desenhar. Se um bloco sumiu no meio-tempo
+  // (ex.: apagou o nome da pessoa envolvida), a divisão antiga aponta para blocos que não
+  // existem mais e a tela quebrava. Só usa a divisão se ela tiver exatamente os blocos atuais.
+  const valid = pages && pages.flat().length === blocks.length && pages.every((p) => p.every((i) => i < blocks.length))
+  const pageList = valid ? pages : [blocks.map((_, i) => i)]
   const totalH = pageList.length * A4_H + (pageList.length - 1) * PAGE_GAP
 
   return (
@@ -220,7 +224,8 @@ function fiSessionSection(key: string, title: string, text: string | null | unde
         </div>
       ),
     })
-    e.lines.forEach((l, li) => blocks.push({ key: `${key}-${ei}-${li}`, node: <p style={FI_TEXT}>{l}</p> }))
+    // keepWithNext em todas as linhas menos a última: o atendimento vai inteiro para a folha
+    e.lines.forEach((l, li) => blocks.push({ key: `${key}-${ei}-${li}`, keepWithNext: li < e.lines.length - 1, node: <p style={FI_TEXT}>{l}</p> }))
   })
   const last = blocks[blocks.length - 1]
   last.node = <div style={{ paddingBottom: 22 }}>{last.node}</div>
