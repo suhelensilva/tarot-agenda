@@ -532,6 +532,19 @@ export default function AgendaPage() {
                 ))}
               </div>
             )}
+
+            {selectedApts.length > 0 && (
+              <p className="mt-3 text-right text-xs text-gray-500 dark:text-gray-400">
+                Total de faturamento do dia:{" "}
+                <span className="font-semibold text-purple-600 dark:text-[#aa55f9]">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+                    selectedApts
+                      .filter((a) => a.paymentStatus === "Pago")
+                      .reduce((s, a) => s + (a.amountPaid ?? 0), 0)
+                  )}
+                </span>
+              </p>
+            )}
           </div>
         )}
       </div>
