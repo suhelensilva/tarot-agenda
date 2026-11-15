@@ -39,6 +39,7 @@ export type FichaPreviewData = {
   energeticObservations?: string | null
   therapeuticSuggestions?: string | null
   returnSchedule?: string | null
+  context?: string | null
   involvedPeople?: Array<{ name: string; birthDate?: string | null; relation?: string | null; notes?: string | null }>
   questions?: Array<{ question: string; cards?: string | null; interpretation?: string | null }>
   energeticTips?: string | null
@@ -338,6 +339,9 @@ export function FichaInternaPreview({
       ),
     }))
   }
+
+  // Só aparece na ficha de continuação: motivos das leituras anteriores
+  blocks.push(...fiTextSection("contexto", "📜 Contexto:", data.context))
 
   if (cards.length > 0) {
     blocks.push({ key: "cartas-h", keepWithNext: true, node: <>{FI_DIVIDER}<p style={{ ...FI_TITLE, margin: "0 0 12px" }}>🃏 Cartas da sessão:</p></> })

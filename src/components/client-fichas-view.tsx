@@ -34,6 +34,7 @@ type FichaForm = {
   energeticObservations: string
   therapeuticSuggestions: string
   returnSchedule: string
+  context: string
   questions: Question[]
   energeticTips: string
   spiritualPractice: string
@@ -55,6 +56,7 @@ type SavedFicha = {
   energeticObservations: string | null
   therapeuticSuggestions: string | null
   returnSchedule: string | null
+  context: string | null
   involvedPeople: Array<{ name: string; birthDate?: string | null; relation?: string | null; notes?: string | null }>
   questions: Array<{ question: string; cards?: string | null; interpretation?: string | null }>
   energeticTips: string | null
@@ -92,6 +94,7 @@ const emptyForm = (type: "INTERNAL" | "REPORT"): FichaForm => ({
   energeticObservations: "",
   therapeuticSuggestions: "",
   returnSchedule: "",
+  context: "",
   questions: [],
   energeticTips: "",
   spiritualPractice: "",
@@ -219,6 +222,7 @@ export default function ClientFichasView({
         energeticObservations: previewFicha.energeticObservations,
         therapeuticSuggestions: previewFicha.therapeuticSuggestions,
         returnSchedule: previewFicha.returnSchedule,
+        context: previewFicha.context,
         involvedPeople: previewFicha.involvedPeople,
         questions: previewFicha.questions ?? [],
         energeticTips: previewFicha.energeticTips,
@@ -250,6 +254,7 @@ export default function ClientFichasView({
     energeticObservations: form.energeticObservations || null,
     therapeuticSuggestions: form.therapeuticSuggestions || null,
     returnSchedule: form.returnSchedule || null,
+    context: form.context || null,
     involvedPeople: form.involvedPeople.filter((p) => p.name),
     questions: form.questions.filter((q) => q.question),
     energeticTips: form.energeticTips || null,
@@ -308,6 +313,7 @@ export default function ClientFichasView({
       energeticObservations: ficha.energeticObservations ?? "",
       therapeuticSuggestions: ficha.therapeuticSuggestions ?? "",
       returnSchedule: ficha.returnSchedule ?? "",
+      context: ficha.context ?? "",
       questions: (ficha.questions ?? []).map((q) => ({
         question: q.question,
         cards: q.cards ?? "",
@@ -341,6 +347,7 @@ export default function ClientFichasView({
         energeticObservations: form.energeticObservations || null,
         therapeuticSuggestions: form.therapeuticSuggestions || null,
         returnSchedule: form.returnSchedule || null,
+        context: form.context || null,
         questions: form.questions.filter((q) => q.question),
         energeticTips: form.energeticTips || null,
         spiritualPractice: form.spiritualPractice || null,
@@ -709,6 +716,21 @@ export default function ClientFichasView({
                     placeholder="Ex: terças das 14h às 18h"
                   />
                 </div>
+
+                {/* Contexto: só existe na ficha de continuação (motivos das leituras anteriores) */}
+                {(form.context || fichas.find((f) => f.id === editId)?.context) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      📜 Contexto (leituras anteriores)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={form.context}
+                      onChange={(e) => setForm({ ...form, context: e.target.value })}
+                      className={TEXTAREA_CLS}
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

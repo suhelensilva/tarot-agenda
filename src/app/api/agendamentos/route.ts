@@ -148,6 +148,12 @@ export async function POST(req: NextRequest) {
       // começa uma ficha nova com os dados da cliente (pessoas envolvidas, pacote) e só ele.
       const isNewSession = Boolean(motivoEntry || perguntasEntry)
       if (isNewSession && !fitsOnePage(updated, client?.name ?? "")) {
+        // Contexto da continuação: motivos das leituras anteriores (o contexto que a
+        // ficha anterior já trazia + os motivos registrados nela), com as datas.
+        const context = [fichaExistente.context, fichaExistente.topicsAddressed]
+          .map((t) => t?.trim())
+          .filter(Boolean)
+          .join("\n") || null
         await prisma.ficha.create({
           data: {
             userId: session.user.id,
@@ -155,6 +161,7 @@ export async function POST(req: NextRequest) {
             serviceId: data.serviceId || fichaExistente.serviceId || null,
             productName: fichaExistente.productName,
             type: "INTERNAL",
+            context,
             topicsAddressed: motivoEntry,
             clientQuestions: perguntasEntry,
             involvedPeople: people,

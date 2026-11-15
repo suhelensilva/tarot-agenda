@@ -34,6 +34,7 @@ const schema = z.object({
   energeticObservations: z.string().nullable().optional(),
   therapeuticSuggestions: z.string().nullable().optional(),
   returnSchedule: z.string().nullable().optional(),
+  context: z.string().nullable().optional(),
   // Links
   links: z.array(z.object({ label: z.string(), url: z.string() })).optional(),
 })
@@ -67,6 +68,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         energeticObservations: data.energeticObservations,
         therapeuticSuggestions: data.therapeuticSuggestions,
         returnSchedule: data.returnSchedule,
+        context: data.context,
         links: data.links ?? [],
       },
     })

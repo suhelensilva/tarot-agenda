@@ -17,6 +17,7 @@ export type FichaFitData = {
   mainSubject?: string | null
   involvedPeople?: unknown
   sessionCards?: unknown
+  context?: string | null
   topicsAddressed?: string | null
   clientQuestions?: string | null
   energeticObservations?: string | null
@@ -84,6 +85,7 @@ export function estimateFichaHeight(f: FichaFitData, clientName = "") {
     for (const c of cards) h += wrap(`${c.card} → ${c.interpretation ?? ""}`, TEXT_CHARS) * 23 + 22
   }
 
+  h += textSection(f.context)
   h += textSection(f.topicsAddressed)
   h += sessionSection(f.clientQuestions)
   h += textSection(f.energeticObservations)

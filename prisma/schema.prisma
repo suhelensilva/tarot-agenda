@@ -314,7 +314,8 @@ model Ficha {
   energeticObservations   String?
   therapeuticSuggestions  String?
   returnSchedule          String?
-  links                   Json      @default("[]")  // [{label, url}]
+  context                 String?   // ficha de continuação: motivos das leituras anteriores
+  links                  Json      @default("[]")  // [{label, url}]
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
