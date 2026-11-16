@@ -33,6 +33,22 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
 
   if (!user) return NextResponse.json({ error: "Não encontrado" }, { status: 404 })
 
+  // Horários ocupados nos próximos 90 dias: atendimentos marcados, intervalos e dias trancados.
+  // Só início/fim, sem dado de cliente.
+  const now = new Date()
+  const until = new Date(now.getTime() + 90 * 86400000)
+  const [busyApts, busyBlocks] = await Promise.all([
+    prisma.appointment.findMany({
+      where: { userId: user.id, status: { not: "CANCELLED" }, endTime: { gt: now }, startTime: { lt: until } },
+      select: { startTime: true, endTime: true },
+    }),
+    prisma.agendaBlock.findMany({
+      where: { userId: user.id, endTime: { gt: now }, startTime: { lt: until } },
+      select: { startTime: true, endTime: true },
+    }),
+  ])
+  const busy = [...busyApts, ...busyBlocks].map((b) => ({ start: b.startTime.toISOString(), end: b.endTime.toISOString() }))
+
   // Um pixelId da taróloga só para setar o cookie _fbp no navegador da cliente.
   // O _fbp é por domínio, então qualquer pixel dela serve.
   const firstPixel = await prisma.metaPixel.findFirst({
@@ -51,6 +67,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       ...user,
       plan,
       metaPixelId,
+      busy,
       publicBio: null,
       publicTheme: "BASIC",
       publicFont: null,
@@ -67,6 +84,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       ...user,
       plan,
       metaPixelId,
+      busy,
       publicBio: null,
       publicTheme: "BASIC",
       publicFont: null,
@@ -76,7 +94,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   }
 
   // PREMIUM: tudo liberado
-  return NextResponse.json({ ...user, plan, metaPixelId })
+  return NextResponse.json({ ...user, plan, metaPixelId, busy })
 }
 
 const bookSchema = z.object({
@@ -106,6 +124,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     })
     if (!service) return NextResponse.json({ error: "Serviço inválido" }, { status: 400 })
 
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date) || !/^\d{2}:\d{2}$/.test(data.startTime)) {
+      return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    }
+
     let client = await prisma.client.findFirst({
       where: { userId: slug, phone: data.clientPhone },
     })
@@ -116,8 +138,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       })
     }
 
-    const start = new Date(`${data.date}T${data.startTime}:00`)
+    // Horário que a cliente escolheu é de Brasília (o servidor roda em UTC)
+    const start = new Date(`${data.date}T${data.startTime}:00-03:00`)
     const end = addMinutes(start, service.duration)
+
+    // Não deixa marcar em cima de atendimento, intervalo ou dia trancado
+    const [aptClash, blockClash] = await Promise.all([
+      prisma.appointment.findFirst({
+        where: { userId: slug, status: { not: "CANCELLED" }, startTime: { lt: end }, endTime: { gt: start } },
+        select: { id: true },
+      }),
+      prisma.agendaBlock.findFirst({
+        where: { userId: slug, startTime: { lt: end }, endTime: { gt: start } },
+        select: { id: true },
+      }),
+    ])
+    if (aptClash || blockClash) {
+      return NextResponse.json({ error: "Esse horário não está mais disponível. Escolha outro." }, { status: 409 })
+    }
 
     // Sinais de correspondência da Meta: IP e user agent vêm da requisição;
     // fbc é o cookie _fbc OU reconstruído a partir do fbclid da URL do anúncio.

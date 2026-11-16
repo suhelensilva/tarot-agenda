@@ -67,6 +67,7 @@ model User {
   metaPixels       MetaPixel[]
   automationSettings AutomationSettings?
   birthdayLogs     BirthdayLog[]
+  agendaBlocks     AgendaBlock[]
 
   @@map("users")
 }
@@ -550,4 +551,20 @@ model BirthdayLog {
 
   @@unique([userId, clientId, year])
   @@map("birthday_logs")
+}
+
+// Intervalos e dias trancados na agenda (bloqueiam horários; não são atendimentos)
+model AgendaBlock {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   // "INTERVALO" (horário) | "TRANCADO" (dia inteiro)
+  startTime DateTime
+  endTime   DateTime
+  note      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startTime])
+  @@map("agenda_blocks")
 }

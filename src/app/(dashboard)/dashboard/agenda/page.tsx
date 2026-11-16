@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil, FileText } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil, FileText, Lock, Coffee, Trash2 } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { usePlanFetch } from "@/components/upgrade-provider"
 
@@ -21,6 +21,28 @@ type Appointment = {
   cancellationReason: string | null
   client: Client & { tag: string | null }
   service: Service | null
+}
+
+type Block = {
+  id: string
+  kind: "INTERVALO" | "TRANCADO"
+  startTime: string
+  endTime: string
+  note: string | null
+}
+
+type FormMode = "agendamento" | "intervalo" | "trancar"
+
+const BLOCK_INPUT = "w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
+
+const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+const dayRange = (d: Date) => {
+  const s = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  return [s, new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)] as const
+}
+const brDay = (ymd: string) => {
+  const [y, m, d] = ymd.split("-").map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })
 }
 
 const statusConfig = {
@@ -98,13 +120,31 @@ export default function AgendaPage() {
   })
   const [showPerson2Apt, setShowPerson2Apt] = useState(false)
 
+  // Intervalos e dias trancados
+  const [blocks, setBlocks] = useState<Block[]>([])
+  const [formMode, setFormMode] = useState<FormMode>("agendamento")
+  const [blockForm, setBlockForm] = useState({ date: "", startHour: "12:00", endHour: "13:00", note: "", days: [] as string[], extraDay: "" })
+  const [blockError, setBlockError] = useState<string | null>(null)
+
   const fetchAppointments = useCallback(async () => {
     const m = currentDate.getMonth() + 1
     const y = currentDate.getFullYear()
-    const res = await fetch(`/api/agendamentos?month=${m}&year=${y}`)
+    const from = new Date(y, m - 1, 1).toISOString()
+    const to = new Date(y, m, 1).toISOString()
+    const [res, resBlocks] = await Promise.all([
+      fetch(`/api/agendamentos?month=${m}&year=${y}`),
+      fetch(`/api/bloqueios?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+    ])
     const data = await res.json()
     setAppointments(data)
+    const b = await resBlocks.json().catch(() => [])
+    setBlocks(Array.isArray(b) ? b : [])
   }, [currentDate])
+
+  function blocksForDay(d: Date) {
+    const [s, e] = dayRange(d)
+    return blocks.filter((b) => new Date(b.startTime) < e && new Date(b.endTime) > s)
+  }
 
   useEffect(() => { fetchAppointments() }, [fetchAppointments])
 
@@ -181,7 +221,55 @@ export default function AgendaPage() {
     setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
     setClientTag("")
+    setFormMode("agendamento")
+    setBlockForm({ date: dateStr, startHour: "12:00", endHour: "13:00", note: "", days: [dateStr], extraDay: "" })
+    setBlockError(null)
     setShowForm(true)
+  }
+
+  async function handleSaveBlock(e: React.FormEvent) {
+    e.preventDefault()
+    setBlockError(null)
+    let periods: { startTime: string; endTime: string }[]
+    if (formMode === "intervalo") {
+      if (!blockForm.date) return setBlockError("Escolha o dia.")
+      const s = new Date(`${blockForm.date}T${blockForm.startHour}:00`)
+      const en = new Date(`${blockForm.date}T${blockForm.endHour}:00`)
+      if (en <= s) return setBlockError("O horário final precisa ser depois do inicial.")
+      periods = [{ startTime: s.toISOString(), endTime: en.toISOString() }]
+    } else {
+      if (blockForm.days.length === 0) return setBlockError("Escolha pelo menos um dia.")
+      periods = blockForm.days.map((ymd) => {
+        const [y, m, d] = ymd.split("-").map(Number)
+        return { startTime: new Date(y, m - 1, d).toISOString(), endTime: new Date(y, m - 1, d + 1).toISOString() }
+      })
+    }
+    setSaving(true)
+    try {
+      const res = await fetch("/api/bloqueios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: formMode === "intervalo" ? "INTERVALO" : "TRANCADO", note: blockForm.note || null, periods }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        setBlockError(err.error ?? "Não deu para salvar. Tente de novo.")
+        return
+      }
+      setShowForm(false)
+      await fetchAppointments()
+    } catch {
+      setBlockError("Erro de conexão. Verifique sua internet e tente novamente.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDeleteBlock(b: Block) {
+    const msg = b.kind === "TRANCADO" ? "Destrancar este dia?" : "Remover este intervalo?"
+    if (!confirm(msg)) return
+    await fetch(`/api/bloqueios/${b.id}`, { method: "DELETE" })
+    setBlocks((prev) => prev.filter((x) => x.id !== b.id))
   }
 
   function openEdit(apt: Appointment) {
@@ -213,6 +301,7 @@ export default function AgendaPage() {
     setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
     setClientTag(apt.client.tag ?? "")
+    setFormMode("agendamento")
     if (!apt.client.tag) {
       fetch(`/api/clientes/${apt.client.id}/etiquetas`)
         .then((r) => r.json())
@@ -289,6 +378,19 @@ export default function AgendaPage() {
 
     const startTime = new Date(`${form.date}T${form.startHour}:00`)
     const endTime = new Date(`${form.date}T${form.endHour}:00`)
+
+    // Avisa se o horário cai num intervalo ou num dia trancado
+    try {
+      const r = await fetch(`/api/bloqueios?from=${encodeURIComponent(startTime.toISOString())}&to=${encodeURIComponent(endTime.toISOString())}`)
+      const hits: Block[] = r.ok ? await r.json() : []
+      if (hits.length > 0) {
+        const b = hits[0]
+        const what = b.kind === "TRANCADO"
+          ? "Esse dia está trancado na agenda"
+          : `Esse horário cai no intervalo das ${hhmm(new Date(b.startTime))} às ${hhmm(new Date(b.endTime))}`
+        if (!confirm(`${what}. Agendar mesmo assim?`)) { setSaving(false); return }
+      }
+    } catch { /* sem conexão para checar: segue */ }
 
     const payload = {
       clientId: form.clientId,
@@ -420,6 +522,9 @@ export default function AgendaPage() {
   }
 
   const selectedApts = aptsForSelected()
+  const selectedBlocks = selectedDay ? blocksForDay(selectedDay) : []
+  const selectedLocks = selectedBlocks.filter((b) => b.kind === "TRANCADO")
+  const selectedBreaks = selectedBlocks.filter((b) => b.kind === "INTERVALO")
 
   return (
     <div className="flex h-full">
@@ -458,14 +563,23 @@ export default function AgendaPage() {
             {days.map((day, i) => {
               if (!day) return <div key={`empty-${i}`} className="h-16 border-b border-r border-gray-50 dark:border-[rgba(255,255,255,0.03)]" />
               const apts = aptsForDay(day)
+              const dayBlocks = blocksForDay(day)
+              const isLocked = dayBlocks.some((b) => b.kind === "TRANCADO")
+              const hasBreak = dayBlocks.some((b) => b.kind === "INTERVALO")
               const isToday = day.toDateString() === today.toDateString()
               const isSelected = selectedDay?.toDateString() === day.toDateString()
               return (
                 <button
                   key={day.toISOString()}
                   onClick={() => setSelectedDay(day)}
-                  className={`relative h-16 border-b border-r border-gray-50 dark:border-[rgba(255,255,255,0.03)] p-1.5 text-left transition-colors hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.06)] ${isSelected ? "bg-purple-50 dark:bg-[rgba(170,85,249,0.08)]" : ""}`}
+                  className={`relative h-16 border-b border-r border-gray-50 dark:border-[rgba(255,255,255,0.03)] p-1.5 text-left transition-colors hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.06)] ${isSelected ? "bg-purple-50 dark:bg-[rgba(170,85,249,0.08)]" : isLocked ? "bg-gray-100 dark:bg-white/[0.04]" : ""}`}
                 >
+                  {(isLocked || hasBreak) && (
+                    <span className="absolute bottom-1 right-1 flex gap-0.5 text-gray-400 dark:text-gray-500">
+                      {hasBreak && <Coffee size={11} />}
+                      {isLocked && <Lock size={11} />}
+                    </span>
+                  )}
                   <span className={`text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full ${
                     isToday ? "bg-purple-600 text-white" : isSelected ? "text-purple-700 dark:text-[#aa55f9]" : "text-gray-700 dark:text-gray-300"
                   }`}>
@@ -504,11 +618,41 @@ export default function AgendaPage() {
               </button>
             </div>
 
-            {selectedApts.length === 0 ? (
+            {selectedLocks.map((b) => (
+              <div key={b.id} className="mb-2 flex items-center gap-3 p-3 rounded-xl border border-dashed border-gray-300 dark:border-white/15 bg-gray-50 dark:bg-white/[0.03]">
+                <Lock size={16} className="text-gray-500 dark:text-gray-400 shrink-0" />
+                <p className="flex-1 text-sm text-gray-700 dark:text-gray-300">
+                  <span className="font-medium">Agenda trancada neste dia</span>
+                  {b.note && <span className="text-gray-500 dark:text-gray-400"> · {b.note}</span>}
+                </p>
+                <button onClick={() => handleDeleteBlock(b)} className="text-xs text-purple-600 dark:text-[#aa55f9] hover:text-purple-500 font-medium">
+                  Destrancar
+                </button>
+              </div>
+            ))}
+
+            {selectedApts.length === 0 && selectedBreaks.length === 0 ? (
               <p className="text-gray-400 dark:text-gray-500 text-sm">Nenhum agendamento neste dia</p>
             ) : (
               <div className="space-y-2">
-                {selectedApts.map((apt) => (
+                {[
+                  ...selectedBreaks.map((b) => ({ at: new Date(b.startTime).getTime(), block: b, apt: null })),
+                  ...selectedApts.map((a) => ({ at: new Date(a.startTime).getTime(), block: null, apt: a })),
+                ].sort((x, y) => x.at - y.at).map(({ block: b, apt }) => b ? (
+                  <div key={b.id} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl border border-dashed border-gray-300 dark:border-white/15 bg-gray-50 dark:bg-white/[0.03]">
+                    <div className="text-sm font-mono text-gray-500 dark:text-gray-400 font-bold w-12 shrink-0">{hhmm(new Date(b.startTime))}</div>
+                    <div className="flex-1 min-w-0 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                      <Coffee size={15} className="shrink-0" />
+                      <span className="truncate">
+                        Intervalo até {hhmm(new Date(b.endTime))}
+                        {b.note && <span className="text-gray-400 dark:text-gray-500"> · {b.note}</span>}
+                      </span>
+                    </div>
+                    <button onClick={() => handleDeleteBlock(b)} title="Remover intervalo" className="text-gray-400 hover:text-red-500 shrink-0">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                ) : apt && (
                   <button
                     key={apt.id}
                     onClick={() => setSelected(apt)}
@@ -760,12 +904,41 @@ export default function AgendaPage() {
         <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-[#13131f] rounded-2xl shadow-xl dark:border dark:border-[rgba(170,85,249,0.15)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
-              <h2 className="font-semibold text-gray-900 dark:text-white">{editingId ? "Editar agendamento" : "Novo agendamento"}</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-white">
+                {editingId ? "Editar agendamento" : formMode === "intervalo" ? "Adicionar intervalo" : formMode === "trancar" ? "Trancar agenda" : "Novo agendamento"}
+              </h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={18} />
               </button>
             </div>
 
+            {!editingId && (
+              <div className="px-6 pt-4">
+                <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-gray-100 dark:bg-white/5">
+                  {([
+                    ["agendamento", "Agendamento", Plus],
+                    ["intervalo", "Intervalo", Coffee],
+                    ["trancar", "Trancar agenda", Lock],
+                  ] as const).map(([mode, label, Icon]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => { setFormMode(mode); setBlockError(null) }}
+                      className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                        formMode === mode
+                          ? "bg-white dark:bg-[#1f1f30] text-purple-700 dark:text-[#aa55f9] shadow-sm"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                      }`}
+                    >
+                      <Icon size={13} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {formMode === "agendamento" ? (
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -1159,6 +1332,95 @@ export default function AgendaPage() {
                 </button>
               </div>
             </form>
+            ) : (
+            <form onSubmit={handleSaveBlock} className="p-6 space-y-4">
+              {formMode === "intervalo" ? (
+                <>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Uma pausa no mesmo dia. O horário fica marcado como intervalo na agenda e não aparece no link de agendamento.
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dia</label>
+                    <input type="date" value={blockForm.date} onChange={(e) => setBlockForm({ ...blockForm, date: e.target.value })} className={BLOCK_INPUT} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Das</label>
+                      <input type="time" value={blockForm.startHour} onChange={(e) => setBlockForm({ ...blockForm, startHour: e.target.value })} className={BLOCK_INPUT} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Até</label>
+                      <input type="time" value={blockForm.endHour} onChange={(e) => setBlockForm({ ...blockForm, endHour: e.target.value })} className={BLOCK_INPUT} />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    O dia inteiro fica trancado: ninguém agenda pelo link e a agenda avisa se você tentar marcar.
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Dias trancados</label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {blockForm.days.length === 0 && <span className="text-xs text-gray-400">Nenhum dia escolhido</span>}
+                      {blockForm.days.map((d) => (
+                        <span key={d} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-[rgba(170,85,249,0.15)] dark:text-[#aa55f9] font-medium">
+                          {brDay(d)}
+                          <button type="button" onClick={() => setBlockForm({ ...blockForm, days: blockForm.days.filter((x) => x !== d) })} className="hover:text-red-500">
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="date" value={blockForm.extraDay} onChange={(e) => setBlockForm({ ...blockForm, extraDay: e.target.value })} className={BLOCK_INPUT} />
+                      <button
+                        type="button"
+                        disabled={!blockForm.extraDay}
+                        onClick={() => setBlockForm((f) => ({
+                          ...f,
+                          days: f.days.includes(f.extraDay) ? f.days : [...f.days, f.extraDay].sort(),
+                          extraDay: "",
+                        }))}
+                        className="shrink-0 px-3 rounded-lg border border-purple-200 dark:border-[rgba(170,85,249,0.3)] text-sm text-purple-600 dark:text-[#aa55f9] font-medium disabled:opacity-40"
+                      >
+                        + Adicionar dia
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observação</label>
+                <input
+                  value={blockForm.note}
+                  onChange={(e) => setBlockForm({ ...blockForm, note: e.target.value })}
+                  className={BLOCK_INPUT}
+                  placeholder={formMode === "intervalo" ? "opcional, ex.: almoço" : "opcional, ex.: viagem"}
+                />
+              </div>
+
+              {blockError && <p className="text-sm text-red-500">{blockError}</p>}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 border border-gray-200 dark:border-[rgba(255,255,255,0.08)] text-gray-600 dark:text-gray-400 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white py-2.5 rounded-lg text-sm font-medium transition-colors"
+                >
+                  {saving ? "Salvando..." : formMode === "intervalo" ? "Adicionar intervalo" : blockForm.days.length > 1 ? `Trancar ${blockForm.days.length} dias` : "Trancar agenda"}
+                </button>
+              </div>
+            </form>
+            )}
           </div>
         </div>
       )}

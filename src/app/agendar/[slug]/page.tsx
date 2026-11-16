@@ -26,6 +26,8 @@ type PageData = {
   services: Service[]
   availability: Availability[]
   metaPixelId: string | null
+  // horários ocupados (atendimentos, intervalos e dias trancados)
+  busy?: { start: string; end: string }[]
 }
 
 // ── Theme config ──────────────────────────────────────────────────────────────
@@ -484,8 +486,21 @@ function BookingModal({ data, font, onClose }: { data: PageData; font: string; o
   ]
   const today = new Date(); today.setHours(0,0,0,0)
 
-  const dayAvail = selectedDate ? data.availability.find((a) => a.dayOfWeek === selectedDate.getDay()) : null
-  const slots    = dayAvail && selectedService ? generateSlots(dayAvail.startTime, dayAvail.endTime, selectedService.duration) : []
+  // Horários livres de um dia: tira o que já passou e o que bate com atendimento,
+  // intervalo ou dia trancado. Os horários da agenda são de Brasília.
+  const busy = (data.busy ?? []).map((b) => [new Date(b.start).getTime(), new Date(b.end).getTime()] as const)
+  function freeSlots(d: Date): string[] {
+    const av = data.availability.find((a) => a.active && a.dayOfWeek === d.getDay())
+    if (!av || !selectedService) return []
+    const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    const dur = selectedService.duration * 60000
+    const now = new Date().getTime()
+    return generateSlots(av.startTime, av.endTime, selectedService.duration).filter((s) => {
+      const st = new Date(`${ymd}T${s}:00-03:00`).getTime()
+      return st > now && !busy.some(([bs, be]) => st < be && st + dur > bs)
+    })
+  }
+  const slots = selectedDate ? freeSlots(selectedDate) : []
 
   async function handleBook() {
     if (!selectedService || !selectedDate || !selectedSlot) return
@@ -495,7 +510,7 @@ function BookingModal({ data, font, onClose }: { data: PageData; font: string; o
     const readCookie = (name: string) =>
       document.cookie.split("; ").find((c) => c.startsWith(name + "="))?.split("=")[1] || null
     const fbclid = new URLSearchParams(window.location.search).get("fbclid")
-    await fetch(`/api/agendar/${data.id}`, {
+    const res = await fetch(`/api/agendar/${data.id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -510,6 +525,13 @@ function BookingModal({ data, font, onClose }: { data: PageData; font: string; o
       }),
     })
     setSaving(false)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      alert(err.error ?? "Não deu para agendar. Tente outro horário.")
+      setSelectedSlot(null)
+      setStep("datetime")
+      return
+    }
     setStep("done")
   }
 
@@ -595,7 +617,7 @@ function BookingModal({ data, font, onClose }: { data: PageData; font: string; o
               <div className="grid grid-cols-7 gap-1 mb-5">
                 {calDays.map((d, i) => {
                   if (!d) return <div key={`e${i}`} />
-                  const isAvail = availDays.includes(d.getDay()) && d >= today
+                  const isAvail = availDays.includes(d.getDay()) && d >= today && freeSlots(d).length > 0
                   const isSel   = selectedDate?.toDateString() === d.toDateString()
                   return (
                     <button key={d.toISOString()} disabled={!isAvail} onClick={() => { setSelectedDate(d); setSelectedSlot(null) }}
