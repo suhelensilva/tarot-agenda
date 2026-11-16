@@ -131,6 +131,7 @@ export default function AgendaPage() {
   const [formMode, setFormMode] = useState<FormMode>("agendamento")
   const [blockForm, setBlockForm] = useState({ date: "", startHour: "12:00", endHour: "13:00", note: "", days: [] as string[], extraDay: "" })
   const [blockError, setBlockError] = useState<string | null>(null)
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
 
   const fetchAppointments = useCallback(async () => {
     const m = currentDate.getMonth() + 1
@@ -202,7 +203,7 @@ export default function AgendaPage() {
     return `${yyyy}-${mm}-${dd}`
   }
 
-  function openNew(day?: Date) {
+  function openNew(day?: Date, mode: FormMode = "agendamento") {
     const d = day ?? selectedDay ?? today
     const dateStr = toLocalDateStr(d)
     const isSelectedToday = d.toDateString() === today.toDateString()
@@ -227,8 +228,20 @@ export default function AgendaPage() {
     setNewClient({ name: "", phone: "", email: "", birthDate: "", person2Name: "", person2BirthDate: "", tag: "" })
     setNewClientError(null)
     setClientTag("")
-    setFormMode("agendamento")
+    setFormMode(mode)
+    setEditingBlockId(null)
     setBlockForm({ date: dateStr, startHour: "12:00", endHour: "13:00", note: "", days: [dateStr], extraDay: "" })
+    setBlockError(null)
+    setShowForm(true)
+  }
+
+  function openEditBlock(b: Block) {
+    const s = new Date(b.startTime)
+    setEditingId(null)
+    setSelected(null)
+    setFormMode("intervalo")
+    setEditingBlockId(b.id)
+    setBlockForm({ date: toLocalDateStr(s), startHour: hhmm(s), endHour: hhmm(new Date(b.endTime)), note: b.note ?? "", days: [], extraDay: "" })
     setBlockError(null)
     setShowForm(true)
   }
@@ -252,17 +265,24 @@ export default function AgendaPage() {
     }
     setSaving(true)
     try {
-      const res = await fetch("/api/bloqueios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: formMode === "intervalo" ? "INTERVALO" : "TRANCADO", note: blockForm.note || null, periods }),
-      })
+      const res = editingBlockId
+        ? await fetch(`/api/bloqueios/${editingBlockId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...periods[0], note: blockForm.note || null }),
+          })
+        : await fetch("/api/bloqueios", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ kind: formMode === "intervalo" ? "INTERVALO" : "TRANCADO", note: blockForm.note || null, periods }),
+          })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         setBlockError(err.error ?? "Não deu para salvar. Tente de novo.")
         return
       }
       setShowForm(false)
+      setEditingBlockId(null)
       await fetchAppointments()
     } catch {
       setBlockError("Erro de conexão. Verifique sua internet e tente novamente.")
@@ -309,6 +329,7 @@ export default function AgendaPage() {
     setNewClientError(null)
     setClientTag(apt.client.tag ?? "")
     setFormMode("agendamento")
+    setEditingBlockId(null)
     if (!apt.client.tag) {
       fetch(`/api/clientes/${apt.client.id}/etiquetas`)
         .then((r) => r.json())
@@ -561,13 +582,22 @@ export default function AgendaPage() {
               <ChevronRight size={18} />
             </button>
           </div>
-          <button
-            onClick={() => openNew()}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            <Plus size={16} />
-            Novo agendamento
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openNew(undefined, "intervalo")}
+              className="flex items-center gap-2 border border-purple-200 dark:border-[rgba(170,85,249,0.3)] text-purple-700 dark:text-[#aa55f9] hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.08)] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Coffee size={16} />
+              Adicionar intervalo
+            </button>
+            <button
+              onClick={() => openNew()}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus size={16} />
+              Novo agendamento
+            </button>
+          </div>
         </div>
 
         {/* Grid do calendário */}
@@ -666,6 +696,9 @@ export default function AgendaPage() {
                         {b.note && <span className="text-gray-400 dark:text-gray-500"> · {b.note}</span>}
                       </span>
                     </div>
+                    <button onClick={() => openEditBlock(b)} title="Editar intervalo" className="text-gray-400 hover:text-purple-600 dark:hover:text-[#aa55f9] shrink-0">
+                      <Pencil size={15} />
+                    </button>
                     <button onClick={() => handleDeleteBlock(b)} title="Remover intervalo" className="text-gray-400 hover:text-red-500 shrink-0">
                       <Trash2 size={15} />
                     </button>
@@ -952,14 +985,14 @@ export default function AgendaPage() {
           <div className="bg-white dark:bg-[#13131f] rounded-2xl shadow-xl dark:border dark:border-[rgba(170,85,249,0.15)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
               <h2 className="font-semibold text-gray-900 dark:text-white">
-                {editingId ? "Editar agendamento" : formMode === "intervalo" ? "Adicionar intervalo" : formMode === "trancar" ? "Trancar agenda" : "Novo agendamento"}
+                {editingId ? "Editar agendamento" : editingBlockId ? "Editar intervalo" : formMode === "intervalo" ? "Adicionar intervalo" : formMode === "trancar" ? "Trancar agenda" : "Novo agendamento"}
               </h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={18} />
               </button>
             </div>
 
-            {!editingId && (
+            {!editingId && !editingBlockId && (
               <div className="px-6 pt-4">
                 <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-gray-100 dark:bg-white/5">
                   {([
@@ -1483,7 +1516,7 @@ export default function AgendaPage() {
                   disabled={saving}
                   className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white py-2.5 rounded-lg text-sm font-medium transition-colors"
                 >
-                  {saving ? "Salvando..." : formMode === "intervalo" ? "Adicionar intervalo" : blockForm.days.length > 1 ? `Trancar ${blockForm.days.length} dias` : "Trancar agenda"}
+                  {saving ? "Salvando..." : editingBlockId ? "Salvar alterações" : formMode === "intervalo" ? "Adicionar intervalo" : blockForm.days.length > 1 ? `Trancar ${blockForm.days.length} dias` : "Trancar agenda"}
                 </button>
               </div>
             </form>
