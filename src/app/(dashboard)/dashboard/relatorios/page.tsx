@@ -24,7 +24,8 @@ type Expense     = { id: string; description: string; category: string; amount: 
 
 /** Data de hoje no horário de Brasília, formato YYYY-MM-DD */
 const todayBR = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })
-type ReportData  = { summary: Summary & { totalSessions: number }; chartData: ChartPoint[]; expenseBreakdown: ExpenseCat[]; transactions: Transaction[]; clientStats: ClientStat[] }
+type CohortRow   = { key: string; label?: string; newCount: number; newRevenue: number; recurringCount: number; recurringRevenue: number; recurringPct: number }
+type ReportData  = { summary: Summary & { totalSessions: number }; chartData: ChartPoint[]; expenseBreakdown: ExpenseCat[]; transactions: Transaction[]; clientStats: ClientStat[]; cohort?: { months: CohortRow[]; total: CohortRow } }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -270,6 +271,54 @@ export default function RelatoriosPage() {
                 </div>
               </div>
             </div>
+
+            {/* ── Clientes novas x recorrentes ────────────────────────────── */}
+            {data.cohort && (
+              <div className="bg-white dark:bg-[#0f0f1a] border border-gray-100 dark:border-[rgba(170,85,249,0.12)] rounded-2xl p-6 shadow-sm">
+                <h2 className="font-semibold text-gray-900 dark:text-white text-base">Clientes novas x recorrentes</h2>
+                <p className="text-xs text-gray-400 mt-0.5 mb-4">Nova = primeiro atendimento pago naquele mês. Recorrente = já tinha pago antes.</p>
+                {data.cohort.months.length === 0 ? (
+                  <p className="text-sm text-gray-400 py-6 text-center">Nenhum atendimento pago no período</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-[11px] text-gray-400 dark:text-gray-500 font-medium border-b border-gray-100 dark:border-[rgba(170,85,249,0.08)]">
+                          <th className="text-left font-medium py-2 pr-3">Mês</th>
+                          <th className="text-right font-medium py-2 px-3">Clientes novas</th>
+                          <th className="text-right font-medium py-2 px-3">Faturamento novas</th>
+                          <th className="text-right font-medium py-2 px-3">Clientes recorrentes</th>
+                          <th className="text-right font-medium py-2 px-3">Faturamento recorrentes</th>
+                          <th className="text-right font-medium py-2 pl-3">% recorrentes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...data.cohort.months].reverse().map((r) => (
+                          <tr key={r.key} className="border-b border-gray-50 dark:border-[rgba(255,255,255,0.04)]">
+                            <td className="py-2.5 pr-3 text-gray-700 dark:text-gray-300 capitalize">{r.label ?? r.key}</td>
+                            <td className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">{r.newCount}</td>
+                            <td className="py-2.5 px-3 text-right text-gray-900 dark:text-white">{formatCurrency(r.newRevenue)}</td>
+                            <td className="py-2.5 px-3 text-right text-violet-600 dark:text-violet-400 font-medium">{r.recurringCount}</td>
+                            <td className="py-2.5 px-3 text-right text-gray-900 dark:text-white">{formatCurrency(r.recurringRevenue)}</td>
+                            <td className="py-2.5 pl-3 text-right text-gray-500">{r.recurringPct.toFixed(0)}%</td>
+                          </tr>
+                        ))}
+                        {data.cohort.months.length > 1 && (
+                          <tr className="font-semibold">
+                            <td className="pt-3 pr-3 text-gray-900 dark:text-white">Total do período</td>
+                            <td className="pt-3 px-3 text-right text-emerald-600 dark:text-emerald-400">{data.cohort.total.newCount}</td>
+                            <td className="pt-3 px-3 text-right text-gray-900 dark:text-white">{formatCurrency(data.cohort.total.newRevenue)}</td>
+                            <td className="pt-3 px-3 text-right text-violet-600 dark:text-violet-400">{data.cohort.total.recurringCount}</td>
+                            <td className="pt-3 px-3 text-right text-gray-900 dark:text-white">{formatCurrency(data.cohort.total.recurringRevenue)}</td>
+                            <td className="pt-3 pl-3 text-right text-gray-500">{data.cohort.total.recurringPct.toFixed(0)}%</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ── Linha 4: histórico + clientes ──────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

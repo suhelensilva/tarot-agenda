@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { firstMonthByClient, cohortByMonth, cohortTotal } from "@/lib/client-cohorts"
 
 type Period = "today" | "week" | "month" | "semester" | "year" | "custom"
 
@@ -246,6 +247,24 @@ export async function GET(req: NextRequest) {
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
+  // ── Clientes novas x recorrentes (mês a mês) ─────────────────────────────
+  const allPaid = await prisma.appointment.findMany({
+    where: { userId, paymentStatus: "Pago", amountPaid: { gt: 0 } },
+    select: { clientId: true, startTime: true, amountPaid: true },
+  })
+  const firstMonth = firstMonthByClient(allPaid)
+  const paidInRange = allPaid.filter((a) => a.startTime >= start && a.startTime <= end)
+  const cohort = {
+    months: cohortByMonth(paidInRange, firstMonth).map((r) => {
+      const [y, m] = r.key.split("-").map(Number)
+      return {
+        ...r,
+        label: new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: TZ }).format(br(y, m - 1, 15)),
+      }
+    }),
+    total: cohortTotal(paidInRange, firstMonth),
+  }
+
   // ── Top clientes ─────────────────────────────────────────────────────────
   const clientStats = topClients
     .map((c) => ({
@@ -263,6 +282,7 @@ export async function GET(req: NextRequest) {
     expenseBreakdown,
     transactions: transactions.slice(0, 30),
     clientStats,
+    cohort,
     statusCounts,
     period: { start: start.toISOString(), end: end.toISOString() },
   })

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { firstMonthByClient, cohortTotal } from "@/lib/client-cohorts"
 
 export async function GET() {
   const session = await auth()
@@ -80,5 +81,13 @@ export async function GET() {
       return { month: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""), count }
     })
 
-  return NextResponse.json({ monthlyRevenue, monthlyClients })
+  // Novas x recorrentes (histórico completo): faturamento do mês de entrada de
+  // cada cliente x faturamento dos meses em que ela voltou
+  const allPaid = await prisma.appointment.findMany({
+    where: { userId, paymentStatus: "Pago", amountPaid: { gt: 0 } },
+    select: { clientId: true, startTime: true, amountPaid: true },
+  })
+  const cohortAll = cohortTotal(allPaid, firstMonthByClient(allPaid))
+
+  return NextResponse.json({ monthlyRevenue, monthlyClients, cohortAll })
 }

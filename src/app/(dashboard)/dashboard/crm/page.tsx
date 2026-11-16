@@ -628,6 +628,7 @@ export default function CrmPage() {
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number; count: number }[]>([])
   const [monthlyClients, setMonthlyClients] = useState<{ month: string; count: number }[]>([])
   const [topThreshold, setTopThreshold] = useState<number>(500)
+  const [cohortAll, setCohortAll] = useState<{ newCount: number; newRevenue: number; recurringCount: number; recurringRevenue: number; recurringPct: number } | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem(TOP_THRESHOLD_KEY)
@@ -662,6 +663,7 @@ export default function CrmPage() {
       fetch("/api/crm/stats").then(r => r.json()).then(s => {
         setMonthlyRevenue(s.monthlyRevenue ?? [])
         setMonthlyClients(s.monthlyClients ?? [])
+        setCohortAll(s.cohortAll ?? null)
       }).catch(() => {})
     } finally {
       setLoading(false)
@@ -874,6 +876,31 @@ export default function CrmPage() {
             </div>
           ))}
         </div>
+
+        {/* Novas x recorrentes (histórico completo) */}
+        {cohortAll && (
+          <div className="rounded-2xl p-5 bg-[#0f0f1a] border border-white/5 mb-4">
+            <div className="flex items-baseline justify-between mb-4 gap-3 flex-wrap">
+              <p className="text-xs font-medium text-gray-400">Clientes novas x recorrentes (total)</p>
+              <p className="text-[11px] text-gray-500">
+                <span className="text-violet-400 font-semibold">{cohortAll.recurringPct.toFixed(0)}%</span> do faturamento vem de quem voltou
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-xl p-4" style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)" }}>
+                <p className="text-[11px] text-gray-400">Clientes novas</p>
+                <p className="text-2xl font-bold text-emerald-400 mt-1">{cohortAll.newCount}</p>
+                <p className="text-xs text-gray-400 mt-1">Faturamento no mês de entrada: <span className="text-white font-medium">{formatCurrency(cohortAll.newRevenue)}</span></p>
+              </div>
+              <div className="rounded-xl p-4" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.25)" }}>
+                <p className="text-[11px] text-gray-400">Clientes que voltaram (recorrentes)</p>
+                <p className="text-2xl font-bold text-violet-400 mt-1">{cohortAll.recurringCount}</p>
+                <p className="text-xs text-gray-400 mt-1">Faturamento das voltas: <span className="text-white font-medium">{formatCurrency(cohortAll.recurringRevenue)}</span></p>
+              </div>
+            </div>
+            <p className="text-[10px] text-gray-600 mt-3">Nova = mês do primeiro atendimento pago. Recorrente = pagou de novo em outro mês.</p>
+          </div>
+        )}
 
         {/* Linha 1: Faturamento mensal + Novas clientes */}
         <div className="grid grid-cols-1 gap-4 mb-4 xl:grid-cols-2">
