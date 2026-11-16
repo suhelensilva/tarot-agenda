@@ -18,6 +18,7 @@ type Appointment = {
   meetingLink: string | null
   amountPaid: number | null
   paymentStatus: string | null
+  deliveryFormat: string | null
   cancellationReason: string | null
   client: Client & { tag: string | null }
   service: Service | null
@@ -32,6 +33,10 @@ type Block = {
 }
 
 type FormMode = "agendamento" | "intervalo" | "trancar"
+
+// Formato de entrega: fica só no agendamento (não é etiqueta da cliente)
+const DELIVERY_FORMATS = ["Foto e áudio", "Vídeo gravado"]
+const DELIVERY_ACTIVE = "bg-purple-100 text-purple-700 border-purple-400 dark:bg-[rgba(170,85,249,0.2)] dark:text-[#c084fc] dark:border-[rgba(170,85,249,0.5)]"
 
 const BLOCK_INPUT = "w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
 
@@ -117,6 +122,7 @@ export default function AgendaPage() {
     meetingLink: "",
     amountPaid: "",
     paymentStatus: "",
+    deliveryFormat: "",
   })
   const [showPerson2Apt, setShowPerson2Apt] = useState(false)
 
@@ -212,7 +218,7 @@ export default function AgendaPage() {
       endHour   = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`
     }
 
-    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", perguntas: "", person2Name: "", person2BirthDate: "", notes: "", meetingLink: "", amountPaid: "", paymentStatus: "" })
+    setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", perguntas: "", person2Name: "", person2BirthDate: "", notes: "", meetingLink: "", amountPaid: "", paymentStatus: "", deliveryFormat: "" })
     setEditingId(null)
     setSelected(null)
     setShowNewClient(false)
@@ -293,6 +299,7 @@ export default function AgendaPage() {
       meetingLink: apt.meetingLink ?? "",
       amountPaid: apt.amountPaid != null ? String(apt.amountPaid) : "",
       paymentStatus: "",
+      deliveryFormat: apt.deliveryFormat ?? "",
     })
     setEditingId(apt.id)
     setShowNewClient(false)
@@ -405,6 +412,7 @@ export default function AgendaPage() {
       notes: form.notes || null,
       meetingLink: form.meetingLink || null,
       amountPaid: form.amountPaid !== "" ? parseFloat(form.amountPaid) : null,
+      deliveryFormat: form.deliveryFormat || null,
       ...(!editingId && form.paymentStatus ? { paymentStatus: form.paymentStatus } : {}),
     }
 
@@ -457,6 +465,16 @@ export default function AgendaPage() {
     } finally {
       setUpdatingStatus(false)
     }
+  }
+
+  async function updateDeliveryFormat(id: string, value: string | null) {
+    setSelected((prev) => prev ? { ...prev, deliveryFormat: value } : prev)
+    setAppointments((prev) => prev.map((a) => a.id === id ? { ...a, deliveryFormat: value } : a))
+    await fetch(`/api/agendamentos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deliveryFormat: value }),
+    })
   }
 
   async function updatePaymentStatus(id: string, value: string | null) {
@@ -667,7 +685,16 @@ export default function AgendaPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 dark:text-white truncate">{apt.client.name}</p>
-                      {apt.service && <p className="text-xs text-gray-500 dark:text-gray-400">{apt.service.name}</p>}
+                      {(apt.service || apt.deliveryFormat) && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 flex-wrap">
+                          {apt.service?.name}
+                          {apt.deliveryFormat && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-[rgba(170,85,249,0.15)] dark:text-[#c084fc] text-[10px] font-medium">
+                              {apt.deliveryFormat}
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${statusConfig[apt.status].color}`}>
                       {statusConfig[apt.status].label}
@@ -725,6 +752,26 @@ export default function AgendaPage() {
                 {label.name}
               </span>
             ))}
+          </div>
+
+          {/* Formato de entrega (só deste agendamento) */}
+          <div className="mt-3">
+            <p className="text-[10px] font-medium text-gray-400 dark:text-gray-600 uppercase tracking-wide mb-1.5">Formato de entrega</p>
+            <div className="flex flex-wrap gap-1.5">
+              {DELIVERY_FORMATS.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => updateDeliveryFormat(selected.id, selected.deliveryFormat === opt ? null : opt)}
+                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-all ${
+                    selected.deliveryFormat === opt
+                      ? DELIVERY_ACTIVE
+                      : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-500 hover:border-gray-300"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Seletor de status de pagamento */}
@@ -1292,6 +1339,26 @@ export default function AgendaPage() {
                   )}
                 </div>
               )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Formato de entrega</label>
+                <div className="flex flex-wrap gap-2">
+                  {DELIVERY_FORMATS.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, deliveryFormat: f.deliveryFormat === opt ? "" : opt }))}
+                      className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
+                        form.deliveryFormat === opt
+                          ? DELIVERY_ACTIVE
+                          : "border-gray-200 dark:border-[rgba(170,85,249,0.2)] text-gray-500 dark:text-gray-500 hover:border-gray-300"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link da chamada</label>

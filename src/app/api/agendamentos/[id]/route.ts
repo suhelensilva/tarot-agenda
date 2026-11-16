@@ -9,6 +9,7 @@ const statusSchema = z.object({
   cancellationReason: z.string().optional(),
   amountPaid: z.number().optional(),
   paymentStatus: z.string().optional().nullable(),
+  deliveryFormat: z.string().optional().nullable(),
 })
 
 const editSchema = z.object({
@@ -21,6 +22,7 @@ const editSchema = z.object({
   motivo: z.string().optional().nullable(),
   meetingLink: z.string().optional().nullable(),
   amountPaid: z.number().optional().nullable(),
+  deliveryFormat: z.string().optional().nullable(),
 })
 
 
@@ -93,6 +95,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         motivo: data.motivo ?? null,
         meetingLink: data.meetingLink ?? null,
         amountPaid: data.amountPaid ?? null,
+        ...(data.deliveryFormat !== undefined ? { deliveryFormat: data.deliveryFormat || null } : {}),
       },
     })
 

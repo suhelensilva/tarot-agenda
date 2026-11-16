@@ -20,6 +20,7 @@ const schema = z.object({
   meetingLink: z.string().optional().nullable(),
   amountPaid: z.number().optional().nullable(),
   paymentStatus: z.string().optional().nullable(),
+  deliveryFormat: z.string().optional().nullable(),
 })
 
 export async function GET(req: NextRequest) {
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
           meetingLink: data.meetingLink || null,
           amountPaid: data.amountPaid ?? null,
           paymentStatus: data.paymentStatus ?? null,
+          deliveryFormat: data.deliveryFormat || null,
           fbc: fbcHerdado,
         },
         include: { client: true, service: true },
