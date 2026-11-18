@@ -24,7 +24,13 @@ type Appointment = {
   notes: string | null
   motivo: string | null
   amountPaid: number | null
+  paymentStatus: string | null
   service: { id: string; name: string; price: number } | null
+}
+
+/** Valor devido de um atendimento pendente: o valor lançado ou, se vazio, o preço do serviço. */
+function pendingValue(a: Appointment) {
+  return a.amountPaid && a.amountPaid > 0 ? a.amountPaid : a.service?.price ?? 0
 }
 
 type ClientDetail = {
@@ -392,6 +398,34 @@ export default function ClienteDetailPage() {
     ? [...client.appointments].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
     : []
 
+  const pendingAppointments = sortedAppointments
+    .filter((a) => a.paymentStatus === "Pendente" && a.status !== "CANCELLED")
+    .reverse() // mais antigo primeiro
+  const pendingTotal = pendingAppointments.reduce((s, a) => s + pendingValue(a), 0)
+
+  const pendingBox = pendingAppointments.length > 0 && (
+    <div className="bg-amber-50 dark:bg-[rgba(251,191,36,0.08)] border border-amber-200 dark:border-[rgba(251,191,36,0.3)] rounded-xl p-4">
+      <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase tracking-wide mb-2">
+        Pagamento pendente · {pendingAppointments.length} {pendingAppointments.length === 1 ? "atendimento" : "atendimentos"}
+      </p>
+      <ul className="space-y-1">
+        {pendingAppointments.map((a) => (
+          <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-gray-700 dark:text-gray-300 truncate">
+              Atendimento do dia {new Date(a.startTime).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+              <span className="text-gray-400 dark:text-gray-500"> · {a.title ?? a.service?.name ?? "Atendimento"}</span>
+            </span>
+            <span className="shrink-0 font-medium text-amber-700 dark:text-amber-400">{formatCurrency(pendingValue(a))}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="flex items-center justify-between mt-3 pt-2 border-t border-amber-200 dark:border-[rgba(251,191,36,0.2)] text-sm font-semibold">
+        <span className="text-gray-900 dark:text-white">Total pendente</span>
+        <span className="text-amber-700 dark:text-amber-400">{formatCurrency(pendingTotal)}</span>
+      </div>
+    </div>
+  )
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (loadingClient) {
@@ -511,6 +545,8 @@ export default function ClienteDetailPage() {
         {/* ── Tab: Dados ── */}
         {tab === "dados" && (
           <div className="max-w-lg space-y-5">
+
+            {pendingBox}
 
             {/* Contact card */}
             <div className="bg-white dark:bg-[#13131f] border border-gray-200 dark:border-[rgba(170,85,249,0.15)] rounded-xl p-5 space-y-3">
@@ -690,6 +726,7 @@ export default function ClienteDetailPage() {
         {/* ── Tab: Atendimentos ── */}
         {tab === "atendimentos" && (
           <div className="max-w-2xl">
+            {pendingBox && <div className="mb-4">{pendingBox}</div>}
             {sortedAppointments.length === 0 ? (
               <div className="text-center py-16">
                 <Calendar size={40} className="mx-auto text-gray-300 mb-3" />
@@ -722,7 +759,11 @@ export default function ClienteDetailPage() {
                           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.cls}`}>
                             {status.label}
                           </span>
-                          {a.amountPaid != null && a.amountPaid > 0 && (
+                          {a.paymentStatus === "Pendente" && a.status !== "CANCELLED" ? (
+                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
+                              Pendente · {formatCurrency(pendingValue(a))}
+                            </span>
+                          ) : a.amountPaid != null && a.amountPaid > 0 && (
                             <span className="text-xs text-green-600 dark:text-green-400 font-medium">{formatCurrency(a.amountPaid)}</span>
                           )}
                         </div>
