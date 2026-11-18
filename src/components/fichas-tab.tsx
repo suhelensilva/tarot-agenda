@@ -1,5 +1,6 @@
 "use client"
 
+import { activeServicesAZ } from "@/lib/service-order"
 import { useState, useEffect, useRef } from "react"
 import {
   FileText, ClipboardList, Search, Plus, X, Tag, Trash2,
@@ -364,7 +365,7 @@ export default function FichasTab({
                   }}
                   className={inp}>
                   <option value="">Selecionar produto...</option>
-                  {services.map((s) => <option key={s.id} value={s.id}>{s.name} — {formatCurrency(s.price)}</option>)}
+                  {activeServicesAZ(services as { id: string; name: string; price: number; active?: boolean }[]).map((s) => <option key={s.id} value={s.id}>{s.name} — {formatCurrency(s.price)}</option>)}
                 </select>
                 {selectedService && (
                   <div className="mt-2 flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-lg px-3 py-2">

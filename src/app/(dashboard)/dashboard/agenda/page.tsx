@@ -1,5 +1,6 @@
 "use client"
 
+import { activeServicesAZ } from "@/lib/service-order"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil, FileText, Lock, Coffee, Trash2, Copy } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
@@ -160,8 +161,7 @@ export default function AgendaPage() {
   useEffect(() => {
     fetch("/api/clientes").then((r) => r.json()).then(setClients)
     fetch("/api/servicos").then((r) => r.json()).then((d) => setServices(
-      d.filter((s: Service & { active: boolean }) => s.active)
-        .sort((a: Service, b: Service) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }))
+      Array.isArray(d) ? activeServicesAZ(d as (Service & { active: boolean })[]) : []
     ))
   }, [])
 
@@ -1311,7 +1311,7 @@ export default function AgendaPage() {
                   className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[#1a1a2e] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                 >
                   <option value="">Sem serviço específico</option>
-                  {[...services].sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })).map((s) => (
+                  {services.map((s) => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>

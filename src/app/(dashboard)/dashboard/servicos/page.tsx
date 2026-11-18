@@ -70,6 +70,8 @@ export default function ServicosPage() {
   const [editingCat, setEditingCat] = useState<Category | null>(null)
   const [catName, setCatName] = useState("")
   const [savingCat, setSavingCat] = useState(false)
+  const [creatingInlineCat, setCreatingInlineCat] = useState(false)
+  const [inlineCatName, setInlineCatName] = useState("")
 
   // Collapsed categories
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
@@ -122,7 +124,8 @@ export default function ServicosPage() {
 
   function openNew() {
     setEditing(null)
-    setForm(empty)
+    setForm({ ...empty, categoryId: "__select__" })
+    setCreatingInlineCat(false)
     setShowForm(true)
   }
 
@@ -139,6 +142,7 @@ export default function ServicosPage() {
       imageUrl: s.imageUrl ?? "",
       showOnPublicLink: s.showOnPublicLink,
     })
+    setCreatingInlineCat(false)
     setShowForm(true)
   }
 
@@ -151,7 +155,7 @@ export default function ServicosPage() {
       price: form.free ? 0 : parseFloat(form.price),
       duration: parseInt(form.duration),
       type: form.type,
-      categoryId: form.categoryId || null,
+      categoryId: form.categoryId && form.categoryId !== "__select__" ? form.categoryId : null,
       imageUrl: form.imageUrl || null,
       showOnPublicLink: form.showOnPublicLink,
     }
@@ -230,6 +234,27 @@ export default function ServicosPage() {
     fetchAll()
   }
 
+  /** Cria a categoria direto da janela do produto e já deixa ela escolhida. */
+  async function createInlineCat() {
+    const name = inlineCatName.trim()
+    if (!name) return
+    setSavingCat(true)
+    try {
+      const res = await planFetch("/api/categorias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      })
+      if (!res.ok) return
+      const cat = await res.json()
+      setCategories((prev) => [...prev, { ...cat, services: [] }].sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })))
+      setForm((f) => ({ ...f, categoryId: cat.id }))
+      setCreatingInlineCat(false)
+    } finally {
+      setSavingCat(false)
+    }
+  }
+
   async function handleDeleteCat(c: Category) {
     const msg = c.services.length > 0
       ? `Excluir categoria "${c.name}"? Os ${c.services.length} serviço(s) vinculados ficarão sem categoria.`
@@ -241,8 +266,11 @@ export default function ServicosPage() {
 
   // ── Group services ──────────────────────────────────────────────────────────
 
-  const active = services.filter((s) => s.active)
-  const inactive = services.filter((s) => !s.active)
+  // Sempre da leitura mais barata para a mais cara (empate: nome)
+  const byPrice = (a: Service, b: Service) =>
+    (Number(a.price) || 0) - (Number(b.price) || 0) || a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
+  const active = services.filter((s) => s.active).sort(byPrice)
+  const inactive = services.filter((s) => !s.active).sort(byPrice)
 
   // Group active by category
   const grouped: { id: string | null; name: string; services: Service[] }[] = []
@@ -523,15 +551,40 @@ export default function ServicosPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoria</label>
                 <select
-                  value={form.categoryId}
-                  onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                  value={creatingInlineCat ? "__create__" : form.categoryId}
+                  onChange={(e) => {
+                    if (e.target.value === "__create__") { setCreatingInlineCat(true); setInlineCatName(""); return }
+                    setCreatingInlineCat(false)
+                    setForm({ ...form, categoryId: e.target.value })
+                  }}
                   className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[#1a1a2e] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                 >
-                  <option value="">— Sem categoria —</option>
+                  <option value="__select__" disabled>Selecione uma categoria</option>
+                  <option value="__create__">+ Criar categoria</option>
+                  <option value="">Sem categoria</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+                {creatingInlineCat && (
+                  <div className="flex gap-2 mt-2">
+                    <input
+                      autoFocus
+                      value={inlineCatName}
+                      onChange={(e) => setInlineCatName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createInlineCat() } }}
+                      placeholder="Nome da nova categoria"
+                      className="flex-1 border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    />
+                    <button type="button" onClick={createInlineCat} disabled={!inlineCatName.trim() || savingCat}
+                      className="px-3 py-2 rounded-lg text-sm font-medium text-white bg-purple-600 hover:bg-purple-500 disabled:opacity-50">
+                      {savingCat ? "Criando..." : "Criar"}
+                    </button>
+                    <button type="button" onClick={() => setCreatingInlineCat(false)} className="px-2 text-gray-400 hover:text-gray-600">
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

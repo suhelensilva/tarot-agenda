@@ -1,5 +1,6 @@
 "use client"
 
+import { activeServicesAZ } from "@/lib/service-order"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { ArrowLeft, ClipboardList, FileText, Maximize2, Pencil, Plus, Trash2 } from "lucide-react"
 import { FONT_OPTIONS } from "@/lib/fonts"
@@ -201,7 +202,7 @@ export default function ClientFichasView({
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
-  const activeServices = services.filter((s) => s.active)
+  const activeServices = activeServicesAZ(services)
   const sortedFichas = [...fichas].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
