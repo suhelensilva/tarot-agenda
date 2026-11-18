@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { dateLabelBR, splitEntries, findEntry, entryText } from "@/lib/ficha-questions"
 // import { fireCAPIEvent } from "@/lib/meta-capi" // META CAPI DESATIVADO
 
 const statusSchema = z.object({
@@ -23,8 +24,34 @@ const editSchema = z.object({
   meetingLink: z.string().optional().nullable(),
   amountPaid: z.number().optional().nullable(),
   deliveryFormat: z.string().optional().nullable(),
+  perguntas: z.string().optional().nullable(),
 })
 
+/** Perguntas que estão na ficha para o dia deste agendamento. */
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+
+  const { id } = await params
+  const apt = await prisma.appointment.findFirst({
+    where: { id, userId: session.user.id },
+    select: { startTime: true, clientId: true },
+  })
+  if (!apt) return NextResponse.json({ error: "Agendamento não encontrado" }, { status: 404 })
+
+  const label = dateLabelBR(apt.startTime)
+  const fichas = await prisma.ficha.findMany({
+    where: { clientId: apt.clientId, userId: session.user.id, type: "INTERNAL" },
+    orderBy: { createdAt: "desc" },
+    select: { clientQuestions: true },
+  })
+  for (const f of fichas) {
+    const entries = splitEntries(f.clientQuestions)
+    const i = findEntry(entries, label)
+    if (i >= 0) return NextResponse.json({ perguntas: entryText(entries[i]) })
+  }
+  return NextResponse.json({ perguntas: "" })
+}
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -82,6 +109,36 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: `Campos inválidos: ${fields}` }, { status: 400 })
     }
     const data = parsed.data
+
+    const before = await prisma.appointment.findFirst({
+      where: { id, userId: session.user.id },
+      select: { startTime: true, clientId: true },
+    })
+    if (!before) return NextResponse.json({ error: "Agendamento não encontrado" }, { status: 404 })
+
+    // Perguntas: substitui a entrada daquele dia na ficha (ou acrescenta, se não havia)
+    if (data.perguntas !== undefined) {
+      const oldLabel = dateLabelBR(before.startTime)
+      const newLabel = dateLabelBR(new Date(data.startTime))
+      const text = data.perguntas?.trim() ?? ""
+      const fichas = await prisma.ficha.findMany({
+        where: { clientId: before.clientId, userId: session.user.id, type: "INTERNAL" },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, clientQuestions: true },
+      })
+      const owner = fichas.find((f) => findEntry(splitEntries(f.clientQuestions), oldLabel) >= 0)
+      if (owner) {
+        const entries = splitEntries(owner.clientQuestions)
+        const i = findEntry(entries, oldLabel)
+        if (text) entries[i] = `[${newLabel}] ${text}`
+        else entries.splice(i, 1)
+        await prisma.ficha.update({ where: { id: owner.id }, data: { clientQuestions: entries.join("\n") || null } })
+      } else if (text && fichas[0]) {
+        const cur = fichas[0].clientQuestions
+        const entry = `[${newLabel}] ${text}`
+        await prisma.ficha.update({ where: { id: fichas[0].id }, data: { clientQuestions: cur ? `${cur}\n${entry}` : entry } })
+      }
+    }
 
     await prisma.appointment.updateMany({
       where: { id, userId: session.user.id },

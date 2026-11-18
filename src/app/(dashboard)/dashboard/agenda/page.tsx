@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil, FileText, Lock, Coffee, Trash2, Copy } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { usePlanFetch } from "@/components/upgrade-provider"
@@ -133,6 +133,7 @@ export default function AgendaPage() {
   const [blockError, setBlockError] = useState<string | null>(null)
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
   const [duplicatingBlock, setDuplicatingBlock] = useState(false)
+  const perguntasLoadedFor = useRef<string | null>(null)
 
   const fetchAppointments = useCallback(async () => {
     const m = currentDate.getMonth() + 1
@@ -343,6 +344,16 @@ export default function AgendaPage() {
       deliveryFormat: apt.deliveryFormat ?? "",
     })
     setEditingId(apt.id)
+    // Perguntas ficam na ficha: busca as do dia deste agendamento
+    perguntasLoadedFor.current = null
+    fetch(`/api/agendamentos/${apt.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return
+        perguntasLoadedFor.current = apt.id
+        setForm((f) => ({ ...f, perguntas: f.perguntas || d.perguntas || "" }))
+      })
+      .catch(() => {})
     setShowNewClient(false)
     setShowPerson2(false)
     setShowPerson2Apt(false)
@@ -448,7 +459,12 @@ export default function AgendaPage() {
       startTime: startTime.toISOString(),
       endTime: endTime.toISOString(),
       motivo: form.motivo || null,
-      perguntas: form.perguntas || null,
+      // Na edição, só mexe nas perguntas se elas foram carregadas (senão apagaria sem querer)
+      ...(!editingId
+        ? { perguntas: form.perguntas || null }
+        : perguntasLoadedFor.current === editingId || form.perguntas
+          ? { perguntas: form.perguntas }
+          : {}),
       person2Name: form.person2Name || null,
       person2BirthDate: form.person2BirthDate || null,
       notes: form.notes || null,
