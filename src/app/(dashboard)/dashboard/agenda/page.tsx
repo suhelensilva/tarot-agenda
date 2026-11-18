@@ -605,18 +605,18 @@ export default function AgendaPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => openNew(undefined, "intervalo")}
-              className="flex items-center gap-2 border border-purple-200 dark:border-[rgba(170,85,249,0.3)] text-purple-700 dark:text-[#aa55f9] hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.08)] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              <Coffee size={16} />
-              Adicionar intervalo
-            </button>
-            <button
               onClick={() => openNew()}
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               <Plus size={16} />
               Novo agendamento
+            </button>
+            <button
+              onClick={() => openNew(undefined, "intervalo")}
+              className="flex items-center gap-2 border border-purple-200 dark:border-[rgba(170,85,249,0.3)] text-purple-700 dark:text-[#aa55f9] hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.08)] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Coffee size={16} />
+              Adicionar intervalo
             </button>
           </div>
         </div>
