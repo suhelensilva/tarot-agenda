@@ -59,15 +59,30 @@ function phoneToE164(phone: string): string {
   return "+55" + digits
 }
 
-function exportMetaCSV(clients: ClientCard[], filename: string) {
-  const rows: string[][] = [["phone", "fn", "ln", "country"]]
-  for (const c of clients) {
-    if (!c.phone) continue
+// A mesma cliente pode estar em mais de uma etiqueta: entra uma vez só.
+function uniqueClients(clients: ClientCard[]) {
+  const seen = new Set<string>()
+  return clients.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)))
+}
+
+/** Clientes que entram no arquivo. Com valor, só quem tem telefone e já pagou algo. */
+function exportableClients(clients: ClientCard[], withValue: boolean) {
+  return uniqueClients(clients).filter((c) => c.phone && (!withValue || c.totalSpent > 0))
+}
+
+// withValue: coluna "value" (total pago) para público semelhante baseado em valor da Meta.
+function exportMetaCSV(clients: ClientCard[], filename: string, withValue = false) {
+  const header = ["phone", "fn", "ln", "country"]
+  if (withValue) header.push("value")
+  const rows: string[][] = [header]
+  for (const c of exportableClients(clients, withValue)) {
     const phone = phoneToE164(c.phone)
     const parts = c.name.trim().split(/\s+/)
     const fn = parts[0] ?? ""
     const ln = parts.slice(1).join(" ")
-    rows.push([phone, fn, ln, "BR"])
+    const row = [phone, fn, ln, "BR"]
+    if (withValue) row.push(c.totalSpent.toFixed(2))
+    rows.push(row)
   }
   const csv = rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n")
   const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" })
@@ -622,6 +637,7 @@ export default function CrmPage() {
   const [pendingReason, setPendingReason] = useState("")
   const [exportOpen, setExportOpen] = useState(false)
   const [exportTarget, setExportTarget] = useState<string>("__all__")
+  const [exportWithValue, setExportWithValue] = useState(false)
   const [loading, setLoading] = useState(true)
   const dragRef = useRef<{ clientId: string; fromColId: string } | null>(null)
   const dashboardRef = useRef<HTMLDivElement>(null)
@@ -1107,11 +1123,11 @@ export default function CrmPage() {
             : exportTarget === "__untagged__"
             ? "sem-etiqueta"
             : namedCols.find((c) => c.id === exportTarget)?.name.toLowerCase().replace(/\s+/g, "-") ?? "clientes"
-          exportMetaCSV(clients, `clientes-${label}-meta.csv`)
+          exportMetaCSV(clients, `clientes-${label}-meta${exportWithValue ? "-valor" : ""}.csv`, exportWithValue)
           setExportOpen(false)
         }
 
-        const previewCount = getClientsToExport().length
+        const previewCount = exportableClients(getClientsToExport(), exportWithValue).length
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.75)" }}>
@@ -1127,7 +1143,7 @@ export default function CrmPage() {
               </div>
 
               <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                Gera um CSV no formato de Públicos Personalizados da Meta (phone, fn, ln, country). Pronto para importar no Gerenciador de Anúncios.
+                Gera um CSV no formato de Públicos Personalizados da Meta (phone, fn, ln, country{exportWithValue ? ", value" : ""}). Pronto para importar no Gerenciador de Anúncios.
               </p>
 
               <div className="space-y-2 mb-5">
@@ -1173,6 +1189,21 @@ export default function CrmPage() {
                   </label>
                 )}
               </div>
+
+              <label className="flex items-start gap-3 p-3 mb-5 rounded-xl border border-white/5 hover:border-green-500/20 cursor-pointer transition-colors has-[:checked]:border-green-500/40 has-[:checked]:bg-green-500/5">
+                <input
+                  type="checkbox"
+                  checked={exportWithValue}
+                  onChange={(e) => setExportWithValue(e.target.checked)}
+                  className="accent-green-500 mt-0.5"
+                />
+                <div>
+                  <p className="text-sm text-white font-medium">Incluir valor gasto (coluna value)</p>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Para criar público semelhante baseado em valor. Vai o total que cada cliente já pagou, e só entra quem já pagou algo. Ao subir na Meta, marque que a lista tem valor do cliente.
+                  </p>
+                </div>
+              </label>
 
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-600">{previewCount} contatos no arquivo</span>
