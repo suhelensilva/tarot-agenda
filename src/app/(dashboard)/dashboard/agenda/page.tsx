@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil, FileText, Lock, Coffee, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil, FileText, Lock, Coffee, Trash2, Copy } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { usePlanFetch } from "@/components/upgrade-provider"
 
@@ -132,6 +132,7 @@ export default function AgendaPage() {
   const [blockForm, setBlockForm] = useState({ date: "", startHour: "12:00", endHour: "13:00", note: "", days: [] as string[], extraDay: "" })
   const [blockError, setBlockError] = useState<string | null>(null)
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
+  const [duplicatingBlock, setDuplicatingBlock] = useState(false)
 
   const fetchAppointments = useCallback(async () => {
     const m = currentDate.getMonth() + 1
@@ -230,6 +231,7 @@ export default function AgendaPage() {
     setClientTag("")
     setFormMode(mode)
     setEditingBlockId(null)
+    setDuplicatingBlock(false)
     setBlockForm({ date: dateStr, startHour: "12:00", endHour: "13:00", note: "", days: [dateStr], extraDay: "" })
     setBlockError(null)
     setShowForm(true)
@@ -241,9 +243,28 @@ export default function AgendaPage() {
     setSelected(null)
     setFormMode("intervalo")
     setEditingBlockId(b.id)
+    setDuplicatingBlock(false)
     setBlockForm({ date: toLocalDateStr(s), startHour: hhmm(s), endHour: hhmm(new Date(b.endTime)), note: b.note ?? "", days: [], extraDay: "" })
     setBlockError(null)
     setShowForm(true)
+  }
+
+  /** Abre um intervalo novo já com a mesma duração e observação do intervalo escolhido. */
+  function openDuplicateBlock(b: Block) {
+    openEditBlock(b)
+    setEditingBlockId(null)
+    setDuplicatingBlock(true)
+  }
+
+  /** Muda o "Das" mantendo a duração do intervalo (o "Até" anda junto). */
+  function changeBlockStart(value: string) {
+    setBlockForm((f) => {
+      const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m }
+      const dur = toMin(f.endHour) - toMin(f.startHour)
+      if (!value || dur <= 0) return { ...f, startHour: value }
+      const end = Math.min(toMin(value) + dur, 23 * 60 + 59)
+      return { ...f, startHour: value, endHour: `${String(Math.floor(end / 60)).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}` }
+    })
   }
 
   async function handleSaveBlock(e: React.FormEvent) {
@@ -696,6 +717,9 @@ export default function AgendaPage() {
                         {b.note && <span className="text-gray-400 dark:text-gray-500"> · {b.note}</span>}
                       </span>
                     </div>
+                    <button onClick={() => openDuplicateBlock(b)} title="Duplicar intervalo" className="text-gray-400 hover:text-purple-600 dark:hover:text-[#aa55f9] shrink-0">
+                      <Copy size={15} />
+                    </button>
                     <button onClick={() => openEditBlock(b)} title="Editar intervalo" className="text-gray-400 hover:text-purple-600 dark:hover:text-[#aa55f9] shrink-0">
                       <Pencil size={15} />
                     </button>
@@ -985,14 +1009,14 @@ export default function AgendaPage() {
           <div className="bg-white dark:bg-[#13131f] rounded-2xl shadow-xl dark:border dark:border-[rgba(170,85,249,0.15)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[rgba(170,85,249,0.1)]">
               <h2 className="font-semibold text-gray-900 dark:text-white">
-                {editingId ? "Editar agendamento" : editingBlockId ? "Editar intervalo" : formMode === "intervalo" ? "Adicionar intervalo" : formMode === "trancar" ? "Trancar agenda" : "Novo agendamento"}
+                {editingId ? "Editar agendamento" : editingBlockId ? "Editar intervalo" : duplicatingBlock ? "Duplicar intervalo" : formMode === "intervalo" ? "Adicionar intervalo" : formMode === "trancar" ? "Trancar agenda" : "Novo agendamento"}
               </h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={18} />
               </button>
             </div>
 
-            {!editingId && !editingBlockId && (
+            {!editingId && !editingBlockId && !duplicatingBlock && (
               <div className="px-6 pt-4">
                 <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-gray-100 dark:bg-white/5">
                   {([
@@ -1439,6 +1463,11 @@ export default function AgendaPage() {
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Uma pausa no mesmo dia. O horário fica marcado como intervalo na agenda e não aparece no link de agendamento.
                   </p>
+                  {duplicatingBlock && (
+                    <p className="text-xs text-purple-700 dark:text-[#c084fc] bg-purple-50 dark:bg-[rgba(170,85,249,0.1)] rounded-lg px-3 py-2">
+                      Cópia do intervalo. Escolha o dia e o horário de início: o fim acompanha e a duração continua a mesma.
+                    </p>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dia</label>
                     <input type="date" value={blockForm.date} onChange={(e) => setBlockForm({ ...blockForm, date: e.target.value })} className={BLOCK_INPUT} />
@@ -1446,7 +1475,7 @@ export default function AgendaPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Das</label>
-                      <input type="time" value={blockForm.startHour} onChange={(e) => setBlockForm({ ...blockForm, startHour: e.target.value })} className={BLOCK_INPUT} />
+                      <input type="time" value={blockForm.startHour} onChange={(e) => changeBlockStart(e.target.value)} className={BLOCK_INPUT} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Até</label>
