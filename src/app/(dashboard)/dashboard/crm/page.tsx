@@ -1142,8 +1142,8 @@ export default function CrmPage() {
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.75)" }}>
-            <div className="rounded-2xl p-6 w-96 shadow-2xl bg-[#0f0f1a] border border-[rgba(170,85,249,0.2)]">
-              <div className="flex items-center justify-between mb-5">
+            <div className="rounded-2xl p-6 w-96 max-h-[90vh] flex flex-col shadow-2xl bg-[#0f0f1a] border border-[rgba(170,85,249,0.2)]">
+              <div className="flex items-center justify-between mb-5 flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <Download size={15} className="text-green-400" />
                   <h3 className="text-sm font-bold text-white">Exportar para Meta</h3>
@@ -1153,16 +1153,17 @@ export default function CrmPage() {
                 </button>
               </div>
 
-              <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              <p className="text-xs text-gray-500 mb-4 leading-relaxed flex-shrink-0">
                 Gera um CSV no formato de Públicos Personalizados da Meta (phone, fn, ln, country{exportWithValue ? ", value" : ""}). Pronto para importar no Gerenciador de Anúncios.
               </p>
 
-              <div className="space-y-2 mb-5">
-                <label className="block text-xs font-medium text-gray-400 mb-2">
-                  Quais clientes exportar? <span className="text-gray-600 font-normal">Marque uma ou mais listas.</span>
-                </label>
+              <label className="block text-xs font-medium text-gray-400 mb-2 flex-shrink-0">
+                Quais clientes exportar? <span className="text-gray-600 font-normal">Marque uma ou mais listas.</span>
+              </label>
 
-                <label className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
+              <div className="space-y-2 mb-4 overflow-y-auto min-h-0 flex-1 pr-1">
+
+                <label className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
                   <input type="checkbox"
                     checked={allSelected}
                     onChange={toggleAll}
@@ -1174,7 +1175,7 @@ export default function CrmPage() {
                 </label>
 
                 {namedCols.map((col) => (
-                  <label key={col.id} className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
+                  <label key={col.id} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
                     <input type="checkbox"
                       checked={exportTargets.includes(col.id)}
                       onChange={() => toggleTarget(col.id)}
@@ -1190,7 +1191,7 @@ export default function CrmPage() {
                 ))}
 
                 {untaggedCol && untaggedCol.clients.length > 0 && (
-                  <label className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
+                  <label className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
                     <input type="checkbox"
                       checked={exportTargets.includes(untaggedCol.id)}
                       onChange={() => toggleTarget(untaggedCol.id)}
@@ -1203,7 +1204,7 @@ export default function CrmPage() {
                 )}
               </div>
 
-              <label className="flex items-start gap-3 p-3 mb-5 rounded-xl border border-white/5 hover:border-green-500/20 cursor-pointer transition-colors has-[:checked]:border-green-500/40 has-[:checked]:bg-green-500/5">
+              <label className="flex-shrink-0 flex items-start gap-3 p-3 mb-4 rounded-xl border border-white/5 hover:border-green-500/20 cursor-pointer transition-colors has-[:checked]:border-green-500/40 has-[:checked]:bg-green-500/5">
                 <input
                   type="checkbox"
                   checked={exportWithValue}
@@ -1218,7 +1219,7 @@ export default function CrmPage() {
                 </div>
               </label>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-shrink-0">
                 <span className="text-xs text-gray-600">{previewCount} contatos no arquivo</span>
                 <div className="flex gap-2">
                   <button onClick={() => setExportOpen(false)}
