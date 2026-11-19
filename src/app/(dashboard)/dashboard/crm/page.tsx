@@ -330,11 +330,13 @@ function BlacklistCard({
   listId,
   onDragStart,
   onReasonChange,
+  onRemove,
 }: {
   client: ClientCard
   listId: string
   onDragStart: (e: React.DragEvent, clientId: string) => void
   onReasonChange: (clientId: string, reason: string | null) => void
+  onRemove: (clientId: string) => void
 }) {
   const [hovered, setHovered] = useState(false)
   const [localReason, setLocalReason] = useState(client.blacklistReason ?? "")
@@ -445,6 +447,18 @@ function BlacklistCard({
             <p className="text-[9px]" style={{ color: "rgba(255,80,80,0.4)" }}>
               {saving ? "Salvando..." : "Enter para salvar · Esc para fechar"}
             </p>
+            <button
+              type="button"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={() => {
+                if (leaveTimer.current) clearTimeout(leaveTimer.current)
+                onRemove(client.id)
+              }}
+              className="mt-1 w-full text-[11px] font-semibold rounded-lg px-2 py-1.5 transition-colors hover:brightness-125"
+              style={{ color: "#ffcccc", background: "rgba(120,0,0,0.6)", border: "1px solid rgba(255,60,60,0.4)" }}
+            >
+              Tirar da blacklist
+            </button>
           </div>
         ) : (
           /* Modo exibição */
@@ -482,6 +496,7 @@ function BlacklistColumn({
   onDrop,
   onDragOver,
   onReasonChange,
+  onRemove,
 }: {
   clients: ClientCard[]
   listId: string
@@ -489,6 +504,7 @@ function BlacklistColumn({
   onDrop: (e: React.DragEvent, toColId: string) => void
   onDragOver: (e: React.DragEvent) => void
   onReasonChange: (clientId: string, reason: string | null) => void
+  onRemove: (clientId: string) => void
 }) {
   const [dragOver, setDragOver] = useState(false)
 
@@ -521,6 +537,7 @@ function BlacklistColumn({
             listId={listId}
             onDragStart={(e, id) => onDragStart(e, id, listId)}
             onReasonChange={onReasonChange}
+            onRemove={onRemove}
           />
         ))}
         {clients.length === 0 && (
@@ -729,8 +746,8 @@ export default function CrmPage() {
     }
 
     try {
-      const isSpecialFrom = fromColId === "__untagged__" || fromColId === blacklistId
-      if (!isSpecialFrom) {
+      // Saindo da blacklist também precisa apagar o vínculo no banco.
+      if (fromColId !== "__untagged__") {
         await fetch(`/api/clientes/${clientId}/etiquetas`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
@@ -744,7 +761,22 @@ export default function CrmPage() {
           body: JSON.stringify({ listId: toColId === blacklistId ? blacklistId : toColId, reason: reason ?? null }),
         })
       }
+      // Ao sair da blacklist ela volta para as etiquetas que já tinha.
+      if (fromColId === blacklistId) fetchData()
     } catch {
+      fetchData()
+    }
+  }
+
+  async function removeFromBlacklist(clientId: string) {
+    setBlacklist((prev) => ({ ...prev, clients: prev.clients.filter((c) => c.id !== clientId) }))
+    try {
+      await fetch(`/api/clientes/${clientId}/etiquetas`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listId: blacklist.id }),
+      })
+    } finally {
       fetchData()
     }
   }
@@ -860,6 +892,7 @@ export default function CrmPage() {
               onDragStart={handleDragStart}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
+              onRemove={removeFromBlacklist}
               onReasonChange={(clientId, reason) => {
                 setBlacklist((prev) => ({
                   ...prev,
