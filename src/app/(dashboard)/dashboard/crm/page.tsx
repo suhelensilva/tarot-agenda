@@ -636,7 +636,8 @@ export default function CrmPage() {
   const [pendingBlacklist, setPendingBlacklist] = useState<{ card: ClientCard; fromColId: string } | null>(null)
   const [pendingReason, setPendingReason] = useState("")
   const [exportOpen, setExportOpen] = useState(false)
-  const [exportTarget, setExportTarget] = useState<string>("__all__")
+  // Listas (ids das colunas) marcadas para exportar; dá para juntar várias.
+  const [exportTargets, setExportTargets] = useState<string[]>([])
   const [exportWithValue, setExportWithValue] = useState(false)
   const [loading, setLoading] = useState(true)
   const dragRef = useRef<{ clientId: string; fromColId: string } | null>(null)
@@ -1109,21 +1110,31 @@ export default function CrmPage() {
         const namedCols = columns.filter((c) => !c.isUntagged)
         const untaggedCol = columns.find((c) => c.isUntagged)
 
+        const selectableCols = [
+          ...namedCols,
+          ...(untaggedCol && untaggedCol.clients.length > 0 ? [untaggedCol] : []),
+        ]
+        const selectedCols = selectableCols.filter((c) => exportTargets.includes(c.id))
+        const allSelected = selectableCols.length > 0 && selectedCols.length === selectableCols.length
+
+        function toggleTarget(id: string) {
+          setExportTargets((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+        }
+
+        function toggleAll() {
+          setExportTargets(allSelected ? [] : selectableCols.map((c) => c.id))
+        }
+
         function getClientsToExport(): ClientCard[] {
-          if (exportTarget === "__all__") return columns.flatMap((c) => c.clients)
-          if (exportTarget === "__untagged__") return untaggedCol?.clients ?? []
-          const col = namedCols.find((c) => c.id === exportTarget)
-          return col?.clients ?? []
+          return selectedCols.flatMap((c) => c.clients)
         }
 
         function doExport() {
-          const clients = getClientsToExport()
-          const label = exportTarget === "__all__"
+          const slug = (s: string) => s.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+          const label = allSelected
             ? "todas"
-            : exportTarget === "__untagged__"
-            ? "sem-etiqueta"
-            : namedCols.find((c) => c.id === exportTarget)?.name.toLowerCase().replace(/\s+/g, "-") ?? "clientes"
-          exportMetaCSV(clients, `clientes-${label}-meta${exportWithValue ? "-valor" : ""}.csv`, exportWithValue)
+            : selectedCols.map((c) => (c.isUntagged ? "sem-etiqueta" : slug(c.name))).join("+") || "clientes"
+          exportMetaCSV(getClientsToExport(), `clientes-${label}-meta${exportWithValue ? "-valor" : ""}.csv`, exportWithValue)
           setExportOpen(false)
         }
 
@@ -1147,24 +1158,26 @@ export default function CrmPage() {
               </p>
 
               <div className="space-y-2 mb-5">
-                <label className="block text-xs font-medium text-gray-400 mb-2">Quais clientes exportar?</label>
+                <label className="block text-xs font-medium text-gray-400 mb-2">
+                  Quais clientes exportar? <span className="text-gray-600 font-normal">Marque uma ou mais listas.</span>
+                </label>
 
                 <label className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
-                  <input type="radio" name="exportTarget" value="__all__"
-                    checked={exportTarget === "__all__"}
-                    onChange={() => setExportTarget("__all__")}
+                  <input type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
                     className="accent-violet-500" />
                   <div>
                     <p className="text-sm text-white font-medium">Todas as clientes</p>
-                    <p className="text-xs text-gray-600">{columns.flatMap((c) => c.clients).length} clientes (exceto blacklist)</p>
+                    <p className="text-xs text-gray-600">{uniqueClients(columns.flatMap((c) => c.clients)).length} clientes (exceto blacklist)</p>
                   </div>
                 </label>
 
                 {namedCols.map((col) => (
                   <label key={col.id} className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
-                    <input type="radio" name="exportTarget" value={col.id}
-                      checked={exportTarget === col.id}
-                      onChange={() => setExportTarget(col.id)}
+                    <input type="checkbox"
+                      checked={exportTargets.includes(col.id)}
+                      onChange={() => toggleTarget(col.id)}
                       className="accent-violet-500" />
                     <div className="flex items-center gap-2 flex-1">
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: col.color }} />
@@ -1176,11 +1189,11 @@ export default function CrmPage() {
                   </label>
                 ))}
 
-                {(untaggedCol?.clients.length ?? 0) > 0 && (
+                {untaggedCol && untaggedCol.clients.length > 0 && (
                   <label className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-violet-500/20 cursor-pointer transition-colors has-[:checked]:border-violet-500/40 has-[:checked]:bg-violet-500/5">
-                    <input type="radio" name="exportTarget" value="__untagged__"
-                      checked={exportTarget === "__untagged__"}
-                      onChange={() => setExportTarget("__untagged__")}
+                    <input type="checkbox"
+                      checked={exportTargets.includes(untaggedCol.id)}
+                      onChange={() => toggleTarget(untaggedCol.id)}
                       className="accent-violet-500" />
                     <div>
                       <p className="text-sm text-white font-medium">Sem etiqueta</p>
