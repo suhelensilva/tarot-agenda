@@ -233,7 +233,25 @@ export default function AgendaPage() {
     setFormMode(mode)
     setEditingBlockId(null)
     setDuplicatingBlock(false)
-    setBlockForm({ date: dateStr, startHour: "12:00", endHour: "13:00", note: "", days: [dateStr], extraDay: "" })
+    // Intervalo novo começa 1 minuto depois do fim do último agendamento (ou intervalo) do dia.
+    let blockStart = "12:00"
+    let blockEnd = "13:00"
+    if (mode === "intervalo") {
+      const [dayStart, dayEnd] = dayRange(d)
+      const ends = [
+        ...aptsForDay(d).filter((a) => a.status !== "CANCELLED").map((a) => new Date(a.endTime)),
+        ...blocksForDay(d).filter((b) => b.kind === "INTERVALO").map((b) => new Date(b.endTime)),
+      ].filter((t) => t > dayStart && t < dayEnd)
+      if (ends.length > 0) {
+        const last = new Date(Math.max(...ends.map((t) => t.getTime())) + 60_000)
+        const startMin = Math.min(last.getHours() * 60 + last.getMinutes(), 23 * 60 + 44)
+        const endMin = startMin + 15
+        const fmt = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`
+        blockStart = fmt(startMin)
+        blockEnd = fmt(endMin)
+      }
+    }
+    setBlockForm({ date: dateStr, startHour: blockStart, endHour: blockEnd, note: "", days: [dateStr], extraDay: "" })
     setBlockError(null)
     setShowForm(true)
   }
