@@ -74,9 +74,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       select: { paymentStatus: true, amountPaid: true, clientId: true },
     })
 
+    // Data do pagamento: entra no financeiro no dia em que foi marcado como Pago.
+    const ps = parsed.data.paymentStatus
+    const paidAt =
+      ps === undefined ? undefined
+      : ps === "Pago" ? (before?.paymentStatus === "Pago" ? undefined : new Date())
+      : null
+
     await prisma.appointment.updateMany({
       where: { id, userId: session.user.id },
-      data: parsed.data,
+      data: { ...parsed.data, ...(paidAt !== undefined ? { paidAt } : {}) },
     })
 
     // [META CAPI DESATIVADO] — reativar quando houver solução de atribuição para recompras

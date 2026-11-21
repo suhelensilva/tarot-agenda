@@ -142,9 +142,10 @@ export async function GET(req: NextRequest) {
   const [appointments, expenses, prevAppointments, prevExpenses, topClients, statusCounts] = await Promise.all([
     // Receitas: só agendamentos com pagamento efetuado
     prisma.appointment.findMany({
-      where: { userId, startTime: { gte: start, lte: end }, paymentStatus: "Pago" },
-      select: { startTime: true, amountPaid: true, title: true, service: { select: { name: true } }, client: { select: { name: true } } },
-      orderBy: { startTime: "desc" },
+      // Entra no dia em que foi marcado como pago (paidAt), não no dia do atendimento.
+      where: { userId, paidAt: { gte: start, lte: end }, paymentStatus: "Pago" },
+      select: { startTime: true, paidAt: true, amountPaid: true, title: true, service: { select: { name: true } }, client: { select: { name: true } } },
+      orderBy: { paidAt: "desc" },
     }),
 
     // Despesas no período
@@ -155,7 +156,7 @@ export async function GET(req: NextRequest) {
 
     // Período anterior (para comparação, se disponível)
     prevStart && prevEnd ? prisma.appointment.aggregate({
-      where: { userId, startTime: { gte: prevStart, lte: prevEnd }, paymentStatus: "Pago" },
+      where: { userId, paidAt: { gte: prevStart, lte: prevEnd }, paymentStatus: "Pago" },
       _sum: { amountPaid: true },
     }) : Promise.resolve(null),
 
@@ -166,10 +167,10 @@ export async function GET(req: NextRequest) {
 
     // Top clientes do período — inclui qualquer agendamento com valor pago
     prisma.client.findMany({
-      where: { userId, appointments: { some: { startTime: { gte: start, lte: end }, amountPaid: { gt: 0 }, paymentStatus: "Pago" } } },
+      where: { userId, appointments: { some: { paidAt: { gte: start, lte: end }, amountPaid: { gt: 0 }, paymentStatus: "Pago" } } },
       include: {
         appointments: {
-          where: { startTime: { gte: start, lte: end }, amountPaid: { gt: 0 }, paymentStatus: "Pago" },
+          where: { paidAt: { gte: start, lte: end }, amountPaid: { gt: 0 }, paymentStatus: "Pago" },
           select: { amountPaid: true },
         },
       },
@@ -201,7 +202,7 @@ export async function GET(req: NextRequest) {
     buckets.map(async (b) => {
       const [rev, exp] = await Promise.all([
         prisma.appointment.aggregate({
-          where: { userId, startTime: { gte: b.start, lte: b.end }, paymentStatus: "Pago" },
+          where: { userId, paidAt: { gte: b.start, lte: b.end }, paymentStatus: "Pago" },
           _sum: { amountPaid: true },
         }),
         prisma.expense.aggregate({
@@ -235,7 +236,7 @@ export async function GET(req: NextRequest) {
       description: a.client.name,
       category:    a.service?.name ?? "Sessão",
       amount:      a.amountPaid ?? 0,
-      date:        a.startTime.toISOString(),
+      date:        (a.paidAt ?? a.startTime).toISOString(),
     })),
     ...expenses.map((e) => ({
       id:          e.id,
@@ -248,10 +249,10 @@ export async function GET(req: NextRequest) {
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   // ── Clientes novas x recorrentes (mês a mês) ─────────────────────────────
-  const allPaid = await prisma.appointment.findMany({
+  const allPaid = (await prisma.appointment.findMany({
     where: { userId, paymentStatus: "Pago", amountPaid: { gt: 0 } },
-    select: { clientId: true, startTime: true, amountPaid: true },
-  })
+    select: { clientId: true, startTime: true, paidAt: true, amountPaid: true },
+  })).map((a) => ({ ...a, startTime: a.paidAt ?? a.startTime })) // mês do pagamento
   const firstMonth = firstMonthByClient(allPaid)
   const paidInRange = allPaid.filter((a) => a.startTime >= start && a.startTime <= end)
   const cohort = {

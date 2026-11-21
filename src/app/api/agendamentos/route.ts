@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
           meetingLink: data.meetingLink || null,
           amountPaid: data.amountPaid ?? null,
           paymentStatus: data.paymentStatus ?? null,
+          paidAt: data.paymentStatus === "Pago" ? new Date() : null,
           deliveryFormat: data.deliveryFormat || null,
           fbc: fbcHerdado,
         },

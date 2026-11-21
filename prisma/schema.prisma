@@ -179,7 +179,8 @@ model Appointment {
   cancellationReason String?
   amountPaid         Float?
   paymentStatus      String?
-  deliveryFormat     String?           // formato de entrega: "Foto e áudio" | "Vídeo gravado" | outro
+  paidAt             DateTime?         // quando foi marcado como Pago (é o dia que entra no financeiro)
+  deliveryFormat    String?           // formato de entrega: "Foto e áudio" | "Vídeo gravado" | outro
   remindersSent      Json              @default("[]")
   // Sinais de correspondência da Meta capturados no agendamento público (navegador da cliente)
   fbp                String?

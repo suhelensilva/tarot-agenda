@@ -14,14 +14,21 @@ export async function GET() {
   const sixMonthsAgo = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 5, 1, 3))
 
   // Faturamento e quantidade de atendimentos por mes (ultimos 6 meses)
+  // Atendimentos contam pelo dia do atendimento; faturamento pelo dia do pagamento (paidAt).
   const appointments = await prisma.appointment.findMany({
     where: {
       userId,
-      OR: [{ status: "COMPLETED" }, { paymentStatus: "Pago" }],
-      startTime: { gte: sixMonthsAgo },
+      OR: [
+        { status: "COMPLETED", startTime: { gte: sixMonthsAgo } },
+        { paymentStatus: "Pago", paidAt: { gte: sixMonthsAgo } },
+      ],
     },
-    select: { startTime: true, amountPaid: true, status: true, paymentStatus: true },
+    select: { startTime: true, paidAt: true, amountPaid: true, status: true, paymentStatus: true },
   })
+  const monthKey = (t: Date) => {
+    const d = new Date(new Date(t).getTime() - 3 * 3600_000) // horário de Brasília
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
+  }
 
   const monthMap: Record<string, { revenue: number; count: number }> = {}
   for (let i = 5; i >= 0; i--) {
@@ -33,12 +40,13 @@ export async function GET() {
   }
 
   for (const appt of appointments) {
-    // mês no horário de Brasília (UTC-3), independente do fuso do servidor
-    const d = new Date(new Date(appt.startTime).getTime() - 3 * 3600_000)
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
-    if (monthMap[key]) {
-      if (appt.paymentStatus === "Pago") monthMap[key].revenue += appt.amountPaid ?? 0
-      if (appt.status === "COMPLETED") monthMap[key].count += 1
+    if (appt.paymentStatus === "Pago" && appt.paidAt) {
+      const k = monthKey(appt.paidAt)
+      if (monthMap[k]) monthMap[k].revenue += appt.amountPaid ?? 0
+    }
+    if (appt.status === "COMPLETED") {
+      const k = monthKey(appt.startTime)
+      if (monthMap[k]) monthMap[k].count += 1
     }
   }
 
@@ -83,10 +91,10 @@ export async function GET() {
 
   // Novas x recorrentes (histórico completo): faturamento do mês de entrada de
   // cada cliente x faturamento dos meses em que ela voltou
-  const allPaid = await prisma.appointment.findMany({
+  const allPaid = (await prisma.appointment.findMany({
     where: { userId, paymentStatus: "Pago", amountPaid: { gt: 0 } },
-    select: { clientId: true, startTime: true, amountPaid: true },
-  })
+    select: { clientId: true, startTime: true, paidAt: true, amountPaid: true },
+  })).map((a) => ({ ...a, startTime: a.paidAt ?? a.startTime }))
   const cohortAll = cohortTotal(allPaid, firstMonthByClient(allPaid))
 
   return NextResponse.json({ monthlyRevenue, monthlyClients, cohortAll })
