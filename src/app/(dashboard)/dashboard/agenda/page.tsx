@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { ChevronLeft, ChevronRight, Plus, X, Clock, User, Package, Link, CheckCircle, XCircle, AlertCircle, Pencil, FileText, Lock, Coffee, Trash2, Copy } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { usePlanFetch } from "@/components/upgrade-provider"
+import { ClientSearchSelect } from "@/components/client-search-select"
 
 type Client = { id: string; name: string; phone: string; tag: string | null }
 type Service = { id: string; name: string; price: number; duration: number }
@@ -1199,17 +1200,12 @@ export default function AgendaPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <select
-                      required
+                    <ClientSearchSelect
+                      clients={clients}
                       value={form.clientId}
-                      onChange={(e) => onClientChange(e.target.value)}
+                      onChange={onClientChange}
                       className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[#1a1a2e] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
-                    >
-                      <option value="">Selecione a cliente</option>
-                      {clients.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                    />
 
                     {/* Etiqueta da cliente selecionada */}
                     {form.clientId && (
