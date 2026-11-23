@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getPlanLimits } from "@/lib/plan"
 import { z } from "zod"
+import { matchesClient } from "@/lib/name-search"
 import { applyClientTag, tagListError, TAG_MEMBERSHIP_INCLUDE, withTag } from "@/lib/client-tag"
 
 const schema = z.object({
@@ -24,15 +25,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q") ?? ""
 
   const clients = await prisma.client.findMany({
-    where: {
-      userId: session.user.id,
-      ...(q && {
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { phone: { contains: q } },
-        ],
-      }),
-    },
+    where: { userId: session.user.id },
     include: {
       _count: { select: { appointments: true } },
       ...TAG_MEMBERSHIP_INCLUDE,
@@ -40,7 +33,9 @@ export async function GET(req: NextRequest) {
     orderBy: { name: "asc" },
   })
 
-  return NextResponse.json(clients.map(withTag))
+  // Filtro aqui (e não no banco) para ignorar acento: "jessica" acha "Jéssica".
+  const found = q ? clients.filter((c) => matchesClient(c, q)) : clients
+  return NextResponse.json(found.map(withTag))
 }
 
 export async function POST(req: NextRequest) {

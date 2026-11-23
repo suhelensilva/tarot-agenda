@@ -2,25 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Search, X } from "lucide-react"
+import { matchesClient } from "@/lib/name-search"
 
 type Option = { id: string; name: string; phone?: string | null }
-
-/** Sem acento e minúsculo, para comparar nomes. */
-function norm(s: string) {
-  return s.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR").trim()
-}
-
-/**
- * Cada palavra digitada precisa ser o começo de alguma palavra do nome, em qualquer ordem.
- * "su" acha "Suelen"; "mariana" acha "Suelen Mariana"; "su mar" acha "Suelen Mariana".
- */
-export function matchesName(name: string, query: string) {
-  const words = norm(name).split(/\s+/)
-  return norm(query)
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((q) => words.some((w) => w.startsWith(q)))
-}
 
 export function ClientSearchSelect({
   clients,
@@ -43,7 +27,7 @@ export function ClientSearchSelect({
   const listRef = useRef<HTMLUListElement>(null)
 
   const results = useMemo(() => {
-    const list = query.trim() ? clients.filter((c) => matchesName(c.name, query)) : clients
+    const list = query.trim() ? clients.filter((c) => matchesClient(c, query)) : clients
     return list.slice(0, 50)
   }, [clients, query])
 
