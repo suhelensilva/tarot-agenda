@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma"
 const BR_OFFSET = 3 * 3600_000
 const MAX_DAYS = 366
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const SHORT_BREAK_MS = 15 * 60_000 // intervalo de até 15 min conta como hora trabalhada
+const MAX_SPAN_MS = 12 * 3600_000 // atendimento com mais de 12h é registro errado
 
 /** Meia-noite no relógio de Brasília → instante real. */
 function br(y: number, m: number, d: number) {
@@ -34,7 +36,7 @@ function parseRange(from: string | null, to: string | null) {
 type Range = NonNullable<ReturnType<typeof parseRange>>
 
 async function buildPeriod(userId: string, r: Range, firstPaid: Map<string, number>, paidCount: Map<string, number>) {
-  const [appointments, expenses] = await Promise.all([
+  const [appointments, expenses, worked, breaks] = await Promise.all([
     prisma.appointment.findMany({
       where: { userId, paymentStatus: "Pago", paidAt: { gte: r.start, lte: r.end } },
       select: {
@@ -46,14 +48,52 @@ async function buildPeriod(userId: string, r: Range, firstPaid: Map<string, numb
       where: { userId, date: { gte: r.start, lte: r.end } },
       select: { amount: true, date: true, category: true },
     }),
+    // Horas trabalhadas: atendimentos que aconteceram no período (pela data do atendimento)
+    prisma.appointment.findMany({
+      where: { userId, startTime: { gte: r.start, lte: r.end }, status: { notIn: ["CANCELLED", "NO_SHOW"] } },
+      select: { startTime: true, endTime: true },
+    }),
+    prisma.agendaBlock.findMany({
+      where: { userId, kind: "INTERVALO", startTime: { gte: r.start, lte: r.end } },
+      select: { startTime: true, endTime: true },
+    }),
   ])
 
   // ── Dia a dia ──────────────────────────────────────────────────────────────
   const days = Array.from({ length: r.days }, (_, i) => {
     const key = dayKeyBR(br(r.y, r.m, r.d + i))
-    return { date: key, revenue: 0, expenses: 0, sessions: 0 }
+    return { date: key, revenue: 0, expenses: 0, sessions: 0, hours: 0 }
   })
   const idx = new Map(days.map((d, i) => [d.date, i]))
+
+  // ── Horas trabalhadas ──────────────────────────────────────────────────────
+  // Soma o tempo dos atendimentos + intervalos curtos (até 15 min contam como
+  // trabalho; intervalos maiores são descanso). Sobreposições contam uma vez só.
+  const spans: [number, number][] = []
+  const pushSpan = (s: Date, e: Date) => {
+    const a = Math.max(s.getTime(), r.start.getTime())
+    const b = Math.min(e.getTime(), r.end.getTime())
+    if (b > a && b - a <= MAX_SPAN_MS) spans.push([a, b]) // ignora registro com horário errado
+  }
+  for (const w of worked) pushSpan(w.startTime, w.endTime)
+  let shortBreaks = 0
+  for (const bk of breaks) {
+    if (bk.endTime.getTime() - bk.startTime.getTime() <= SHORT_BREAK_MS) { pushSpan(bk.startTime, bk.endTime); shortBreaks++ }
+  }
+  spans.sort((x, y) => x[0] - y[0])
+  let workedMs = 0
+  let cur: [number, number] | null = null
+  const flush = (s: [number, number]) => {
+    workedMs += s[1] - s[0]
+    const i = idx.get(dayKeyBR(new Date(s[0])))
+    if (i !== undefined) days[i].hours += (s[1] - s[0]) / 3600_000
+  }
+  for (const s of spans) {
+    if (cur && s[0] <= cur[1]) cur[1] = Math.max(cur[1], s[1])
+    else { if (cur) flush(cur); cur = [s[0], s[1]] }
+  }
+  if (cur) flush(cur)
+  const hoursWorked = workedMs / 3600_000
 
   let revenue = 0
   const paidSessions = appointments.filter((a) => (a.amountPaid ?? 0) > 0).length
@@ -132,6 +172,11 @@ async function buildPeriod(userId: string, r: Range, firstPaid: Map<string, numb
       daysWithSales: days.filter((d) => d.revenue > 0).length,
       totalDays: r.days,
       bestDay: best ? { date: best.date, revenue: best.revenue } : null,
+      hoursWorked,
+      daysWorked: days.filter((d) => d.hours > 0).length,
+      shortBreaks,
+      revenuePerHour: hoursWorked > 0 ? revenue / hoursWorked : 0,
+      profitPerHour: hoursWorked > 0 ? profit / hoursWorked : 0,
     },
     clientMix,
     byService: [...byService.entries()].map(([name, v]) => ({ name, ...v })).sort((a, b) => b.revenue - a.revenue),

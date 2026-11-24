@@ -1,7 +1,7 @@
 // Tipos e cálculos do comparativo de períodos (usados na tela e no PDF).
 // Todas as contas são feitas aqui, em código — nada de estimativa.
 
-export type CompareDay = { date: string; revenue: number; expenses: number; sessions: number }
+export type CompareDay = { date: string; revenue: number; expenses: number; sessions: number; hours: number }
 
 export type CompareSummary = {
   revenue: number
@@ -16,6 +16,11 @@ export type CompareSummary = {
   daysWithSales: number
   totalDays: number
   bestDay: { date: string; revenue: number } | null
+  hoursWorked: number
+  daysWorked: number
+  shortBreaks: number
+  revenuePerHour: number
+  profitPerHour: number
 }
 
 export type ClientGroup = { clients: number; revenue: number; sessions: number }
@@ -56,6 +61,31 @@ export function clientStory(data: CompareData, nameA: string, nameB: string): { 
       ? `Das novas de ${nameB}, ${num(B.newRepeat.clients)} já voltaram a comprar (${num((B.newRepeat.clients / newB) * 100)}%). Em ${nameA}: ${num(A.newRepeat.clients)} de ${num(newA)}.`
       : `Nenhuma cliente nova em ${nameB}.`,
   ]
+  return { headline, lines }
+}
+
+/** 12,5 → "12h30" ; 0,75 → "45min" */
+export function formatHours(h: number) {
+  const totalMin = Math.round(h * 60)
+  const hh = Math.floor(totalMin / 60), mm = totalMin % 60
+  if (hh === 0) return `${mm}min`
+  return mm === 0 ? `${hh}h` : `${hh}h${String(mm).padStart(2, "0")}`
+}
+
+export function hourStory(data: CompareData, nameA: string, nameB: string): { headline: string; lines: string[] } {
+  const A = data.a.summary, B = data.b.summary
+  const d = B.revenuePerHour - A.revenuePerHour
+  const p = pctChange(A.revenuePerHour, B.revenuePerHour)
+  const headline = B.hoursWorked === 0 && A.hoursWorked === 0
+    ? "Nenhuma hora de atendimento registrada nos dois períodos."
+    : d === 0
+      ? `Sua hora valeu ${brl(B.revenuePerHour)} nos dois períodos.`
+      : `Sua hora valeu ${brl(B.revenuePerHour)} em ${nameB}, ${brl(Math.abs(d))} ${d > 0 ? "a mais" : "a menos"} que em ${nameA}${p === null ? "" : ` (${formatPct(p)})`}.`
+  const lines = [
+    `Você trabalhou ${formatHours(B.hoursWorked)} em ${nameB} (${num(B.daysWorked)} dia${B.daysWorked === 1 ? "" : "s"}) e ${formatHours(A.hoursWorked)} em ${nameA} (${num(A.daysWorked)} dia${A.daysWorked === 1 ? "" : "s"}).`,
+    `Faturou ${brl(B.revenue)} em ${nameB} e ${brl(A.revenue)} em ${nameA}. Tirando as despesas, a hora ficou em ${brl(B.profitPerHour)} e ${brl(A.profitPerHour)}.`,
+  ]
+  if (B.daysWorked > 0) lines.push(`Média de ${formatHours(B.hoursWorked / B.daysWorked)} por dia trabalhado em ${nameB} (em ${nameA}: ${A.daysWorked > 0 ? formatHours(A.hoursWorked / A.daysWorked) : "0min"}).`)
   return { headline, lines }
 }
 
@@ -149,13 +179,17 @@ export function rangeLabel(from: string, to: string) {
 
 // ── Agrupamento e alinhamento ─────────────────────────────────────────────────
 
-export type Bucket = { label: string; dates: string; revenue: number; expenses: number; profit: number; sessions: number }
+export type Bucket = { label: string; dates: string; revenue: number; expenses: number; profit: number; sessions: number; hours: number }
 
 export function groupDays(days: CompareDay[], grouping: Grouping): Bucket[] {
   const make = (label: string, dates: string, list: CompareDay[]): Bucket => {
     const revenue = list.reduce((s, d) => s + d.revenue, 0)
     const expenses = list.reduce((s, d) => s + d.expenses, 0)
-    return { label, dates, revenue, expenses, profit: revenue - expenses, sessions: list.reduce((s, d) => s + d.sessions, 0) }
+    return {
+      label, dates, revenue, expenses, profit: revenue - expenses,
+      sessions: list.reduce((s, d) => s + d.sessions, 0),
+      hours: list.reduce((s, d) => s + (d.hours ?? 0), 0),
+    }
   }
 
   if (grouping === "day") {

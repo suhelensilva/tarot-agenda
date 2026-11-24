@@ -6,7 +6,7 @@ import {
   type CompareData, type Metric, type Grouping, type AlignedRow, type Breakdown,
   METRIC_LABELS, GROUPING_LABELS, LOWER_IS_BETTER,
   alignPeriods, metricStory, metricTotal, breakdown, rangeLabel, formatMetric,
-  CLIENT_GROUPS, clientStory, revenueShare,
+  CLIENT_GROUPS, clientStory, revenueShare, hourStory, formatHours,
   pctChange, formatPct, trend, brl, num,
 } from "@/lib/comparativo"
 
@@ -43,7 +43,7 @@ type Opts = {
   grouping: Grouping
   chartType: "line" | "bar"
   /** O que estava aberto na tela vem primeiro. */
-  first: Metric | "clients"
+  first: Metric | "clients" | "hourly"
 }
 
 const hex = (h: string): RGB => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]
@@ -121,12 +121,13 @@ export async function downloadComparativoPdf({ data, nameA, nameB, grouping, cha
   })
   y += 22
 
-  const pages: (Metric | "clients")[] = [first, ...[...ORDER, "clients" as const].filter((m) => m !== first)]
+  const pages: Opts["first"][] = [first, ...[...ORDER, "clients" as const, "hourly" as const].filter((m) => m !== first)]
   const rows = alignPeriods(data.a.days, data.b.days, grouping)
 
   pages.forEach((page, idx) => {
     if (idx > 0) { pdf.addPage(); y = 16 }
     if (page === "clients") { clientsPage(); return }
+    if (page === "hourly") { hourlyPage(); return }
     const metric = page
     const story = metricStory(metric, data, nameA, nameB)
     const a = metricTotal(metric, data.a.summary), b = metricTotal(metric, data.b.summary)
@@ -196,6 +197,53 @@ export async function downloadComparativoPdf({ data, nameA, nameB, grouping, cha
       yy += w.length * 4.6 + 1.5
     })
     y += h + 4
+  }
+
+  // ── Página "Valor por hora" ────────────────────────────────────────────────
+  function hourlyPage() {
+    const A = data.a.summary, B = data.b.summary
+    const story = hourStory(data, nameA, nameB)
+
+    fill(PURPLE); pdf.roundedRect(M, y, CONTENT_W, 10, 2, 2, "F")
+    font(12, true); pdf.setTextColor(255, 255, 255); text("Valor por hora trabalhada", M + 5, y + 6.8)
+    y += 16
+    font(12.5, true); color(INK)
+    const head: string[] = pdf.splitTextToSize(t(story.headline), CONTENT_W)
+    head.forEach((l, i) => text(l, M, y + i * 6))
+    y += head.length * 6 + 5
+
+    const tiles: [string, number, number, (v: number) => string, RGB][] = [
+      ["Horas trabalhadas", A.hoursWorked, B.hoursWorked, formatHours, [20, 184, 166]],
+      ["Faturamento por hora", A.revenuePerHour, B.revenuePerHour, brl, PURPLE],
+      ["Lucro por hora", A.profitPerHour, B.profitPerHour, brl, GREEN],
+    ]
+    const cw = (CONTENT_W - 8) / 3
+    tiles.forEach(([label, a, b, fmt, c], i) => {
+      const x = M + i * (cw + 4)
+      fill([250, 250, 252]); draw(LINE); pdf.setLineWidth(0.2)
+      pdf.roundedRect(x, y, cw, 30, 2.5, 2.5, "FD")
+      fill(c); pdf.roundedRect(x, y, cw, 2.2, 1, 1, "F")
+      font(9, true); color(c); text(label, x + 4, y + 8)
+      font(16, true); color(INK); text(fmt(b), x + 4, y + 18)
+      font(7.5); color(MUTED); text(`antes: ${fmt(a)}`, x + 4, y + 23.5)
+      const d = b - a
+      if (d !== 0) {
+        const tr = trend(d)
+        font(9, true); color(tr === "good" ? GREEN : tr === "bad" ? RED : MUTED)
+        text(formatPct(pctChange(a, b)), x + cw - 4, y + 18, { align: "right" })
+      }
+    })
+    y += 38
+
+    sectionTitle(`Horas trabalhadas ${GROUPING_LABELS[grouping].toLowerCase()}`)
+    legend(M, y + 1)
+    y += 5
+    drawChart(rows, "hours")
+    font(7.5); color(MUTED)
+    text("Conta o tempo dos atendimentos e os intervalos de até 15 min. Intervalos maiores são descanso.", M, y - 3)
+    y += 3
+
+    summaryBox(story.lines)
   }
 
   // ── Página "Clientes" ──────────────────────────────────────────────────────
@@ -279,7 +327,7 @@ export async function downloadComparativoPdf({ data, nameA, nameB, grouping, cha
   pdf.save(`comparativo-${digits(data.a.from)}-${digits(data.b.from)}.pdf`)
 
   // ── Gráfico dia a dia (vetor) ──────────────────────────────────────────────
-  function drawChart(rs: AlignedRow[], metric: Metric) {
+  function drawChart(rs: AlignedRow[], metric: Metric | "hours") {
     const H = 62
     ensure(H + 10)
     const left = M + 16, right = M + CONTENT_W - 1, top = y + 2, bottom = y + H
@@ -292,6 +340,7 @@ export async function downloadComparativoPdf({ data, nameA, nameB, grouping, cha
     const mag = Math.pow(10, Math.floor(Math.log10(rawStep)))
     let step = [1, 2, 2.5, 5, 10].map((f) => f * mag).find((s) => s >= rawStep) ?? rawStep
     if (metric === "sessions") step = Math.max(1, Math.ceil(step))
+    if (metric === "hours") step = Math.max(0.5, step)
     max = Math.ceil(max / step) * step
     min = Math.floor(min / step) * step
     const yOf = (v: number) => bottom - ((v - min) / (max - min)) * h
@@ -300,7 +349,7 @@ export async function downloadComparativoPdf({ data, nameA, nameB, grouping, cha
     for (let v = min; v <= max + step / 2; v += step) {
       const yy = yOf(v)
       draw(v === 0 ? [190, 190, 200] : LINE); pdf.line(left, yy, right, yy)
-      text(metric === "sessions" ? num(v) : shortMoney(v), left - 2, yy + 1.2, { align: "right" })
+      text(metric === "sessions" ? num(v) : metric === "hours" ? `${num(v, v % 1 ? 1 : 0)}h` : shortMoney(v), left - 2, yy + 1.2, { align: "right" })
     }
 
     const n = Math.max(rs.length, 1)

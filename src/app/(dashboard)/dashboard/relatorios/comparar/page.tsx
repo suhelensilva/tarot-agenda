@@ -9,14 +9,14 @@ import {
 } from "recharts"
 import {
   ArrowLeft, ArrowLeftRight, Download, TrendingUp, TrendingDown, Minus, BarChart3, AreaChart as AreaIcon, Loader2,
-  DollarSign, ArrowDownRight, Wallet, Users, Sparkles, HeartHandshake, UserPlus, Repeat, Star,
+  DollarSign, ArrowDownRight, Wallet, Users, Sparkles, HeartHandshake, UserPlus, Repeat, Star, Clock,
 } from "lucide-react"
 import { PlanGate } from "@/components/plan-gate"
 import {
   type CompareData, type Metric, type Grouping, type AlignedRow, type Breakdown, type ClientMix,
   METRIC_LABELS, GROUPING_LABELS, LOWER_IS_BETTER, WEEKDAY_ORDER, CLIENT_GROUPS,
   alignPeriods, defaultGrouping, metricStory, metricTotal, breakdown, weekdayTotals, rangeLabel, formatMetric,
-  mixTotals, revenueShare, clientStory,
+  mixTotals, revenueShare, clientStory, hourStory, formatHours,
   pctChange, formatPct, trend, brl, num,
   todayBR, isoFrom, addDays, daysBetween, minusYear,
 } from "@/lib/comparativo"
@@ -48,7 +48,7 @@ const chip = (on: boolean) =>
   }`
 const axisTick = { fontSize: 11, fill: "rgba(140,140,170,0.85)" }
 
-type View = Metric | "clients"
+type View = Metric | "clients" | "hourly"
 
 // ── Atalhos de período ────────────────────────────────────────────────────────
 
@@ -94,7 +94,7 @@ export default function CompararPage() {
   const [nameA, setNameA] = useState("")
   const [nameB, setNameB] = useState("")
   const [view, setView] = useState<View>("revenue")
-  const metric: Metric = view === "clients" ? "revenue" : view
+  const metric: Metric = view === "clients" || view === "hourly" ? "revenue" : view
   const [grouping, setGrouping] = useState<Grouping | "auto">("auto")
   const [chartType, setChartType] = useState<"area" | "bar">("area")
   const [data, setData] = useState<CompareData | null>(null)
@@ -222,17 +222,28 @@ export default function CompararPage() {
           <div className={`space-y-5 transition-opacity ${loading ? "opacity-60" : ""}`}>
 
             {/* Cartões = escolher o que comparar */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+            {/* Faixa de cartões: não espreme — se não couber, rola para o lado */}
+            <div className="cmp-scroll flex gap-4 overflow-x-auto pt-1 pb-3 -mx-1 px-1 snap-x">
               {(Object.keys(METRIC_LABELS) as Metric[]).map((m) => (
-                <MetricCard key={m} metric={m} active={view === m} onClick={() => setView(m)}
-                  a={metricTotal(m, data.a.summary)} b={metricTotal(m, data.b.summary)} />
+                <div key={m} className="snap-start shrink-0 w-[250px]">
+                  <MetricCard metric={m} active={view === m} onClick={() => setView(m)}
+                    a={metricTotal(m, data.a.summary)} b={metricTotal(m, data.b.summary)} />
+                </div>
               ))}
-              <ClientsCard active={view === "clients"} onClick={() => setView("clients")}
-                a={mixTotals(data.a.clientMix).clients} b={mixTotals(data.b.clientMix).clients} />
+              <div className="snap-start shrink-0 w-[250px]">
+                <ClientsCard active={view === "clients"} onClick={() => setView("clients")}
+                  a={mixTotals(data.a.clientMix).clients} b={mixTotals(data.b.clientMix).clients} />
+              </div>
+              <div className="snap-start shrink-0 w-[250px]">
+                <HourCard active={view === "hourly"} onClick={() => setView("hourly")}
+                  a={data.a.summary.revenuePerHour} b={data.b.summary.revenuePerHour} />
+              </div>
             </div>
 
             {view === "clients" ? (
               <ClientsView data={data} labelA={labelA} labelB={labelB} />
+            ) : view === "hourly" ? (
+              <HourlyView data={data} labelA={labelA} labelB={labelB} grouping={effGrouping} />
             ) : (<>
 
             {/* Gráfico principal + anéis */}
@@ -335,7 +346,7 @@ function MetricCard({ metric, active, onClick, a, b }: { metric: Metric; active:
   const meta = METRIC_META[metric]
   return (
     <button onClick={onClick}
-      className={`${card} p-4 text-left transition-all hover:-translate-y-0.5 ${active ? "ring-2 ring-fuchsia-500/70 shadow-[0_0_28px_rgba(217,70,239,0.25)]" : "opacity-90 hover:opacity-100"}`}>
+      className={`${card} w-full h-full p-4 text-left transition-all hover:-translate-y-0.5 ${active ? "ring-2 ring-fuchsia-500/70 shadow-[0_0_28px_rgba(217,70,239,0.25)]" : "opacity-90 hover:opacity-100"}`}>
       {active && <div className="absolute inset-x-6 -top-px h-px bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent" />}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -603,7 +614,7 @@ function ClientsCard({ active, onClick, a, b }: { active: boolean; onClick: () =
   const ringColor = t === "good" ? "#10b981" : t === "bad" ? "#f43f5e" : "#a1a1aa"
   return (
     <button onClick={onClick}
-      className={`${card} p-4 text-left transition-all hover:-translate-y-0.5 ${active ? "ring-2 ring-fuchsia-500/70 shadow-[0_0_28px_rgba(217,70,239,0.25)]" : "opacity-90 hover:opacity-100"}`}>
+      className={`${card} w-full h-full p-4 text-left transition-all hover:-translate-y-0.5 ${active ? "ring-2 ring-fuchsia-500/70 shadow-[0_0_28px_rgba(217,70,239,0.25)]" : "opacity-90 hover:opacity-100"}`}>
       {active && <div className="absolute inset-x-6 -top-px h-px bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent" />}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -767,6 +778,182 @@ function ClientsView({ data, labelA, labelB }: { data: CompareData; labelA: stri
         <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
           {story.lines.map((l, i) => <li key={i} className="flex gap-2"><span className="text-fuchsia-500">•</span>{l}</li>)}
         </ul>
+      </div>
+    </div>
+  )
+}
+
+// ── Valor por hora trabalhada ─────────────────────────────────────────────────
+
+function HourCard({ active, onClick, a, b }: { active: boolean; onClick: () => void; a: number; b: number }) {
+  const diff = b - a
+  const t = trend(diff)
+  const ringColor = t === "good" ? "#10b981" : t === "bad" ? "#f43f5e" : "#a1a1aa"
+  return (
+    <button onClick={onClick}
+      className={`${card} w-full h-full p-4 text-left transition-all hover:-translate-y-0.5 ${active ? "ring-2 ring-fuchsia-500/70 shadow-[0_0_28px_rgba(217,70,239,0.25)]" : "opacity-90 hover:opacity-100"}`}>
+      {active && <div className="absolute inset-x-6 -top-px h-px bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent" />}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-400 to-violet-500 text-white flex items-center justify-center shadow-md"><Clock size={17} /></span>
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Valor por hora</span>
+          </div>
+          <p className="text-xl font-bold text-gray-900 dark:text-white truncate">{brl(b)}</p>
+          <p className="text-[11px] text-gray-400 truncate">antes: {brl(a)}</p>
+        </div>
+        <ProgressRing pct={diff === 0 ? 0 : pctChange(a, b)} color={ringColor} />
+      </div>
+    </button>
+  )
+}
+
+function StatTile({ icon, grad, title, a, b, fmt }: { icon: React.ReactNode; grad: string; title: string; a: number; b: number; fmt: (v: number) => string }) {
+  const diff = b - a
+  const t = trend(diff)
+  const ringColor = t === "good" ? "#10b981" : t === "bad" ? "#f43f5e" : "#a1a1aa"
+  return (
+    <div className={`${card} p-5 overflow-hidden`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-3">
+            <span className={`w-8 h-8 rounded-xl bg-gradient-to-br ${grad} text-white flex items-center justify-center shadow-md`}>{icon}</span>
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</span>
+          </div>
+          <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{fmt(b)}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">antes: {fmt(a)}</p>
+        </div>
+        <ProgressRing pct={diff === 0 ? 0 : pctChange(a, b)} color={ringColor} size={60} />
+      </div>
+    </div>
+  )
+}
+
+function HourlyView({ data, labelA, labelB, grouping }: { data: CompareData; labelA: string; labelB: string; grouping: Grouping }) {
+  const A = data.a.summary, B = data.b.summary
+  const story = hourStory(data, labelA, labelB)
+  const rows = alignPeriods(data.a.days, data.b.days, grouping)
+  const chartData = rows.map((r) => ({
+    label: r.label.replace("Dia ", "").replace("Semana ", "Sem "),
+    full: r.label,
+    a: r.a ? Math.round(r.a.hours * 100) / 100 : null,
+    b: r.b ? Math.round(r.b.hours * 100) / 100 : null,
+    aDates: r.a?.dates ?? "—",
+    bDates: r.b?.dates ?? "—",
+  }))
+  const wa = [0, 0, 0, 0, 0, 0, 0], wb = [0, 0, 0, 0, 0, 0, 0]
+  const wdIndex = (iso: string) => { const [y, m, d] = iso.split("-").map(Number); return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7 }
+  for (const d of data.a.days) wa[wdIndex(d.date)] += d.hours
+  for (const d of data.b.days) wb[wdIndex(d.date)] += d.hours
+  const radar = WEEKDAY_ORDER.map((day, i) => ({ day, a: Math.round(wa[i] * 10) / 10, b: Math.round(wb[i] * 10) / 10 }))
+
+  const max = Math.max(A.revenuePerHour, B.revenuePerHour, 1)
+  const ringData = [
+    { name: "A", value: (Math.max(0, A.revenuePerHour) / max) * 100, fill: A_COLOR },
+    { name: "B", value: (Math.max(0, B.revenuePerHour) / max) * 100, fill: B_COLOR },
+  ]
+  const diff = B.revenuePerHour - A.revenuePerHour
+  const tone = trend(diff) === "good" ? "text-emerald-500" : trend(diff) === "bad" ? "text-rose-500" : "text-gray-400"
+  const Icon = diff > 0 ? TrendingUp : diff < 0 ? TrendingDown : Minus
+
+  const tip = ({ active, payload }: { active?: boolean; payload?: readonly { payload?: unknown }[] }) => {
+    if (!active || !payload?.length) return null
+    const p = payload[0].payload as (typeof chartData)[number]
+    return <ChartTip title={p.full} rows={[
+      { color: A_COLOR, label: p.aDates, value: p.a === null ? "—" : formatHours(p.a) },
+      { color: B_COLOR, label: p.bDates, value: p.b === null ? "—" : formatHours(p.b) },
+    ]} />
+  }
+  const radarTip = ({ active, payload }: { active?: boolean; payload?: readonly { payload?: unknown }[] }) => {
+    if (!active || !payload?.length) return null
+    const p = payload[0].payload as (typeof radar)[number]
+    return <ChartTip title={p.day} rows={[
+      { color: A_COLOR, label: labelA, value: formatHours(p.a) },
+      { color: B_COLOR, label: labelB, value: formatHours(p.b) },
+    ]} />
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatTile icon={<Clock size={16} />} grad="from-teal-400 to-cyan-500" title="Horas trabalhadas" a={A.hoursWorked} b={B.hoursWorked} fmt={formatHours} />
+        <StatTile icon={<DollarSign size={16} />} grad="from-violet-500 to-fuchsia-500" title="Faturamento por hora" a={A.revenuePerHour} b={B.revenuePerHour} fmt={brl} />
+        <StatTile icon={<Wallet size={16} />} grad="from-emerald-500 to-teal-500" title="Lucro por hora" a={A.profitPerHour} b={B.profitPerHour} fmt={brl} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Anéis: valor da hora */}
+        <div className={`${card} p-6 flex flex-col overflow-hidden`}>
+          <div className="absolute -left-16 -bottom-16 w-48 h-48 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
+          <h2 className="font-semibold text-gray-900 dark:text-white">Quanto vale a sua hora</h2>
+          <div className="relative h-52 my-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadialBarChart data={ringData} innerRadius="58%" outerRadius="100%" startAngle={90} endAngle={-270} barSize={14}>
+                <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                <RadialBar dataKey="value" cornerRadius={10} background={{ fill: "rgba(150,150,190,0.12)" }} style={{ filter: "drop-shadow(0 0 5px rgba(217,70,239,0.45))" }} />
+              </RadialBarChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <Icon size={18} className={tone} />
+              <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{brl(B.revenuePerHour)}</p>
+              <p className={`text-[11px] font-semibold ${tone}`}>{diff === 0 ? "igual" : formatPct(pctChange(A.revenuePerHour, B.revenuePerHour))}</p>
+            </div>
+          </div>
+          <div className="space-y-2 text-sm">
+            <p className="flex items-center justify-between"><span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 truncate"><span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: A_COLOR }} />{labelA}</span><b className="text-gray-900 dark:text-white">{brl(A.revenuePerHour)}/h</b></p>
+            <p className="flex items-center justify-between"><span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 truncate"><span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: B_COLOR }} />{labelB}</span><b className="text-gray-900 dark:text-white">{brl(B.revenuePerHour)}/h</b></p>
+          </div>
+          <p className="mt-4 pt-3 border-t border-purple-50 dark:border-white/5 text-sm text-gray-700 dark:text-gray-200 leading-snug">{story.headline}</p>
+        </div>
+
+        {/* Horas por dia */}
+        <div className={`${card} p-6 lg:col-span-2`}>
+          <h2 className="font-semibold text-gray-900 dark:text-white">Horas trabalhadas {GROUPING_LABELS[grouping].toLowerCase()}</h2>
+          <Legend labelA={labelA} labelB={labelB} />
+          <div className="mt-4">
+            <ResponsiveContainer width="100%" height={290}>
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barGap={3}>
+                <GradientDefs />
+                <CartesianGrid strokeDasharray="4 6" stroke="rgba(150,150,190,0.15)" vertical={false} />
+                <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} dy={8} interval="preserveStartEnd" />
+                <YAxis tickFormatter={(v: number) => `${v}h`} tick={{ ...axisTick, fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
+                <Tooltip content={tip} cursor={{ fill: "rgba(217,70,239,0.05)" }} />
+                <Bar dataKey="a" fill="url(#cmpBarA)" radius={[6, 6, 0, 0]} maxBarSize={20} />
+                <Bar dataKey="b" fill="url(#cmpBarB)" radius={[6, 6, 0, 0]} maxBarSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2">Conta o tempo dos atendimentos e os intervalos de até 15 min. Intervalos maiores são descanso.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className={`${card} p-6`}>
+          <h2 className="font-semibold text-gray-900 dark:text-white">Horas por dia da semana</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <RadarChart data={radar} outerRadius="72%">
+              <defs>
+                <radialGradient id="cmpRadarHB"><stop offset="0%" stopColor={B_LIGHT} stopOpacity={0.7} /><stop offset="100%" stopColor={B_COLOR} stopOpacity={0.35} /></radialGradient>
+                <radialGradient id="cmpRadarHA"><stop offset="0%" stopColor={A_LIGHT} stopOpacity={0.6} /><stop offset="100%" stopColor={A_COLOR} stopOpacity={0.25} /></radialGradient>
+              </defs>
+              <PolarGrid stroke="rgba(150,150,190,0.25)" />
+              <PolarAngleAxis dataKey="day" tick={{ ...axisTick, fontSize: 12 }} />
+              <PolarRadiusAxis tick={false} axisLine={false} />
+              <Tooltip content={radarTip} />
+              <Radar dataKey="a" stroke={A_COLOR} strokeWidth={2} fill="url(#cmpRadarHA)" />
+              <Radar dataKey="b" stroke={B_COLOR} strokeWidth={2.5} fill="url(#cmpRadarHB)" style={{ filter: `drop-shadow(0 0 6px ${B_COLOR}80)` }} />
+            </RadarChart>
+          </ResponsiveContainer>
+          <Legend labelA={labelA} labelB={labelB} />
+        </div>
+
+        <div className={`${card} p-5 lg:col-span-2 overflow-hidden`}>
+          <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-fuchsia-500/10 blur-2xl pointer-events-none" />
+          <h2 className="font-semibold text-gray-900 dark:text-white text-sm mb-2 flex items-center gap-1.5"><Sparkles size={15} className="text-fuchsia-500" /> Resumo</h2>
+          <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+            {story.lines.map((l, i) => <li key={i} className="flex gap-2"><span className="text-fuchsia-500">•</span>{l}</li>)}
+          </ul>
+        </div>
       </div>
     </div>
   )

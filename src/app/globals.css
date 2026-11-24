@@ -144,6 +144,15 @@ html:not(.dark) aside {
 .dark ::-webkit-scrollbar-thumb { background: #aa55f920; border-radius: 3px; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #aa55f950; }
 
+/* Barrinha fina de rolagem lateral (faixa de cartões do comparativo) */
+.cmp-scroll::-webkit-scrollbar { height: 6px; }
+.cmp-scroll::-webkit-scrollbar-track { background: transparent; }
+.cmp-scroll::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #8b5cf6, #d946ef); border-radius: 999px; }
+.cmp-scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(90deg, #7c3aed, #c026d3); }
+@supports (-moz-appearance: none) {
+  .cmp-scroll { scrollbar-width: thin; scrollbar-color: #c084fc transparent; }
+}
+
 /* Glow neon nos cards dark */
 .dark .neon-card {
   background: #13131f;
