@@ -7,8 +7,9 @@ import {
 } from "recharts"
 import {
   TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight,
-  Plus, Trash2, Pencil, X, Check, Calendar,
+  Plus, Trash2, Pencil, X, Check, Calendar, ArrowLeftRight,
 } from "lucide-react"
+import Link from "next/link"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { PlanGate } from "@/components/plan-gate"
 
@@ -140,10 +141,16 @@ export default function RelatoriosPage() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Relatório Financeiro</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Acompanhe receitas, despesas e lucro</p>
           </div>
-          <button onClick={openNewExp}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm">
-            <Plus size={15} /> Registrar despesa
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/dashboard/relatorios/comparar"
+              className="flex items-center gap-2 border border-purple-200 dark:border-[rgba(170,85,249,0.3)] text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-[rgba(170,85,249,0.1)] px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+              <ArrowLeftRight size={15} /> Comparar períodos
+            </Link>
+            <button onClick={openNewExp}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm">
+              <Plus size={15} /> Registrar despesa
+            </button>
+          </div>
         </div>
 
         {/* Filtros */}
