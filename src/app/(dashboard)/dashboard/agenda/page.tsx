@@ -45,12 +45,14 @@ const BLOCK_INPUT = "w-full border border-gray-200 dark:border-[rgba(170,85,249,
 const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
 const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m }
 const fmtMin = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`
-/** Intervalo que começa 1 minuto depois de `fim` (ex.: agendamento até 14:50 → intervalo das 14:51). */
-const horarioDepois = (fim: Date, duracao = 15) => {
-  const startMin = Math.min(fim.getHours() * 60 + fim.getMinutes() + 1, 23 * 60 + 58)
-  const endMin = Math.min(startMin + Math.max(duracao, 1), 23 * 60 + 59)
-  return { startHour: fmtMin(startMin), endHour: fmtMin(endMin) }
+/** Monta o "Das/Até" a partir do minuto de início e da duração, sem passar da meia-noite. */
+const faixa = (startMin: number, duracao: number) => {
+  const s = Math.min(Math.max(startMin, 0), 23 * 60 + 58)
+  const e = Math.min(s + Math.max(duracao, 1), 23 * 60 + 59)
+  return { startHour: fmtMin(s), endHour: fmtMin(e) }
 }
+/** Horário que começa 1 minuto depois de `fim` (ex.: agendamento até 14:50 → das 14:51). */
+const horarioDepois = (fim: Date, duracao = 15) => faixa(fim.getHours() * 60 + fim.getMinutes() + 1, duracao)
 const dayRange = (d: Date) => {
   const s = new Date(d.getFullYear(), d.getMonth(), d.getDate())
   return [s, new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)] as const
@@ -214,8 +216,13 @@ export default function AgendaPage() {
     return `${yyyy}-${mm}-${dd}`
   }
 
-  /** Sugestão pro intervalo novo: 1 minuto depois do último agendamento (ou intervalo) do dia. */
-  function sugestaoIntervalo(ymd: string, duracao = 15) {
+  /**
+   * Início sugerido (em minutos do dia) pra um agendamento ou intervalo novo no dia `ymd`:
+   * - 1 minuto depois do fim do último agendamento ou intervalo do dia (o que terminar mais tarde);
+   * - se o dia é hoje e esse horário já passou (ou o dia está vazio), vale a hora do relógio;
+   * - dia vazio que não é hoje: null (fica o horário padrão).
+   */
+  function inicioSugerido(ymd: string): number | null {
     if (!ymd) return null
     const [y, m, dd] = ymd.split("-").map(Number)
     const d = new Date(y, m - 1, dd)
@@ -224,26 +231,28 @@ export default function AgendaPage() {
       ...aptsForDay(d).filter((a) => a.status !== "CANCELLED").map((a) => new Date(a.endTime)),
       ...blocksForDay(d).filter((b) => b.kind === "INTERVALO").map((b) => new Date(b.endTime)),
     ].filter((t) => t > dayStart && t < dayEnd)
-    if (ends.length === 0) return null
-    return horarioDepois(new Date(Math.max(...ends.map((t) => t.getTime()))), duracao)
+    const ultimo = ends.length > 0 ? new Date(Math.max(...ends.map((t) => t.getTime()))) : null
+    const depoisDoUltimo = ultimo ? ultimo.getHours() * 60 + ultimo.getMinutes() + 1 : null
+    const agora = new Date()
+    if (d.toDateString() === agora.toDateString()) {
+      return Math.max(depoisDoUltimo ?? 0, agora.getHours() * 60 + agora.getMinutes())
+    }
+    return depoisDoUltimo
+  }
+
+  function sugestaoIntervalo(ymd: string, duracao = 15) {
+    const ini = inicioSugerido(ymd)
+    return ini === null ? null : faixa(ini, duracao)
   }
 
   /** `depoisDe`: fim do agendamento escolhido; o intervalo começa 1 minuto depois dele. */
   function openNew(day?: Date, mode: FormMode = "agendamento", depoisDe?: Date) {
     const d = day ?? selectedDay ?? today
     const dateStr = toLocalDateStr(d)
-    const isSelectedToday = d.toDateString() === today.toDateString()
 
-    let startHour = "09:00"
-    let endHour   = "10:00"
-
-    if (isSelectedToday) {
-      const now = new Date()
-      const h   = now.getHours()
-      const m   = now.getMinutes()
-      startHour = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
-      endHour   = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`
-    }
+    // Agendamento novo: 1 minuto depois do último agendamento/intervalo do dia, ou a hora atual se já passou.
+    const ini = inicioSugerido(dateStr)
+    const { startHour, endHour } = ini === null ? { startHour: "09:00", endHour: "10:00" } : faixa(ini, 60)
 
     setForm({ clientId: "", serviceId: "", title: "", date: dateStr, startHour, endHour, motivo: "", perguntas: "", person2Name: "", person2BirthDate: "", notes: "", meetingLink: "", amountPaid: "", paymentStatus: "", deliveryFormat: "" })
     setEditingId(null)
@@ -1387,7 +1396,16 @@ export default function AgendaPage() {
                     required
                     type="date"
                     value={form.date}
-                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    onChange={(e) => {
+                      const date = e.target.value
+                      setForm((f) => {
+                        // Agendamento novo: ao trocar o dia, o início segue a regra do último horário desse dia (a duração continua)
+                        if (editingId) return { ...f, date }
+                        const dur = toMin(f.endHour) - toMin(f.startHour)
+                        const ini = inicioSugerido(date)
+                        return ini === null ? { ...f, date } : { ...f, date, ...faixa(ini, dur > 0 ? dur : 60) }
+                      })
+                    }}
                     className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                   />
                 </div>
