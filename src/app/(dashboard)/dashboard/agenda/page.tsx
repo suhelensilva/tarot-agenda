@@ -51,8 +51,6 @@ const faixa = (startMin: number, duracao: number) => {
   const e = Math.min(s + Math.max(duracao, 1), 23 * 60 + 59)
   return { startHour: fmtMin(s), endHour: fmtMin(e) }
 }
-/** Horário que começa 1 minuto depois de `fim` (ex.: agendamento até 14:50 → das 14:51). */
-const horarioDepois = (fim: Date, duracao = 15) => faixa(fim.getHours() * 60 + fim.getMinutes() + 1, duracao)
 const dayRange = (d: Date) => {
   const s = new Date(d.getFullYear(), d.getMonth(), d.getDate())
   return [s, new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)] as const
@@ -245,8 +243,7 @@ export default function AgendaPage() {
     return ini === null ? null : faixa(ini, duracao)
   }
 
-  /** `depoisDe`: fim do agendamento escolhido; o intervalo começa 1 minuto depois dele. */
-  function openNew(day?: Date, mode: FormMode = "agendamento", depoisDe?: Date) {
+  function openNew(day?: Date, mode: FormMode = "agendamento") {
     const d = day ?? selectedDay ?? today
     const dateStr = toLocalDateStr(d)
 
@@ -266,10 +263,9 @@ export default function AgendaPage() {
     setFormMode(mode)
     setEditingBlockId(null)
     setDuplicatingBlock(false)
-    // Intervalo novo começa 1 minuto depois do fim do agendamento escolhido
-    // (ou do último agendamento/intervalo do dia). Calcula sempre, pra valer também
+    // Intervalo novo segue a mesma regra do agendamento. Calcula sempre, pra valer também
     // quando ela troca pra aba "Intervalo" dentro do formulário.
-    const sugestao = depoisDe ? horarioDepois(depoisDe) : sugestaoIntervalo(dateStr)
+    const sugestao = sugestaoIntervalo(dateStr)
     setBlockForm({ date: dateStr, startHour: sugestao?.startHour ?? "12:00", endHour: sugestao?.endHour ?? "13:00", note: "", days: [dateStr], extraDay: "" })
     setBlockError(null)
     setShowForm(true)
@@ -770,7 +766,7 @@ export default function AgendaPage() {
                   ...selectedBreaks.map((b) => ({ at: new Date(b.startTime).getTime(), block: b, apt: null })),
                   ...selectedApts.map((a) => ({ at: new Date(a.startTime).getTime(), block: null, apt: a })),
                 ].sort((x, y) => x.at - y.at).map(({ block: b, apt }) => b ? (
-                  <div key={b.id} className="mr-16 flex items-center gap-4 px-4 py-3 rounded-xl border border-dashed border-gray-300 dark:border-white/15 bg-gray-50 dark:bg-white/[0.03]">
+                  <div key={b.id} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl border border-dashed border-gray-300 dark:border-white/15 bg-gray-50 dark:bg-white/[0.03]">
                     <div className="text-sm font-mono text-gray-500 dark:text-gray-400 font-bold w-12 shrink-0">{hhmm(new Date(b.startTime))}</div>
                     <div className="flex-1 min-w-0 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                       <Coffee size={15} className="shrink-0" />
@@ -790,10 +786,10 @@ export default function AgendaPage() {
                     </button>
                   </div>
                 ) : apt && (
-                  <div key={apt.id} className="flex items-stretch gap-2">
                   <button
+                    key={apt.id}
                     onClick={() => setSelected(apt)}
-                    className={`flex-1 min-w-0 flex items-center gap-4 p-4 rounded-xl border text-left transition-colors ${
+                    className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-colors ${
                       selected?.id === apt.id
                         ? "border-purple-300 bg-purple-50 dark:border-[rgba(170,85,249,0.4)] dark:bg-[rgba(170,85,249,0.1)]"
                         : "border-gray-200 bg-white hover:border-purple-200 dark:border-[rgba(170,85,249,0.12)] dark:bg-[#13131f] dark:hover:border-[rgba(170,85,249,0.3)]"
@@ -819,21 +815,6 @@ export default function AgendaPage() {
                       {statusConfig[apt.status].label}
                     </span>
                   </button>
-                  {/* Intervalo logo depois deste agendamento: começa 1 minuto após o fim */}
-                  {apt.status === "CANCELLED" ? (
-                    <span className="w-14 shrink-0" />
-                  ) : (
-                    <button
-                      onClick={() => openNew(new Date(apt.startTime), "intervalo", new Date(apt.endTime))}
-                      title={`Adicionar intervalo a partir das ${horarioDepois(new Date(apt.endTime)).startHour}`}
-                      aria-label="Adicionar intervalo depois deste agendamento"
-                      className="w-14 shrink-0 flex flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-gray-300 dark:border-white/15 text-gray-400 hover:text-purple-600 hover:border-purple-300 dark:hover:text-[#aa55f9] dark:hover:border-[rgba(170,85,249,0.4)] transition-colors"
-                    >
-                      <Coffee size={16} />
-                      <span className="text-[10px] font-mono leading-none">{horarioDepois(new Date(apt.endTime)).startHour}</span>
-                    </button>
-                  )}
-                  </div>
                 ))}
               </div>
             )}
