@@ -43,6 +43,14 @@ const DELIVERY_ACTIVE = "bg-purple-100 text-purple-700 border-purple-400 dark:bg
 const BLOCK_INPUT = "w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)] dark:placeholder-gray-600"
 
 const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m }
+const fmtMin = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`
+/** Intervalo que começa 1 minuto depois de `fim` (ex.: agendamento até 14:50 → intervalo das 14:51). */
+const horarioDepois = (fim: Date, duracao = 15) => {
+  const startMin = Math.min(fim.getHours() * 60 + fim.getMinutes() + 1, 23 * 60 + 58)
+  const endMin = Math.min(startMin + Math.max(duracao, 1), 23 * 60 + 59)
+  return { startHour: fmtMin(startMin), endHour: fmtMin(endMin) }
+}
 const dayRange = (d: Date) => {
   const s = new Date(d.getFullYear(), d.getMonth(), d.getDate())
   return [s, new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)] as const
@@ -206,7 +214,22 @@ export default function AgendaPage() {
     return `${yyyy}-${mm}-${dd}`
   }
 
-  function openNew(day?: Date, mode: FormMode = "agendamento") {
+  /** Sugestão pro intervalo novo: 1 minuto depois do último agendamento (ou intervalo) do dia. */
+  function sugestaoIntervalo(ymd: string, duracao = 15) {
+    if (!ymd) return null
+    const [y, m, dd] = ymd.split("-").map(Number)
+    const d = new Date(y, m - 1, dd)
+    const [dayStart, dayEnd] = dayRange(d)
+    const ends = [
+      ...aptsForDay(d).filter((a) => a.status !== "CANCELLED").map((a) => new Date(a.endTime)),
+      ...blocksForDay(d).filter((b) => b.kind === "INTERVALO").map((b) => new Date(b.endTime)),
+    ].filter((t) => t > dayStart && t < dayEnd)
+    if (ends.length === 0) return null
+    return horarioDepois(new Date(Math.max(...ends.map((t) => t.getTime()))), duracao)
+  }
+
+  /** `depoisDe`: fim do agendamento escolhido; o intervalo começa 1 minuto depois dele. */
+  function openNew(day?: Date, mode: FormMode = "agendamento", depoisDe?: Date) {
     const d = day ?? selectedDay ?? today
     const dateStr = toLocalDateStr(d)
     const isSelectedToday = d.toDateString() === today.toDateString()
@@ -234,25 +257,11 @@ export default function AgendaPage() {
     setFormMode(mode)
     setEditingBlockId(null)
     setDuplicatingBlock(false)
-    // Intervalo novo começa 1 minuto depois do fim do último agendamento (ou intervalo) do dia.
-    let blockStart = "12:00"
-    let blockEnd = "13:00"
-    if (mode === "intervalo") {
-      const [dayStart, dayEnd] = dayRange(d)
-      const ends = [
-        ...aptsForDay(d).filter((a) => a.status !== "CANCELLED").map((a) => new Date(a.endTime)),
-        ...blocksForDay(d).filter((b) => b.kind === "INTERVALO").map((b) => new Date(b.endTime)),
-      ].filter((t) => t > dayStart && t < dayEnd)
-      if (ends.length > 0) {
-        const last = new Date(Math.max(...ends.map((t) => t.getTime())) + 60_000)
-        const startMin = Math.min(last.getHours() * 60 + last.getMinutes(), 23 * 60 + 44)
-        const endMin = startMin + 15
-        const fmt = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`
-        blockStart = fmt(startMin)
-        blockEnd = fmt(endMin)
-      }
-    }
-    setBlockForm({ date: dateStr, startHour: blockStart, endHour: blockEnd, note: "", days: [dateStr], extraDay: "" })
+    // Intervalo novo começa 1 minuto depois do fim do agendamento escolhido
+    // (ou do último agendamento/intervalo do dia). Calcula sempre, pra valer também
+    // quando ela troca pra aba "Intervalo" dentro do formulário.
+    const sugestao = depoisDe ? horarioDepois(depoisDe) : sugestaoIntervalo(dateStr)
+    setBlockForm({ date: dateStr, startHour: sugestao?.startHour ?? "12:00", endHour: sugestao?.endHour ?? "13:00", note: "", days: [dateStr], extraDay: "" })
     setBlockError(null)
     setShowForm(true)
   }
@@ -279,11 +288,20 @@ export default function AgendaPage() {
   /** Muda o "Das" mantendo a duração do intervalo (o "Até" anda junto). */
   function changeBlockStart(value: string) {
     setBlockForm((f) => {
-      const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m }
       const dur = toMin(f.endHour) - toMin(f.startHour)
       if (!value || dur <= 0) return { ...f, startHour: value }
       const end = Math.min(toMin(value) + dur, 23 * 60 + 59)
-      return { ...f, startHour: value, endHour: `${String(Math.floor(end / 60)).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}` }
+      return { ...f, startHour: value, endHour: fmtMin(end) }
+    })
+  }
+
+  /** Troca o dia do intervalo novo e refaz o início pra 1 minuto depois do último horário desse dia (a duração continua). */
+  function changeBlockDate(value: string) {
+    setBlockForm((f) => {
+      if (editingBlockId || duplicatingBlock) return { ...f, date: value }
+      const dur = toMin(f.endHour) - toMin(f.startHour)
+      const s = sugestaoIntervalo(value, dur > 0 ? dur : 15)
+      return s ? { ...f, date: value, ...s } : { ...f, date: value }
     })
   }
 
@@ -743,7 +761,7 @@ export default function AgendaPage() {
                   ...selectedBreaks.map((b) => ({ at: new Date(b.startTime).getTime(), block: b, apt: null })),
                   ...selectedApts.map((a) => ({ at: new Date(a.startTime).getTime(), block: null, apt: a })),
                 ].sort((x, y) => x.at - y.at).map(({ block: b, apt }) => b ? (
-                  <div key={b.id} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl border border-dashed border-gray-300 dark:border-white/15 bg-gray-50 dark:bg-white/[0.03]">
+                  <div key={b.id} className="mr-16 flex items-center gap-4 px-4 py-3 rounded-xl border border-dashed border-gray-300 dark:border-white/15 bg-gray-50 dark:bg-white/[0.03]">
                     <div className="text-sm font-mono text-gray-500 dark:text-gray-400 font-bold w-12 shrink-0">{hhmm(new Date(b.startTime))}</div>
                     <div className="flex-1 min-w-0 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                       <Coffee size={15} className="shrink-0" />
@@ -763,10 +781,10 @@ export default function AgendaPage() {
                     </button>
                   </div>
                 ) : apt && (
+                  <div key={apt.id} className="flex items-stretch gap-2">
                   <button
-                    key={apt.id}
                     onClick={() => setSelected(apt)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-colors ${
+                    className={`flex-1 min-w-0 flex items-center gap-4 p-4 rounded-xl border text-left transition-colors ${
                       selected?.id === apt.id
                         ? "border-purple-300 bg-purple-50 dark:border-[rgba(170,85,249,0.4)] dark:bg-[rgba(170,85,249,0.1)]"
                         : "border-gray-200 bg-white hover:border-purple-200 dark:border-[rgba(170,85,249,0.12)] dark:bg-[#13131f] dark:hover:border-[rgba(170,85,249,0.3)]"
@@ -792,6 +810,21 @@ export default function AgendaPage() {
                       {statusConfig[apt.status].label}
                     </span>
                   </button>
+                  {/* Intervalo logo depois deste agendamento: começa 1 minuto após o fim */}
+                  {apt.status === "CANCELLED" ? (
+                    <span className="w-14 shrink-0" />
+                  ) : (
+                    <button
+                      onClick={() => openNew(new Date(apt.startTime), "intervalo", new Date(apt.endTime))}
+                      title={`Adicionar intervalo a partir das ${horarioDepois(new Date(apt.endTime)).startHour}`}
+                      aria-label="Adicionar intervalo depois deste agendamento"
+                      className="w-14 shrink-0 flex flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-gray-300 dark:border-white/15 text-gray-400 hover:text-purple-600 hover:border-purple-300 dark:hover:text-[#aa55f9] dark:hover:border-[rgba(170,85,249,0.4)] transition-colors"
+                    >
+                      <Coffee size={16} />
+                      <span className="text-[10px] font-mono leading-none">{horarioDepois(new Date(apt.endTime)).startHour}</span>
+                    </button>
+                  )}
+                  </div>
                 ))}
               </div>
             )}
@@ -1062,7 +1095,12 @@ export default function AgendaPage() {
                     <button
                       key={mode}
                       type="button"
-                      onClick={() => { setFormMode(mode); setBlockError(null) }}
+                      onClick={() => {
+                        // Se o dia foi trocado na aba Agendamento, o intervalo acompanha esse dia
+                        if (mode === "intervalo" && form.date && form.date !== blockForm.date) changeBlockDate(form.date)
+                        setFormMode(mode)
+                        setBlockError(null)
+                      }}
                       className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors ${
                         formMode === mode
                           ? "bg-white dark:bg-[#1f1f30] text-purple-700 dark:text-[#aa55f9] shadow-sm"
@@ -1500,7 +1538,7 @@ export default function AgendaPage() {
                   )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dia</label>
-                    <input type="date" value={blockForm.date} onChange={(e) => setBlockForm({ ...blockForm, date: e.target.value })} className={BLOCK_INPUT} />
+                    <input type="date" value={blockForm.date} onChange={(e) => changeBlockDate(e.target.value)} className={BLOCK_INPUT} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
