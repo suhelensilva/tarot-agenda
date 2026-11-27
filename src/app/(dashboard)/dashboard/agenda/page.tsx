@@ -71,6 +71,85 @@ const statusConfig = {
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
 const DAYS = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"]
 
+// ── Data de nascimento: campo de texto dd/mm/aaaa que aceita COLAR ─────────
+// O calendário do navegador (type="date") não aceita colar texto. Este campo
+// aceita digitar e colar de qualquer mensagem: "15/03/1988", "15.03.88",
+// "15-03-1988", "1988-03-15", "15031988", "15 de março de 1988".
+// Guarda no formato do banco ("AAAA-MM-DD"), igual ao campo antigo.
+const MESES_CURTOS: Record<string, number> = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 }
+
+function montaIso(d: number, m: number, y: number): string | null {
+  if (y < 100) y += y <= (new Date().getFullYear() % 100) ? 2000 : 1900
+  const dt = new Date(y, m - 1, d)
+  if (y < 1900 || dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+}
+
+function lerNascimento(raw: string): string | null {
+  const t = raw.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim()
+  let m = t.match(/(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (m) return montaIso(+m[3], +m[2], +m[1])
+  m = t.match(/(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{4}|\d{2})(?!\d)/)
+  if (m) return montaIso(+m[1], +m[2], +m[3])
+  m = t.match(/(\d{1,2})\s*(?:de\s+)?([a-z]{3})[a-z]*\.?\s*(?:de\s+)?(\d{4}|\d{2})(?!\d)/)
+  if (m && MESES_CURTOS[m[2]]) return montaIso(+m[1], MESES_CURTOS[m[2]], +m[3])
+  m = t.match(/^(\d{2})(\d{2})(\d{4})$/)
+  if (m) return montaIso(+m[1], +m[2], +m[3])
+  return null
+}
+
+const isoParaBr = (iso: string) => { const [y, m, d] = iso.split("-"); return y && m && d ? `${d}/${m}/${y}` : "" }
+
+function mascaraData(txt: string) {
+  const d = txt.replace(/\D/g, "").slice(0, 8)
+  if (d.length <= 2) return d
+  if (d.length <= 4) return `${d.slice(0, 2)}/${d.slice(2)}`
+  return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`
+}
+
+function CampoNascimento({ value, onChange, className }: { value: string; onChange: (iso: string) => void; className: string }) {
+  const [texto, setTexto] = useState(value ? isoParaBr(value) : "")
+
+  // Formulário limpo/preenchido por fora: o texto acompanha
+  const [valorAnterior, setValorAnterior] = useState(value)
+  if (value !== valorAnterior) {
+    setValorAnterior(value)
+    const atualIso = lerNascimento(texto)
+    if (!value) { if (atualIso) setTexto("") }
+    else if (atualIso !== value) setTexto(isoParaBr(value))
+  }
+
+  const completo = texto.replace(/\D/g, "").length === 8
+  const invalido = completo && !lerNascimento(texto)
+
+  return (
+    <>
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="dd/mm/aaaa"
+        value={texto}
+        onChange={(e) => {
+          const novo = mascaraData(e.target.value)
+          setTexto(novo)
+          // Só guarda a data quando está completa e válida; incompleta = sem data
+          onChange((novo.length === 10 && lerNascimento(novo)) || "")
+        }}
+        onPaste={(e) => {
+          const iso = lerNascimento(e.clipboardData.getData("text"))
+          if (!iso) return
+          e.preventDefault()
+          setTexto(isoParaBr(iso))
+          onChange(iso)
+        }}
+        className={className}
+      />
+      {invalido && <p className="mt-1 text-xs text-red-500">Data inválida</p>}
+    </>
+  )
+}
+
 export default function AgendaPage() {
   const today = new Date()
   const [currentDate, setCurrentDate] = useState(today)
@@ -1161,10 +1240,9 @@ export default function AgendaPage() {
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nascimento</label>
-                        <input
-                          type="date"
+                        <CampoNascimento
                           value={newClient.birthDate}
-                          onChange={(e) => setNewClient((p) => ({ ...p, birthDate: e.target.value }))}
+                          onChange={(iso) => setNewClient((p) => ({ ...p, birthDate: iso }))}
                           className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                         />
                       </div>
@@ -1193,10 +1271,9 @@ export default function AgendaPage() {
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nascimento da 2ª pessoa</label>
-                          <input
-                            type="date"
+                          <CampoNascimento
                             value={newClient.person2BirthDate}
-                            onChange={(e) => setNewClient((p) => ({ ...p, person2BirthDate: e.target.value }))}
+                            onChange={(iso) => setNewClient((p) => ({ ...p, person2BirthDate: iso }))}
                             className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                           />
                         </div>
@@ -1310,10 +1387,9 @@ export default function AgendaPage() {
                     </div>
                     <div className="col-span-2">
                       <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Data de nascimento (opcional)</label>
-                      <input
-                        type="date"
+                      <CampoNascimento
                         value={form.person2BirthDate}
-                        onChange={(e) => setForm({ ...form, person2BirthDate: e.target.value })}
+                        onChange={(iso) => setForm((f) => ({ ...f, person2BirthDate: iso }))}
                         className="w-full border border-gray-200 dark:border-[rgba(170,85,249,0.2)] dark:bg-[rgba(255,255,255,0.05)] rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-[rgba(170,85,249,0.4)]"
                       />
                     </div>
